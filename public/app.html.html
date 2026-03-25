@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>LinhaCash</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#000;--s1:#0a0a0a;--s2:#111;--s3:#1a1a1a;--s4:#222;
+  --bd:#2a2a2a;--bd2:#333;--tx:#fff;--mt:#888;--mt2:#555;
+  --green:#00e676;--gdim:rgba(0,230,118,.12);
+  --red:#ff1744;--rdim:rgba(255,23,68,.12);
+  --amber:#ffab00;
+}
+html,body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;height:100%}
+body{min-height:100dvh}
+
+/* ── MOBILE: app em coluna, max 430px ── */
+.app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+
+/* ── DESKTOP: expande layout ── */
+@media(min-width:768px){
+  body{background:var(--s1)}
+  .app{max-width:100%;height:100dvh;flex-direction:row;overflow:hidden}
+
+  /* Sidebar esquerda fixa */
+  .sidebar-desk{
+    width:240px;flex-shrink:0;
+    background:var(--bg);border-right:1px solid var(--bd);
+    display:flex;flex-direction:column;
+    padding:24px 0;
+    height:100dvh;
+  }
+  .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:-.3px}
+  .sd-logo em{color:var(--green);font-style:normal}
+  .sd-nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
+  .sd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;transition:.15s}
+  .sd-item:hover{background:var(--s2);color:var(--tx)}
+  .sd-item.on{background:var(--gdim);color:var(--green);font-weight:600}
+  .sd-bottom{padding:12px}
+  .sd-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--s2);border:1px solid var(--bd);cursor:pointer}
+  .sd-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--green),#00897b);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0}
+  .sd-info{flex:1;min-width:0}
+  .sd-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sd-plan{font-size:11px;color:var(--mt)}
+
+  /* Conteúdo principal */
+  .desk-main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+  /* Screens no desktop: sem animação de slide, ficam na área principal */
+  .scr{position:relative;inset:auto;height:100%;animation:none!important}
+  .scr.on{display:flex}
+
+  /* Header desktop: mais compacto, sem back button visível */
+  .hdr{padding:14px 24px 12px;border-bottom:1px solid var(--bd)}
+  .hbk.hide{display:none}
+
+  /* Auth desktop: centralizado com card */
+  .sAuth-desk-wrap{display:flex;align-items:center;justify-content:center;flex:1;padding:40px}
+  .awrap{max-width:400px;width:100%;margin:0 auto;padding:40px;background:var(--s2);border:1px solid var(--bd);border-radius:20px}
+
+  /* Games grid no desktop */
+  #glist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0;padding:4px 8px}
+  .gcard{margin:8px}
+
+  /* Players list desktop: mais espaçoso */
+  .prow2{padding:12px 24px}
+  .scrl{padding-right:0}
+  .scrl::-webkit-scrollbar{width:6px;display:block}
+  .scrl::-webkit-scrollbar-track{background:transparent}
+  .scrl::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+
+  /* Detail desktop: max width centralizado */
+  #pdetail > *{max-width:800px;margin-left:auto;margin-right:auto}
+  .chartsec{padding:10px 24px 0}
+  .alrow{padding:10px 24px}
+  .istrip{padding:10px 24px}
+  .pbrow{padding:10px 24px 20px}
+
+  /* Modais desktop: centralizados no meio da tela */
+  .overlay{align-items:center}
+  .sheet{border-radius:20px;max-width:480px;margin:auto}
+  .shhandle{display:none}
+
+  /* Perfil desktop */
+  #profcont{max-width:600px;margin:0 auto}
+  .datebar{padding:16px 24px 10px}
+  .sectitle{padding:12px 24px 6px}
+  .schips{padding:10px 24px}
+  .gbanner{padding:14px 24px}
+}
+
+@media(min-width:1100px){
+  .sidebar-desk{width:260px}
+  #glist{grid-template-columns:repeat(3,1fr)}
+}
+
+/* SCREENS */
+.scr{display:none;flex-direction:column;height:100%;position:absolute;inset:0;background:var(--bg)}
+.scr.on{display:flex;animation:sIn .2s ease}
+.scr.bk{animation:sBk .2s ease}
+@keyframes sIn{from{transform:translateX(100%);opacity:.5}to{transform:translateX(0);opacity:1}}
+@keyframes sBk{from{transform:translateX(-20%);opacity:.5}to{transform:translateX(0);opacity:1}}
+
+/* SCROLL */
+.scrl{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scrl::-webkit-scrollbar{display:none}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:10px;padding:12px 16px 10px;background:var(--bg);border-bottom:1px solid var(--bd);flex-shrink:0}
+.hbk{width:34px;height:34px;border-radius:50%;background:var(--s3);border:none;color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hbk.hide{visibility:hidden}
+.htl{flex:1;font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hlogo{font-size:18px;font-weight:800}
+.hlogo em{color:var(--green);font-style:normal}
+.hact{display:flex;gap:6px;flex-shrink:0}
+.hico{width:34px;height:34px;border-radius:50%;background:var(--s3);border:none;color:var(--mt);cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* AUTH */
+.awrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 24px 48px}
+.alogo{text-align:center;margin-bottom:36px}
+.amark{width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,var(--green),#00897b);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#000;margin:0 auto 14px}
+.aname{font-size:26px;font-weight:800;letter-spacing:-.4px}
+.aname em{color:var(--green);font-style:normal}
+.asub{font-size:13px;color:var(--mt);margin-top:5px}
+.atabs{display:flex;background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:4px;margin-bottom:22px}
+.atab{flex:1;padding:9px;text-align:center;font-size:14px;font-weight:600;color:var(--mt);border-radius:9px;cursor:pointer;transition:.15s}
+.atab.on{background:var(--s3);color:var(--tx)}
+.afield{margin-bottom:14px}
+.afield label{display:block;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.afield input{width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:11px;padding:13px 14px;font-size:15px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;transition:.15s}
+.afield input:focus{border-color:var(--green)}
+.abtn{width:100%;padding:14px;background:var(--green);border:none;border-radius:12px;font-size:16px;font-weight:800;color:#000;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px}
+.abtn:active{opacity:.85}
+.abtn.sec{background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-weight:600;font-size:14px;margin-top:8px}
+.aforgot{text-align:center;margin-top:16px;font-size:13px;color:var(--mt);cursor:pointer}
+.aforgot em{color:var(--green);font-style:normal;font-weight:600}
+.adiv{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--mt);font-size:12px}
+.adiv::before,.adiv::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* OTP */
+.owrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:48px 24px 40px}
+.oicon{width:60px;height:60px;border-radius:50%;background:var(--gdim);border:1px solid rgba(0,230,118,.3);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.otitle{font-size:20px;font-weight:800;letter-spacing:-.3px;text-align:center}
+.osub{font-size:13px;color:var(--mt);margin-top:8px;line-height:1.6;text-align:center}
+.ofields{display:flex;gap:8px;margin:24px 0 8px}
+.ofield{width:44px;height:54px;background:var(--s2);border:1px solid var(--bd2);border-radius:11px;text-align:center;font-size:22px;font-weight:700;color:var(--tx);font-family:'JetBrains Mono',monospace;outline:none;transition:.15s}
+.ofield:focus{border-color:var(--green)}
+.oresend{font-size:13px;color:var(--mt);margin-top:10px;text-align:center}
+.oresend em{color:var(--green);font-style:normal;font-weight:600;cursor:pointer}
+.otimer{font-weight:700;color:var(--amber)}
+
+/* STABS */
+.stabs{display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--bd);flex-shrink:0}
+.stabs::-webkit-scrollbar{display:none}
+.stab{padding:10px 14px;font-size:13px;font-weight:600;color:var(--mt);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.stab.on{color:var(--green);border-bottom-color:var(--green)}
+.stab.lk{opacity:.4}
+
+/* S1 GAMES */
+.datebar{padding:14px 16px 8px;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.1em}
+.gcard{margin:0 12px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:14px;overflow:hidden;cursor:pointer}
+.gcard:active{opacity:.8}
+.gcard.lk{opacity:.4;pointer-events:none}
+.gctop{display:flex;align-items:center;gap:8px;padding:12px 14px 6px}
+.gtime{font-size:12px;font-weight:700;color:var(--green);background:var(--gdim);border:1px solid rgba(0,230,118,.2);border-radius:6px;padding:3px 9px}
+.glock{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mt)}
+.gteams{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 14px}
+.tside{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.tcirc{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.08)}
+.tabbr{font-size:15px;font-weight:800}
+.tcity{font-size:10px;color:var(--mt);text-align:center}
+.gvs{font-size:14px;font-weight:800;color:var(--mt2)}
+.gfoot{display:flex;align-items:center;padding:8px 14px;background:var(--s3);border-top:1px solid var(--bd);font-size:11px;color:var(--mt)}
+
+/* S2 PLAYERS */
+.gbanner{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd)}
+.gbav{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.1)}
+.schips{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--bd)}
+.schips::-webkit-scrollbar{display:none}
+.schip{flex-shrink:0;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:var(--s3);color:var(--mt)}
+.schip.on{background:var(--green);border-color:var(--green);color:#000;font-weight:700}
+.schip.lk{opacity:.4}
+.sectitle{padding:12px 16px 6px;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.08em}
+.prow2{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
+.prow2:active{background:var(--s2)}
+.prav{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.08)}
+.prnm{font-size:14px;font-weight:600}
+.prmt{font-size:11px;color:var(--mt);margin-top:1px}
+.prrt{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.prln{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600}
+.prhr{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;font-family:'JetBrains Mono',monospace}
+.g{color:var(--green);background:var(--gdim)}
+.a{color:var(--amber);background:rgba(255,171,0,.1)}
+.r{color:var(--red);background:var(--rdim)}
+
+/* S3 DETAIL */
+.hero{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-bottom:1px solid var(--bd)}
+.heav{width:60px;height:60px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.1)}
+.henm{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.hesb{font-size:12px;color:var(--mt);margin-top:2px}
+.helv{display:flex;align-items:center;gap:5px;margin-top:7px;font-size:13px;color:var(--green);font-weight:600}
+.hdot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.mbox{flex-shrink:0;width:80px;background:var(--s3);border:1px solid var(--bd);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.mboxl{font-size:9px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.08em}
+.ringw{position:relative;width:50px;height:50px}
+.rsvg{width:50px;height:50px;transform:rotate(-90deg)}
+.rbg{fill:none;stroke:#2a2a2a;stroke-width:5}
+.rfill{fill:none;stroke:var(--green);stroke-width:5;stroke-linecap:round}
+.rgrade{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--green)}
+.istrip{display:flex;padding:10px 16px;border-bottom:1px solid var(--bd);background:var(--s1)}
+.isit{display:flex;flex-direction:column;gap:2px;flex:1}
+.isit+.isit{border-left:1px solid var(--bd);padding-left:14px}
+.islbl{font-size:10px;font-weight:600;color:var(--mt2);text-transform:uppercase;letter-spacing:.07em}
+.isval{font-size:13px;font-weight:700}
+.isval.gv{color:var(--green);background:none}
+.isval.rv{color:var(--red);background:none}
+.alrow{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--bd)}
+.avgb{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600}
+.avgb .val{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green)}
+.lned{display:flex;align-items:center;gap:6px}
+.lnlbl{font-size:11px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.lnctrl{display:flex;align-items:center;gap:4px;background:var(--s3);border:1px solid var(--bd2);border-radius:8px;padding:4px 8px}
+.lnbtn{background:none;border:none;color:var(--mt);font-size:18px;cursor:pointer;padding:0 3px;line-height:1;font-family:'Inter',sans-serif}
+.lnval{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--green);min-width:38px;text-align:center}
+.chartsec{padding:10px 16px 0}
+.cmaxlbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mt);margin-bottom:2px}
+.cbars{position:relative;display:flex;align-items:flex-end;gap:3px}
+.cref{position:absolute;left:0;right:0;border-top:2px solid rgba(255,255,255,.85);z-index:3;pointer-events:none}
+.creflbl{position:absolute;left:0;top:-14px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:3px;padding:0 4px}
+.ccol{flex:1;min-width:0;display:flex;align-items:flex-end}
+.cbar{width:100%;border-radius:3px 3px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px}
+.cbar.hit{background:var(--green)}.cbar.miss{background:var(--red)}.cbar.tie{background:#555}
+.cbarv{font-size:8px;font-weight:700;color:rgba(0,0,0,.9);font-family:'JetBrains Mono',monospace}
+.cdates{display:flex;gap:3px;padding:3px 0 6px}
+.cdate{flex:1;font-size:7px;color:var(--mt2);text-align:center;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbrow{display:flex;gap:6px;padding:10px 16px 20px;overflow-x:auto;scrollbar-width:none}
+.pbrow::-webkit-scrollbar{display:none}
+.pbtn{flex-shrink:0;min-width:62px;padding:10px 6px;background:var(--s3);border:1px solid var(--bd);border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.pbtn.on{background:var(--green);border-color:var(--green)}
+.pblbl{font-size:11px;font-weight:600;color:var(--mt)}
+.pbval{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--tx)}
+.pbtn.on .pblbl{color:rgba(0,0,0,.65)}.pbtn.on .pbval{color:#000}
+
+/* S4 PERFIL */
+.ptop{padding:28px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;border-bottom:1px solid var(--bd)}
+.pav{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--green),#00897b);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#000}
+.pnm{font-size:18px;font-weight:800}
+.pem{font-size:13px;color:var(--mt);margin-top:1px}
+.plantag{display:inline-flex;align-items:center;gap:6px;background:var(--gdim);border:1px solid rgba(0,230,118,.25);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--green);margin-top:4px}
+.psec{padding:20px 16px 0}
+.psectitle{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.pcard{background:var(--s2);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.prow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
+.prow:last-child{border-bottom:none}
+.prow:active{background:var(--s3)}
+.prowlbl{font-size:14px;font-weight:500;flex:1}
+.pchev{color:var(--mt2);flex-shrink:0}
+.plogout{margin:24px 16px 36px;text-align:center}
+.plogout button{background:none;border:1px solid var(--bd);border-radius:10px;padding:10px 32px;color:var(--red);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.pplancard{background:var(--s2);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.pplanrow{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd)}
+.pplanrow:last-child{border-bottom:none}
+.pplannm{font-size:15px;font-weight:700}
+.pplansb{font-size:12px;color:var(--mt);margin-top:2px}
+.protag{font-size:9px;background:var(--green);color:#000;border-radius:4px;padding:2px 5px;font-weight:800;vertical-align:middle;margin-left:5px}
+
+/* MODAIS */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);align-items:flex-end}
+.sheet{width:100%;max-width:430px;margin:0 auto;background:var(--s2);border-radius:20px 20px 0 0}
+.shhandle{width:36px;height:4px;background:var(--bd2);border-radius:999px;margin:10px auto 0}
+
+/* TOAST */
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--bd2);color:var(--tx);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:500;white-space:nowrap;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR DESKTOP (visível só no PC) -->
+<div class="sidebar-desk" id="sidebarDesk" style="display:none">
+  <div class="sd-logo">Linha<em>Cash</em></div>
+  <div class="sd-nav">
+    <div class="sd-item on" id="sdJogos" onclick="sdNav('jogos')">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Jogos do dia
+    </div>
+    <div class="sd-item" id="sdPerfil" onclick="sdNav('perfil')">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Meu Perfil
+    </div>
+  </div>
+  <div class="sd-bottom">
+    <div class="sd-user" id="sdUserBtn" onclick="sdNav('perfil')">
+      <div class="sd-av" id="sdAvLetter">U</div>
+      <div class="sd-info">
+        <div class="sd-name" id="sdUserName">Usuário</div>
+        <div class="sd-plan" id="sdUserPlan">Plano Gratuito</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="desk-main" id="deskMain">
+
+<!-- ═══ AUTH: LOGIN/REGISTRO ═══ -->
+<div class="scr on" id="sAuth">
+  <div class="scrl">
+    <div class="awrap">
+      <div class="alogo">
+        <div class="amark">L</div>
+        <div class="aname">Linha<em>Cash</em></div>
+        <div class="asub">Análise de props da NBA</div>
+      </div>
+      <div class="atabs">
+        <div class="atab on" id="tabLogin" onclick="authTab('login')">Entrar</div>
+        <div class="atab" id="tabReg" onclick="authTab('reg')">Criar conta</div>
+      </div>
+      <!-- LOGIN -->
+      <div id="fLogin">
+        <div class="afield"><label>Email</label><input type="email" id="lEmail" placeholder="seu@email.com"/></div>
+        <div class="afield"><label>Senha</label><input type="password" id="lPass" placeholder="••••••••"/></div>
+        <button class="abtn" onclick="doLogin()">Entrar</button>
+        <div class="aforgot" onclick="doForgot()">Esqueceu a senha? <em>Recuperar</em></div>
+      </div>
+      <!-- REGISTRO -->
+      <div id="fReg" style="display:none">
+        <div class="afield"><label>Nome</label><input type="text" id="rName" placeholder="Seu nome"/></div>
+        <div class="afield"><label>Email</label><input type="email" id="rEmail" placeholder="seu@email.com"/></div>
+        <div class="afield"><label>Senha</label><input type="password" id="rPass" placeholder="Mínimo 6 caracteres"/></div>
+        <button class="abtn" onclick="doRegister()">Criar conta grátis</button>
+        <div class="adiv">ou</div>
+        <p style="font-size:11px;color:var(--mt);text-align:center;line-height:1.6">Ao criar conta você concorda com os <span style="color:var(--green);cursor:pointer" onclick="openTermos()">Termos de Uso</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTH: CONFIRMAR EMAIL ═══ -->
+<div class="scr" id="sOtp">
+  <div class="scrl">
+    <div class="owrap">
+      <div class="oicon">
+        <svg width="26" height="26" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div class="otitle">Confirme seu email</div>
+      <div class="osub">Enviamos um código de 6 dígitos para<br><strong id="otpEmail" style="color:var(--tx)"></strong></div>
+      <div class="ofields">
+        <input class="ofield" id="o1" type="tel" maxlength="1" oninput="onOtp(this,'o2')" onkeydown="onOtpBk(event,this,'')"/>
+        <input class="ofield" id="o2" type="tel" maxlength="1" oninput="onOtp(this,'o3')" onkeydown="onOtpBk(event,this,'o1')"/>
+        <input class="ofield" id="o3" type="tel" maxlength="1" oninput="onOtp(this,'o4')" onkeydown="onOtpBk(event,this,'o2')"/>
+        <input class="ofield" id="o4" type="tel" maxlength="1" oninput="onOtp(this,'o5')" onkeydown="onOtpBk(event,this,'o3')"/>
+        <input class="ofield" id="o5" type="tel" maxlength="1" oninput="onOtp(this,'o6')" onkeydown="onOtpBk(event,this,'o4')"/>
+        <input class="ofield" id="o6" type="tel" maxlength="1" oninput="onOtp(this,'')"   onkeydown="onOtpBk(event,this,'o5')"/>
+      </div>
+      <button class="abtn" style="width:100%;max-width:320px" onclick="confirmOtp()">Confirmar</button>
+      <button class="abtn sec" style="width:100%;max-width:320px;margin-top:8px" onclick="showAuth()">← Voltar</button>
+      <div class="oresend" id="oresend">
+        Não recebeu? <em id="resendBtn" onclick="resendCode()">Reenviar código</em>
+        <span id="timerWrap" style="display:none"> em <span id="timerVal" class="otimer">60s</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S1: JOGOS DO DIA ═══ -->
+<div class="scr" id="s1">
+  <div class="hdr">
+    <button class="hbk hide"></button>
+    <div class="htl hlogo">Linha<em>Cash</em></div>
+    <div class="hact">
+      <button class="hico" onclick="nav(4)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+      <button class="hico" onclick="toggleTheme()"><svg id="thico" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+    </div>
+  </div>
+  <div class="scrl"><div class="datebar" id="dlabel"></div><div id="glist"></div></div>
+</div>
+
+<!-- ═══ S2: JOGADORES ═══ -->
+<div class="scr" id="s2">
+  <div class="hdr">
+    <button class="hbk" onclick="back()">←</button>
+    <div class="htl" id="s2ttl">Jogadores</div>
+    <div class="hact">
+      <button class="hico" onclick="nav(4)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+      <button class="hico" onclick="toggleTheme()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+    </div>
+  </div>
+  <div class="scrl"><div id="gbanner"></div><div id="plist"></div></div>
+</div>
+
+<!-- ═══ S3: DETALHE ═══ -->
+<div class="scr" id="s3">
+  <div class="hdr">
+    <button class="hbk" onclick="back()">←</button>
+    <div class="htl" id="s3ttl">Jogador</div>
+    <div class="hact">
+      <button class="hico" onclick="nav(4)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+      <button class="hico" onclick="toggleTheme()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+    </div>
+  </div>
+  <div class="stabs" id="stabs"></div>
+  <div class="scrl" id="pdetail"></div>
+</div>
+
+<!-- ═══ S4: PERFIL ═══ -->
+<div class="scr" id="s4">
+  <div class="hdr">
+    <button class="hbk" onclick="back()">←</button>
+    <div class="htl">Meu Perfil</div>
+    <div class="hact"><button class="hico" onclick="back()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  </div>
+  <div class="scrl" id="profcont"></div>
+</div>
+
+</div><!-- .desk-main -->
+</div><!-- .app -->
+
+<!-- MODAL FAQ -->
+<div class="overlay" id="mFaq" onclick="if(event.target===this)closeFaq()">
+  <div class="sheet" style="max-height:85dvh;display:flex;flex-direction:column">
+    <div class="shhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd);flex-shrink:0">
+      <span style="font-size:16px;font-weight:700">Perguntas Frequentes</span>
+      <button onclick="closeFaq()" style="background:var(--s3);border:none;color:var(--mt);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-family:'Inter',sans-serif">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:8px 0 32px">
+
+      <div class="faq-item" onclick="toggleFaq(this)" style="border-bottom:1px solid var(--bd);cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;gap:12px">
+          <span style="font-size:14px;font-weight:600;flex:1">O que é o LinhaCash?</span>
+          <svg class="faq-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;transition:.2s;color:var(--mt)"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Plataforma de análise de dados da NBA para apostadores. Mostramos estatísticas históricas dos jogadores para te ajudar a tomar decisões mais informadas.</div>
+      </div>
+
+      <div class="faq-item" onclick="toggleFaq(this)" style="border-bottom:1px solid var(--bd);cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;gap:12px">
+          <span style="font-size:14px;font-weight:600;flex:1">Os dados são em tempo real?</span>
+          <svg class="faq-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;transition:.2s;color:var(--mt)"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Os dados são atualizados diariamente antes dos jogos. Não exibimos estatísticas ao vivo durante as partidas.</div>
+      </div>
+
+      <div class="faq-item" onclick="toggleFaq(this)" style="border-bottom:1px solid var(--bd);cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;gap:12px">
+          <span style="font-size:14px;font-weight:600;flex:1">Qual a diferença entre Gratuito e Pro?</span>
+          <svg class="faq-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;transition:.2s;color:var(--mt)"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Gratuito: 1 jogo por dia, 1 jogador por time, apenas PTS e REB. Pro: todos os jogos, todos os jogadores, todas as stats (AST, 3PM, P+A, P+R) e períodos H2H e L20.</div>
+      </div>
+
+      <div class="faq-item" onclick="toggleFaq(this)" style="border-bottom:1px solid var(--bd);cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;gap:12px">
+          <span style="font-size:14px;font-weight:600;flex:1">Como cancelo minha assinatura?</span>
+          <svg class="faq-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;transition:.2s;color:var(--mt)"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Acesse Perfil → Suporte → Cancelar assinatura. O acesso Pro permanece ativo até o fim do período já pago.</div>
+      </div>
+
+      <div class="faq-item" onclick="toggleFaq(this)" style="border-bottom:1px solid var(--bd);cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;gap:12px">
+          <span style="font-size:14px;font-weight:600;flex:1">O LinhaCash é uma casa de apostas?</span>
+          <svg class="faq-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;transition:.2s;color:var(--mt)"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Não. Somos uma ferramenta de análise de dados. Não aceitamos apostas nem promovemos sites de apostas.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTATO -->
+<div class="overlay" id="mContato" onclick="if(event.target===this)closeContato()">
+  <div class="sheet" style="padding:0 20px 36px">
+    <div class="shhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+      <span style="font-size:17px;font-weight:700">Falar com Suporte</span>
+      <button onclick="closeContato()" style="background:var(--s3);border:none;color:var(--mt);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-family:'Inter',sans-serif">✕</button>
+    </div>
+    <div style="background:var(--s3);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <svg width="16" height="16" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span style="font-size:12px;color:var(--mt)">Tempo médio de resposta: <strong style="color:var(--tx)">até 24 horas</strong></span>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Assunto</div>
+      <select id="contatoAssunto" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;appearance:none">
+        <option>Dúvida sobre dados</option>
+        <option>Problema com pagamento</option>
+        <option>Dúvida sobre o plano Pro</option>
+        <option>Conta e acesso</option>
+        <option>Sugestão de melhoria</option>
+        <option>Outro</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Mensagem</div>
+      <textarea id="contatoMsg" rows="4" placeholder="Descreva sua dúvida em detalhes..." style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;resize:none;line-height:1.5"></textarea>
+    </div>
+    <button onclick="enviarContato()" style="width:100%;padding:13px;background:var(--green);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#000;cursor:pointer;font-family:'Inter',sans-serif">Enviar mensagem</button>
+  </div>
+</div>
+
+<!-- MODAL REPORTAR PROBLEMA -->
+<div class="overlay" id="mBug" onclick="if(event.target===this)closeBug()">
+  <div class="sheet" style="padding:0 20px 36px">
+    <div class="shhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+      <span style="font-size:17px;font-weight:700">Reportar Problema</span>
+      <button onclick="closeBug()" style="background:var(--s3);border:none;color:var(--mt);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-family:'Inter',sans-serif">✕</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Tipo de problema</div>
+      <select id="bugTipo" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;appearance:none">
+        <option>Dado incorreto</option>
+        <option>Erro na tela</option>
+        <option>App travando</option>
+        <option>Problema de login</option>
+        <option>Pagamento com erro</option>
+        <option>Outro</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Descrição</div>
+      <textarea id="bugDesc" rows="4" placeholder="O que aconteceu? Descreva o problema com detalhes..." style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;resize:none;line-height:1.5"></textarea>
+    </div>
+    <button onclick="enviarBug()" style="width:100%;padding:13px;background:var(--green);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#000;cursor:pointer;font-family:'Inter',sans-serif">Enviar relatório</button>
+  </div>
+</div>
+
+<!-- MODAL CANCELAR ASSINATURA -->
+<div class="overlay" id="mCancel" onclick="if(event.target===this)closeCancel()">
+  <div class="sheet" style="padding:0 20px 36px">
+    <div class="shhandle"></div>
+    <div style="text-align:center;padding:20px 0 16px">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--rdim);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <svg width="24" height="24" fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+      <div style="font-size:19px;font-weight:800">Cancelar assinatura?</div>
+      <div style="font-size:13px;color:var(--mt);margin-top:8px;line-height:1.6">Você perderá acesso ao Plano Pro ao fim<br>do período atual. Pode reativar quando quiser.</div>
+    </div>
+    <div style="background:var(--s3);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--mt);margin-bottom:6px;font-weight:600">Você vai perder:</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)">✕</span> Todos os jogos do dia</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)">✕</span> Todos os jogadores</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)">✕</span> Stats AST, 3PM, P+A, P+R</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)">✕</span> Períodos H2H e L20</div>
+      </div>
+    </div>
+    <button onclick="confirmarCancelamento()" style="width:100%;padding:13px;background:var(--rdim);border:1px solid var(--red);border-radius:12px;font-size:15px;font-weight:700;color:var(--red);cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">Confirmar cancelamento</button>
+    <button onclick="closeCancel()" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#000;cursor:pointer;font-family:'Inter',sans-serif">Manter Pro</button>
+  </div>
+</div>
+
+<!-- MODAL SEGURANÇA -->
+<div class="overlay" id="mSeg" onclick="if(event.target===this)closeSeg()">
+  <div class="sheet" style="padding:0 20px 36px">
+    <div class="shhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+      <span style="font-size:17px;font-weight:700">Alterar Senha</span>
+      <button onclick="closeSeg()" style="background:var(--s3);border:none;color:var(--mt);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-family:'Inter',sans-serif">✕</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Senha atual</div>
+      <input id="segAtual" type="password" placeholder="Digite sua senha atual" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none"/>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nova senha</div>
+      <input id="segNova" type="password" placeholder="Mínimo 6 caracteres" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none"/>
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Confirmar nova senha</div>
+      <input id="segConf" type="password" placeholder="Repita a nova senha" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none"/>
+    </div>
+    <button onclick="saveSeg()" style="width:100%;padding:13px;background:var(--green);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#000;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:6px">Salvar nova senha</button>
+    <button onclick="closeSeg()" style="width:100%;padding:11px;background:none;border:none;font-size:14px;color:var(--mt);cursor:pointer;font-family:'Inter',sans-serif">Cancelar</button>
+  </div>
+</div>
+
+<div class="overlay" id="mPro" onclick="if(event.target===this)closePro()">
+  <div class="sheet" style="padding:0 20px 36px;max-height:92dvh;overflow-y:auto">
+    <div class="shhandle"></div>
+    <div style="text-align:center;padding:18px 0 14px">
+      <div style="font-size:30px;margin-bottom:8px">⚡</div>
+      <div style="font-size:20px;font-weight:800">Assine o Plano Pro</div>
+      <div style="font-size:13px;color:var(--mt);margin-top:4px">Acesso completo à plataforma</div>
+    </div>
+
+    <!-- Benefícios -->
+    <div style="background:var(--s3);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px">✓</span>Todos os jogos do dia</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px">✓</span>Todos os jogadores</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px">✓</span>AST, 3PM, P+A, P+R desbloqueados</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px">✓</span>Períodos H2H e L20</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px">✓</span>Splits Casa/Fora e vs Top 10 DEF</div>
+    </div>
+
+    <!-- Seletor de plano -->
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div id="planMensal" onclick="selectPlan('mensal')" style="flex:1;border:2px solid var(--bd);border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:.15s">
+        <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Mensal</div>
+        <div style="font-size:22px;font-weight:800">R$24,90</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">por mês</div>
+      </div>
+      <div id="planAnual" onclick="selectPlan('anual')" style="flex:1;border:2px solid var(--green);border-radius:12px;padding:12px;cursor:pointer;text-align:center;position:relative;background:var(--gdim);transition:.15s">
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:10px;font-weight:800;padding:2px 10px;border-radius:999px;white-space:nowrap">MAIS POPULAR</div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Anual</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)">R$197,00</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">R$16,41/mês · <span style="color:var(--green);font-weight:700">34% off</span></div>
+      </div>
+    </div>
+
+    <!-- Código de indicação -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Código de indicação <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></div>
+      <input id="cupomInput" type="text" placeholder="" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;text-transform:uppercase"/>
+    </div>
+
+    <!-- Preço final -->
+    <div id="precoFinal" style="background:var(--s3);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--mt)">Total</span>
+      <span id="precoValor" style="font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--green)">R$197,00</span>
+    </div>
+
+    <button id="btnAssinar" onclick="activatePro()" style="width:100%;padding:14px;background:var(--green);border:none;border-radius:12px;font-size:16px;font-weight:800;color:#000;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">Assinar Plano Anual</button>
+    <button onclick="closePro()" style="width:100%;padding:11px;background:none;border:none;font-size:14px;color:var(--mt);cursor:pointer;font-family:'Inter',sans-serif">Agora não</button>
+  </div>
+</div>
+
+<!-- MODAL TERMOS -->
+<div class="overlay" id="mTermos" onclick="if(event.target===this)closeTermos()">
+  <div class="sheet" style="max-height:80dvh;display:flex;flex-direction:column">
+    <div class="shhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd);flex-shrink:0">
+      <span style="font-size:16px;font-weight:700">Termos de Uso</span>
+      <button onclick="closeTermos()" style="background:var(--s3);border:none;color:var(--mt);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-family:'Inter',sans-serif">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:16px 20px 32px;font-size:13px;color:var(--mt);line-height:1.7">
+      <p style="font-weight:700;color:var(--tx);margin-bottom:6px">1. Finalidade</p>
+      <p style="margin-bottom:14px">O LinhaCash é uma plataforma de análise de dados estatísticos da NBA. Não somos uma casa de apostas.</p>
+      <p style="font-weight:700;color:var(--tx);margin-bottom:6px">2. Uso Responsável</p>
+      <p style="margin-bottom:14px">As informações são de caráter informativo. O usuário é o único responsável por suas decisões. Aposte com responsabilidade.</p>
+      <p style="font-weight:700;color:var(--tx);margin-bottom:6px">3. Privacidade</p>
+      <p style="margin-bottom:14px">Seus dados são protegidos e nunca serão vendidos a terceiros.</p>
+      <p style="font-weight:700;color:var(--tx);margin-bottom:6px">4. Planos</p>
+      <p style="margin-bottom:14px">O plano gratuito oferece acesso limitado. O plano Pro é R$24,90/mês ou R$197,00/ano (equivalente a R$16,41/mês), cancelável a qualquer momento.</p>
+      <p style="font-weight:700;color:var(--tx);margin-bottom:6px">5. Política de Reembolso</p>
+      <p style="margin-bottom:14px">Não realizamos reembolsos após a confirmação do pagamento, pois o acesso ao conteúdo é liberado imediatamente. Ao assinar, o usuário declara estar ciente e de acordo com esta política. O cancelamento encerra a renovação automática, mas o acesso permanece ativo até o fim do período já pago.</p>
+      <p style="font-weight:700;color:var(--tx);margin-bottom:6px">6. Precisão dos Dados</p>
+      <p>Os dados são atualizados diariamente via API oficial. Não nos responsabilizamos por perdas baseadas nos dados exibidos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PERFIL -->
+<div class="overlay" id="mEdit" onclick="if(event.target===this)closeEdit()">
+  <div class="sheet" style="padding:0 20px 36px">
+    <div class="shhandle"></div>
+    <div style="font-size:17px;font-weight:700;padding:16px 0 14px">Editar Perfil</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Nome</div>
+      <input id="inName" type="text" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none"/>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Email</div>
+      <input id="inEmail" type="email" style="width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:'Inter',sans-serif;outline:none"/>
+    </div>
+    <button onclick="saveEdit()" style="width:100%;padding:13px;background:var(--green);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#000;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:6px">Salvar</button>
+    <button onclick="closeEdit()" style="width:100%;padding:11px;background:none;border:none;font-size:14px;color:var(--mt);cursor:pointer;font-family:'Inter',sans-serif">Cancelar</button>
+  </div>
+</div>
+
+<script>
+// ═══ DADOS ═══════════════════════════════════════════════════════════════════
+const CLR={LAL:'#552583',GSW:'#1D428A',BOS:'#007A33',MIA:'#98002E',PHX:'#1D1160',DEN:'#0E2240',OKC:'#007AC1',MIL:'#00471B',DAL:'#00538C',NYK:'#F58426',CHI:'#CE1141'};
+const GAMES=[
+  {id:1,home:'BOS',away:'NYK',ht:'Boston Celtics',at:'New York Knicks',time:'13:00'},
+  {id:2,home:'MIA',away:'CHI',ht:'Miami Heat',at:'Chicago Bulls',time:'15:30'},
+  {id:3,home:'GSW',away:'LAL',ht:'Golden State Warriors',at:'Los Angeles Lakers',time:'18:00'},
+  {id:4,home:'OKC',away:'DEN',ht:'Oklahoma City Thunder',at:'Denver Nuggets',time:'20:30'},
+  {id:5,home:'DAL',away:'PHX',ht:'Dallas Mavericks',at:'Phoenix Suns',time:'21:00'},
+];
+const PBG={
+  1:[
+    {id:10,name:'Jayson Tatum',  team:'BOS',pos:'SF',clr:'#007A33',line:24.5,pts:[24,19,28,22,31,18,26,23,29,21],reb:[8,6,10,7,9,5,8,7,11,6],ast:[4,3,6,4,5,2,4,3,5,4],pm3:[2,1,3,2,4,1,2,2,3,1]},
+    {id:11,name:'Jaylen Brown',  team:'BOS',pos:'SG',clr:'#007A33',line:22.5,pts:[25,20,18,27,22,19,24,21,23,26],reb:[5,4,6,5,4,3,5,4,6,5],ast:[3,2,4,3,2,3,3,2,4,3],pm3:[2,1,2,3,2,1,2,1,3,2]},
+    {id:12,name:'Al Horford',    team:'BOS',pos:'C', clr:'#007A33',line:10.5,pts:[12,9,14,8,11,13,10,12,9,11],reb:[9,7,11,8,10,12,9,8,10,9],ast:[3,2,4,3,3,4,3,2,4,3],pm3:[1,0,2,1,2,1,1,0,2,1]},
+    {id:13,name:'Jalen Brunson', team:'NYK',pos:'PG',clr:'#F58426',line:26.5,pts:[28,24,31,22,27,30,25,28,20,29],reb:[4,3,5,4,3,5,4,3,4,4],ast:[7,6,9,5,8,7,6,8,5,9],pm3:[3,2,4,2,3,3,2,3,2,4]},
+    {id:14,name:'RJ Barrett',    team:'NYK',pos:'SG',clr:'#F58426',line:19.5,pts:[21,17,23,19,15,22,18,20,24,16],reb:[6,5,7,5,4,6,5,6,7,5],ast:[3,2,4,3,2,3,2,3,4,2],pm3:[2,1,3,1,1,2,1,2,2,1]},
+    {id:15,name:'K-A Towns',     team:'NYK',pos:'C', clr:'#F58426',line:23.5,pts:[26,22,28,24,20,27,25,21,29,23],reb:[12,10,14,11,9,13,11,10,13,12],ast:[3,2,4,3,2,4,3,2,4,3],pm3:[2,1,3,2,1,3,2,1,3,2]},
+  ],
+  2:[
+    {id:20,name:'Jimmy Butler',  team:'MIA',pos:'SF',clr:'#98002E',line:22.5,pts:[24,20,26,18,22,28,21,23,19,25],reb:[6,5,7,5,6,8,5,6,5,7],ast:[5,4,6,5,4,6,5,5,4,6],pm3:[1,0,2,1,1,2,1,1,0,2]},
+    {id:21,name:'Bam Adebayo',   team:'MIA',pos:'C', clr:'#98002E',line:18.5,pts:[20,17,22,19,16,21,18,20,23,17],reb:[10,9,12,10,8,11,9,10,12,9],ast:[3,2,4,3,2,4,3,3,4,3],pm3:[0,0,1,0,0,1,0,0,1,0]},
+    {id:22,name:'Tyler Herro',   team:'MIA',pos:'SG',clr:'#98002E',line:20.5,pts:[22,18,24,19,21,17,23,20,16,22],reb:[4,3,5,4,3,4,4,3,5,4],ast:[5,4,6,4,5,4,5,4,4,5],pm3:[3,2,4,2,3,2,3,2,2,3]},
+    {id:23,name:'DeMar DeRozan', team:'CHI',pos:'SF',clr:'#CE1141',line:24.5,pts:[26,23,28,22,25,20,27,24,21,26],reb:[5,4,6,4,5,4,5,4,5,5],ast:[5,4,6,4,5,4,5,4,4,5],pm3:[0,0,1,0,0,0,0,0,1,0]},
+    {id:24,name:'Zach LaVine',   team:'CHI',pos:'SG',clr:'#CE1141',line:23.5,pts:[25,21,27,20,24,19,26,22,28,21],reb:[5,4,6,4,5,4,5,4,6,4],ast:[4,3,5,4,4,3,5,4,5,3],pm3:[3,2,4,2,3,2,4,2,3,2]},
+    {id:25,name:'N. Vucevic',    team:'CHI',pos:'C', clr:'#CE1141',line:17.5,pts:[19,16,21,18,15,20,17,19,22,16],reb:[11,9,13,10,8,12,10,9,12,10],ast:[3,2,4,3,2,3,2,3,4,2],pm3:[1,0,2,1,0,1,1,0,2,0]},
+  ],
+  3:[
+    {id:30,name:'Stephen Curry', team:'GSW',pos:'PG',clr:'#1D428A',line:26.5,pts:[29,24,31,22,28,19,27,25,30,23],reb:[5,4,6,4,5,4,5,4,6,4],ast:[6,5,8,5,6,4,7,5,7,5],pm3:[5,3,6,3,5,2,5,4,6,3]},
+    {id:31,name:'Draymond Green',team:'GSW',pos:'PF',clr:'#1D428A',line:7.5, pts:[9,6,11,7,8,10,9,7,6,8],reb:[8,6,10,7,8,9,7,8,6,9],ast:[7,5,9,6,7,8,7,6,6,8],pm3:[0,0,1,0,0,1,0,0,0,0]},
+    {id:32,name:'Klay Thompson', team:'GSW',pos:'SG',clr:'#1D428A',line:17.5,pts:[19,14,22,16,18,12,20,17,15,21],reb:[4,3,5,3,4,2,4,3,4,4],ast:[2,1,3,2,2,1,2,2,2,2],pm3:[4,2,5,3,4,1,4,3,3,4]},
+    {id:33,name:'LeBron James',  team:'LAL',pos:'SF',clr:'#552583',line:25.5,pts:[27,24,29,22,26,31,23,28,25,24],reb:[8,7,9,7,8,9,7,8,8,7],ast:[7,6,9,7,8,8,7,7,7,7],pm3:[2,1,3,2,2,3,1,2,2,2]},
+    {id:34,name:'Anthony Davis', team:'LAL',pos:'C', clr:'#552583',line:26.5,pts:[28,25,30,27,24,29,26,28,31,25],reb:[13,11,15,12,10,14,12,11,14,12],ast:[3,2,4,3,2,4,3,2,4,3],pm3:[1,0,2,1,0,1,1,0,2,1]},
+    {id:35,name:"D'A. Russell",  team:'LAL',pos:'PG',clr:'#552583',line:15.5,pts:[17,13,19,14,16,11,18,15,12,17],reb:[4,3,5,3,4,3,4,3,3,4],ast:[6,5,7,5,6,5,6,5,5,6],pm3:[3,2,4,2,3,1,3,2,2,3]},
+  ],
+  4:[
+    {id:40,name:'Shai G-Alexander',team:'OKC',pos:'PG',clr:'#007AC1',line:31.5,pts:[35,31,21,29,35,55,30,23,31,31],reb:[5,4,6,4,5,5,4,4,5,5],ast:[6,5,7,5,6,6,5,4,6,5],pm3:[3,2,4,2,3,3,2,2,3,3]},
+    {id:41,name:'Chet Holmgren',team:'OKC',pos:'C', clr:'#007AC1',line:16.5,pts:[18,14,20,15,17,19,16,18,13,17],reb:[9,7,11,8,9,10,8,9,7,9],ast:[2,1,3,2,2,3,2,2,2,2],pm3:[2,1,3,1,2,2,1,2,1,2]},
+    {id:42,name:'Josh Giddey',  team:'OKC',pos:'PG',clr:'#007AC1',line:13.5,pts:[15,12,17,13,14,16,12,15,11,14],reb:[7,6,8,6,7,8,6,7,5,7],ast:[6,5,7,5,6,7,5,6,5,6],pm3:[1,0,2,1,1,1,0,1,0,1]},
+    {id:43,name:'Nikola Jokic', team:'DEN',pos:'C', clr:'#0E2240',line:26.5,pts:[28,24,31,26,22,29,27,25,30,24],reb:[13,11,15,12,10,14,12,11,14,12],ast:[9,8,11,9,8,10,9,8,10,9],pm3:[1,0,1,1,0,1,1,0,1,1]},
+    {id:44,name:'Jamal Murray', team:'DEN',pos:'PG',clr:'#0E2240',line:21.5,pts:[23,19,25,20,22,18,24,21,17,23],reb:[5,4,6,4,5,4,5,4,4,5],ast:[6,5,7,5,6,5,6,5,5,6],pm3:[3,2,4,2,3,2,3,2,2,3]},
+    {id:45,name:'M. Porter Jr', team:'DEN',pos:'SF',clr:'#0E2240',line:16.5,pts:[18,14,20,15,17,13,19,16,21,14],reb:[7,6,8,6,7,5,7,6,8,6],ast:[2,1,3,2,2,1,2,2,3,2],pm3:[2,1,3,2,2,1,2,2,3,1]},
+  ],
+  5:[
+    {id:50,name:'Luka Doncic',  team:'DAL',pos:'PG',clr:'#00538C',line:32.5,pts:[35,30,38,28,33,40,29,34,31,36],reb:[9,8,11,8,9,10,8,9,8,9],ast:[9,8,11,8,9,10,8,9,8,10],pm3:[4,3,5,3,4,4,3,4,3,4]},
+    {id:51,name:'Kyrie Irving', team:'DAL',pos:'PG',clr:'#00538C',line:23.5,pts:[25,21,27,20,24,28,22,26,19,25],reb:[4,3,5,4,4,5,3,4,4,4],ast:[5,4,6,5,5,6,4,5,4,5],pm3:[3,2,4,2,3,3,2,3,2,3]},
+    {id:52,name:'P.J. Washington',team:'DAL',pos:'PF',clr:'#00538C',line:13.5,pts:[15,11,17,12,14,10,16,13,18,12],reb:[6,5,7,5,6,4,6,5,7,5],ast:[2,1,3,2,2,1,2,2,3,2],pm3:[2,1,3,1,2,1,2,1,2,1]},
+    {id:53,name:'Kevin Durant',  team:'PHX',pos:'PF',clr:'#1D1160',line:27.5,pts:[29,25,32,26,28,23,30,27,25,29],reb:[7,6,8,6,7,5,7,6,7,7],ast:[4,3,5,4,4,3,4,4,4,4],pm3:[2,1,3,2,2,1,2,2,2,2]},
+    {id:54,name:'Devin Booker',  team:'PHX',pos:'SG',clr:'#1D1160',line:26.5,pts:[28,24,30,25,27,22,29,26,23,28],reb:[5,4,6,4,5,4,5,4,5,5],ast:[5,4,6,5,5,4,5,5,4,5],pm3:[3,2,4,2,3,2,3,2,3,3]},
+    {id:55,name:'Bradley Beal',  team:'PHX',pos:'SG',clr:'#1D1160',line:18.5,pts:[20,16,22,17,19,14,21,18,15,20],reb:[4,3,5,4,4,3,4,3,4,4],ast:[4,3,5,4,4,3,4,4,4,4],pm3:[2,1,3,1,2,1,2,1,2,2]},
+  ],
+};
+const STATS=['PTS','AST','REB','3PM','P+A','P+R'];
+const SFREE=['PTS','REB'];
+const SLBL={PTS:'Points',AST:'Assists',REB:'Rebounds','3PM':'3-Pointers','P+A':'Pts+Ast','P+R':'Pts+Reb'};
+const OPPS=['@IND','IND','@BOS','NOP','HOU','@ATL','SAC','@DAL','MEM','WAS','@MIA','GSW','@NYK','PHI','OKC','@DEN','MIL','@CHI','LAL','PHX'];
+
+// ═══ STATE ════════════════════════════════════════════════════════════════════
+let cGame=null,cPlayer=null,cStat='PTS',cPeriod='L10',cLine=null;
+let stack=['sAuth'];
+let plan='free',dark=true;
+let uName='Usuário',uEmail='usuario@email.com';
+let otpInt=null,pendEmail='';
+
+// ═══ HELPERS ══════════════════════════════════════════════════════════════════
+function half(n){return Math.round(n*2)/2;}
+function ini(n){return n.split(' ').map(c=>c[0]).join('').slice(0,2).toUpperCase();}
+function pro(){return plan==='pro';}
+function getArr(p,s){
+  if(s==='AST')return p.ast;if(s==='REB')return p.reb;if(s==='3PM')return p.pm3;
+  if(s==='P+A')return p.pts.map((v,i)=>v+(p.ast[i]||0));
+  if(s==='P+R')return p.pts.map((v,i)=>v+(p.reb[i]||0));
+  return p.pts;
+}
+function defLine(p,s){
+  let r=p.line;
+  if(s==='AST')r=p.line*.25;else if(s==='REB')r=p.line*.35;
+  else if(s==='3PM')r=p.line*.1;else if(s==='P+A')r=p.line*1.25;else if(s==='P+R')r=p.line*1.35;
+  const v=half(r);return v>=.5?v:.5;
+}
+function toast(msg){
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
+}
+
+// ═══ NAV ══════════════════════════════════════════════════════════════════════
+function show(id,anim){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on','bk'));
+  const el=document.getElementById(id);if(!el)return;
+  el.classList.add('on');if(anim)el.classList.add('bk');
+}
+function nav(n){stack.push('s'+n);show('s'+n,false);if(n===4)renderProf();updateSidebar();}
+function back(){
+  stack.pop();
+  const prev=stack[stack.length-1]||'sAuth';
+  show(prev,true);
+  updateSidebar();
+}
+function showAuth(){stack=['sAuth'];show('sAuth',false);updateSidebar();}
+
+// ═══ AUTH ══════════════════════════════════════════════════════════════════════
+function authTab(t){
+  document.getElementById('tabLogin').classList.toggle('on',t==='login');
+  document.getElementById('tabReg').classList.toggle('on',t==='reg');
+  document.getElementById('fLogin').style.display=t==='login'?'block':'none';
+  document.getElementById('fReg').style.display=t==='reg'?'block':'none';
+}
+function doLogin(){
+  const e=document.getElementById('lEmail').value.trim();
+  const p=document.getElementById('lPass').value;
+  if(!e||!p){toast('Preencha email e senha.');return;}
+  uName=e.split('@')[0];uEmail=e;
+  enterApp();
+}
+function doRegister(){
+  const n=document.getElementById('rName').value.trim();
+  const e=document.getElementById('rEmail').value.trim();
+  const p=document.getElementById('rPass').value;
+  if(!n){toast('Digite seu nome.');return;}
+  if(!e||!e.includes('@')){toast('Email inválido.');return;}
+  if(p.length<6){toast('Senha com mínimo 6 caracteres.');return;}
+  uName=n;uEmail=e;pendEmail=e;
+  document.getElementById('otpEmail').textContent=e;
+  ['o1','o2','o3','o4','o5','o6'].forEach(id=>document.getElementById(id).value='');
+  stack.push('sOtp');show('sOtp',false);
+  startTimer();
+}
+function doForgot(){
+  const e=document.getElementById('lEmail').value.trim();
+  if(!e){toast('Digite seu email primeiro.');return;}
+  toast('Link de recuperação enviado! ✉️');
+}
+function onOtp(el,nextId){
+  el.value=el.value.slice(-1);
+  if(el.value&&nextId)document.getElementById(nextId).focus();
+  const code=['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+  if(code.length===6)confirmOtp();
+}
+function onOtpBk(e,el,prevId){
+  if(e.key==='Backspace'&&!el.value&&prevId)document.getElementById(prevId).focus();
+}
+function confirmOtp(){
+  const code=['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+  if(code.length<6){toast('Digite o código completo.');return;}
+  clearInterval(otpInt);plan='free';
+  enterApp();toast('Conta criada com sucesso! 🎉');
+}
+function resendCode(){
+  ['o1','o2','o3','o4','o5','o6'].forEach(id=>document.getElementById(id).value='');
+  toast('Código reenviado! ✉️');startTimer();
+}
+function startTimer(){
+  let t=60;
+  const btn=document.getElementById('resendBtn');
+  const tw=document.getElementById('timerWrap');
+  const tv=document.getElementById('timerVal');
+  btn.style.pointerEvents='none';btn.style.opacity='.4';
+  tw.style.display='inline';tv.textContent='60s';
+  clearInterval(otpInt);
+  otpInt=setInterval(()=>{
+    t--;tv.textContent=t+'s';
+    if(t<=0){clearInterval(otpInt);btn.style.pointerEvents='auto';btn.style.opacity='1';tw.style.display='none';}
+  },1000);
+}
+function enterApp(){
+  stack=['s1'];show('s1',false);renderGames();updateSidebar();
+}
+
+// ═══ S1: JOGOS ════════════════════════════════════════════════════════════════
+function renderGames(){
+  const d=new Date();
+  document.getElementById('dlabel').textContent='Hoje · '+d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+  const vis=pro()?GAMES:GAMES.slice(0,1);
+  const lkd=pro()?[]:GAMES.slice(1);
+  document.getElementById('glist').innerHTML=
+    vis.map(g=>{
+      const hc=CLR[g.home]||'#444',ac=CLR[g.away]||'#444';
+      return `<div class="gcard" onclick="openGame(${g.id})">
+        <div class="gctop"><span class="gtime">${g.time}</span></div>
+        <div class="gteams">
+          <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${ac}dd,${ac}77)">${g.away}</div><div class="tabbr">${g.away}</div><div class="tcity">${g.at.split(' ').slice(-1)[0]}</div></div>
+          <div class="gvs">×</div>
+          <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${hc}dd,${hc}77)">${g.home}</div><div class="tabbr">${g.home}</div><div class="tcity">${g.ht.split(' ').slice(-1)[0]}</div></div>
+        </div>
+        <div class="gfoot"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:4px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>${(PBG[g.id]||[]).length} jogadores disponíveis</div>
+      </div>`;
+    }).join('')+
+    lkd.map(g=>{
+      const hc=CLR[g.home]||'#444',ac=CLR[g.away]||'#444';
+      return `<div class="gcard lk">
+        <div class="gctop"><span class="gtime" style="background:var(--s4);border-color:var(--bd);color:var(--mt)">${g.time}</span><span class="glock"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pro</span></div>
+        <div class="gteams">
+          <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${ac}44,${ac}22)">${g.away}</div><div class="tabbr">${g.away}</div><div class="tcity">${g.at.split(' ').slice(-1)[0]}</div></div>
+          <div class="gvs">×</div>
+          <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${hc}44,${hc}22)">${g.home}</div><div class="tabbr">${g.home}</div><div class="tcity">${g.ht.split(' ').slice(-1)[0]}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ═══ S2: JOGADORES ════════════════════════════════════════════════════════════
+function openGame(id){
+  cGame=GAMES.find(g=>g.id===id);cStat='PTS';
+  document.getElementById('s2ttl').textContent=cGame.away+' × '+cGame.home;
+  const hc=CLR[cGame.home]||'#444',ac=CLR[cGame.away]||'#444';
+  document.getElementById('gbanner').innerHTML=
+    `<div class="gbanner">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="gbav" style="background:linear-gradient(135deg,${ac}dd,${ac}77)">${cGame.away}</div>
+        <span style="font-size:12px;color:var(--mt)">×</span>
+        <div class="gbav" style="background:linear-gradient(135deg,${hc}dd,${hc}77)">${cGame.home}</div>
+        <span style="font-size:13px;font-weight:700;margin-left:4px">${cGame.away} vs ${cGame.home}</span>
+      </div>
+      <span style="font-size:13px;font-weight:600;color:var(--green)">${cGame.time}</span>
+    </div>
+    <div class="schips" id="s2chips">
+      ${STATS.map(s=>{const lk=!pro()&&!SFREE.includes(s);return`<div class="schip ${s==='PTS'?'on':''} ${lk?'lk':''}" data-stat="${s}" data-lk="${lk?'1':'0'}">${s}${lk?' 🔒':''}</div>`;}).join('')}
+    </div>
+    <div class="sectitle">${pro()?'Jogadores':'Jogadores · <span style="color:var(--amber);font-size:10px">1 por time — Gratuito</span>'}</div>`;
+  // bind chip clicks
+  document.querySelectorAll('#s2chips .schip').forEach(function(el){
+    el.addEventListener('click',function(){
+      if(el.dataset.lk==='1'){openPro();return;}
+      document.querySelectorAll('#s2chips .schip').forEach(function(c){c.classList.remove('on');});
+      el.classList.add('on');
+      cStat=el.dataset.stat;
+      renderPRows();
+    });
+  });
+  renderPRows();nav(2);
+}
+function setS2Stat(s,el){
+  cStat=s;document.querySelectorAll('.schip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderPRows();
+}
+function renderPRows(){
+  let ps=PBG[cGame.id]||[];
+  if(!pro()){const seen={};ps=ps.filter(p=>{if(seen[p.team])return false;seen[p.team]=true;return true;});}
+  document.getElementById('plist').innerHTML=ps.map(p=>{
+    const a=getArr(p,cStat),ln=defLine(p,cStat);
+    const hr=Math.round(a.slice(0,5).filter(v=>v>ln).length/Math.min(a.length,5)*100);
+    const cls=hr>=65?'g':hr>=50?'a':'r';
+    return `<div class="prow2" onclick="openPlayer(${p.id})">
+      <div class="prav" style="background:linear-gradient(135deg,${p.clr}cc,${p.clr}66)">${ini(p.name)}</div>
+      <div style="flex:1;min-width:0"><div class="prnm">${p.name}</div><div class="prmt">${p.pos} · ${p.team}</div></div>
+      <div class="prrt"><div class="prln">${ln}</div><div class="prhr ${cls}">${hr}%</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ S3: DETALHE ══════════════════════════════════════════════════════════════
+function openPlayer(id){
+  const all=Object.values(PBG).flat();
+  cPlayer=all.find(p=>p.id===id);if(!cPlayer)return;
+  cStat='PTS';cPeriod='L10';cLine=null;
+  document.getElementById('s3ttl').textContent=cPlayer.name;
+  document.getElementById('stabs').innerHTML=STATS.map(s=>{
+    const lk=!pro()&&!SFREE.includes(s);
+    return `<div class="stab ${s==='PTS'?'on':''} ${lk?'lk':''}" onclick="${lk?'openPro()':'changeTab(\''+s+'\',this)'}">${s}${lk?' 🔒':''}</div>`;
+  }).join('');
+  renderDetail();nav(3);
+}
+function changeTab(s,el){
+  cStat=s;cLine=null;document.querySelectorAll('.stab').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderDetail();
+}
+function setPeriod(p){
+  cPeriod=p;const sc=document.getElementById('s3').querySelector('.scrl');const top=sc?sc.scrollTop:0;renderDetail();if(sc)sc.scrollTop=top;
+}
+function adjLine(d){
+  const base=cLine!==null?cLine:defLine(cPlayer,cStat);
+  cLine=Math.max(.5,half(base+d));
+  const sc=document.getElementById('s3').querySelector('.scrl');const top=sc?sc.scrollTop:0;renderDetail();if(sc)sc.scrollTop=top;
+}
+function renderDetail(){
+  const p=cPlayer,a=getArr(p,cStat),line=cLine!==null?cLine:defLine(p,cStat),slbl=SLBL[cStat]||cStat;
+  const seed=p.id*17;
+  const l20=[...a,...a.map((v,i)=>Math.max(0,Math.round(v+((seed*(i+1))%5)-2)))];
+  // H2H: somente jogos cujo opp seja o adversário atual do jogador no jogo
+  const opp=cGame?(cGame.home===p.team?cGame.away:cGame.home):'OPP';
+  const h2hGames=p.pts.map((_,i)=>({
+    pts:p.pts[i],reb:p.reb[i],ast:p.ast[i],pm3:p.pm3[i],
+    opp:['@IND','IND','@BOS','NOP','HOU','@ATL','SAC','@DAL','MEM','WAS','@MIA','GSW','@NYK','PHI','OKC','@DEN','MIL','@CHI','LAL','PHX'][i]||'OPP'
+  })).filter(g=>g.opp.replace('@','')=== opp || g.opp===opp || g.opp==='@'+opp);
+  const h2hArr=h2hGames.length>0
+    ? h2hGames.map(g=>getArr({pts:Array(10).fill(g.pts),reb:Array(10).fill(g.reb),ast:Array(10).fill(g.ast),pm3:Array(10).fill(g.pm3)},cStat)[0])
+    : a.slice(0,3); // fallback se não tiver h2h
+  const pmap={'2025':a,'H2H':h2hArr,'L5':a.slice(0,5),'L10':a,'L20':l20};
+  const active=pmap[cPeriod]||a;
+  const avg=(active.reduce((s,v)=>s+v,0)/active.length).toFixed(1);
+  const dr=((p.id*7)%30)+1;
+  const hrf=active.filter(v=>v>line).length/active.length;
+  const grade=hrf>=.7?'A+':hrf>=.6?'A-':hrf>=.5?'B+':'B-';
+  const C=2*Math.PI*22,dash=C*(1-hrf);
+  const periods=[{l:'2025',p:a},{l:'H2H',p:h2hArr},{l:'L5',p:a.slice(0,5)},{l:'L10',p:a},{l:'L20',p:l20}]
+    .map(x=>({l:x.l,hr:Math.round(x.p.filter(v=>v>line).length/x.p.length*100),on:cPeriod===x.l}));
+  const CH=160,cpts=active.slice(0,20),maxV=Math.max(...cpts,line,1);
+  const barsH=([...cpts].reverse()).map(v=>{
+    const bh=Math.max(Math.round((v/maxV)*CH),4);
+    const cls=v>line?'hit':v===line?'tie':'miss';
+    return `<div class="ccol"><div class="cbar ${cls}" style="height:${bh}px"><span class="cbarv">${v}</span></div></div>`;
+  }).join('');
+  const datesH=([...cpts].reverse()).map((_,i)=>{
+    const idx=cpts.length-1-i,d=new Date();d.setDate(d.getDate()-idx*3);
+    return `<div class="cdate">${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}<br>${OPPS[idx]||'OPP'}</div>`;
+  }).join('');
+  // ── Dados extras calculados ──
+  // Casa × Fora (simula alternando jogos pares=casa, ímpares=fora)
+  const homeGames = a.filter((_,i)=>i%2===0);
+  const awayGames = a.filter((_,i)=>i%2!==0);
+  const avgHome = (homeGames.reduce((s,v)=>s+v,0)/homeGames.length).toFixed(1);
+  const avgAway = (awayGames.reduce((s,v)=>s+v,0)/awayGames.length).toFixed(1);
+  // vs Top 10 defesas (simula: pega jogos onde opp rank < 10)
+  const top10Games = a.slice(0,4); // simulado
+  const avgTop10 = (top10Games.reduce((s,v)=>s+v,0)/top10Games.length).toFixed(1);
+  const diffTop10 = (avgTop10 - avg).toFixed(1);
+  // Minutos recentes L5
+  const minL5 = (p.pts.slice(0,5).map((_,i)=>28+Math.round((p.id+i*3)%10)).reduce((a,b)=>a+b,0)/5).toFixed(1);
+  // Próximo jogo
+  const nextOpp = opp;
+  const nextTime = cGame?cGame.time:'--:--';
+  const refPx = Math.max(1,Math.round((line/maxV)*CH));
+
+  document.getElementById('pdetail').innerHTML=`
+    <div class="hero">
+      <div class="heav" style="background:linear-gradient(135deg,${p.clr}cc,${p.clr}55)">${ini(p.name)}</div>
+      <div style="flex:1;min-width:0"><div class="henm">${p.name}</div><div class="hesb">${p.pos}, ${p.team}</div><div class="helv"><span class="hdot"></span>${line} ${slbl}</div></div>
+      <div class="mbox"><div class="mboxl">MATCHUP</div><div class="ringw"><svg class="rsvg" viewBox="0 0 52 52"><circle class="rbg" cx="26" cy="26" r="22"/><circle class="rfill" cx="26" cy="26" r="22" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${dash.toFixed(1)}"/></svg><div class="rgrade">${grade}</div></div></div>
+    </div>
+
+    <!-- Próximo jogo -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--bd)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="13" height="13" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style="font-size:12px;font-weight:600;color:var(--mt)">PRÓXIMO JOGO</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:700">vs ${nextOpp}</span>
+        <span style="font-size:12px;color:var(--green);font-weight:600;background:var(--gdim);padding:2px 8px;border-radius:6px">${nextTime}</span>
+      </div>
+    </div>
+
+    <div class="istrip">
+      <div class="isit"><div class="islbl">OPP</div><div class="isval">vs ${opp}</div></div>
+      <div class="isit"><div class="islbl">DEF RANK</div><div class="isval ${dr>15?'gv':'rv'}">▲ ${dr}th</div></div>
+      <div class="isit"><div class="islbl">HORÁRIO</div><div class="isval">${cGame?cGame.time:'--:--'}</div></div>
+    </div>
+
+    <div class="alrow">
+      <div class="avgb">AVG: <span class="val">${avg}</span></div>
+      <div class="lned"><span class="lnlbl">Linha</span><div class="lnctrl"><button class="lnbtn" onclick="adjLine(-0.5)">−</button><span class="lnval">${line}</span><button class="lnbtn" onclick="adjLine(0.5)">+</button></div></div>
+    </div>
+
+    <div class="chartsec"><div class="cmaxlbl">${maxV}</div><div class="cbars" style="height:${CH}px">${barsH}<div class="cref" style="bottom:${refPx}px"><span class="creflbl">${line}</span></div></div><div class="cdates">${datesH}</div></div>
+
+    <div class="pbrow">${periods.map(x=>`<div class="pbtn ${x.on?'on':''}" onclick="setPeriod('${x.l}')"><div class="pblbl">${x.l}</div><div class="pbval">${x.hr}%</div></div>`).join('')}</div>
+
+    <!-- Splits Casa × Fora + vs Top Def + Minutos -->
+    <div style="padding:0 16px 16px">
+      <div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.08em;padding:12px 0 8px">Splits</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Casa</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700">${avgHome}</div>
+          <div style="font-size:10px;color:var(--mt);margin-top:2px">média ${slbl.toLowerCase()}</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Fora</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700">${avgAway}</div>
+          <div style="font-size:10px;color:var(--mt);margin-top:2px">média ${slbl.toLowerCase()}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">vs Top 10 DEF</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:${Number(diffTop10)>=0?'var(--green)':'var(--red)'}">${Number(diffTop10)>=0?'+':''}${diffTop10}</div>
+          <div style="font-size:10px;color:var(--mt);margin-top:2px">vs média geral</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Min/Jogo L5</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700">${minL5}</div>
+          <div style="font-size:10px;color:var(--mt);margin-top:2px">últimos 5 jogos</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══ S4: PERFIL ═══════════════════════════════════════════════════════════════
+function renderProf(){
+  const ip=pro();
+  document.getElementById('profcont').innerHTML=`
+    <div class="ptop">
+      <div class="pav">${uName[0].toUpperCase()}</div>
+      <div style="text-align:center"><div class="pnm">${uName}</div><div class="pem">${uEmail}</div></div>
+      <div class="plantag">${ip?'⚡ Plano Pro':'✦ Plano Gratuito'}</div>
+    </div>
+    <div class="psec"><div class="psectitle">Planos</div>
+      <div class="pplancard">
+        <div class="pplanrow" style="${!ip?'':'opacity:.5'}"><div><div class="pplannm">Gratuito</div><div class="pplansb">1 jogo · 1 jogador/time · PTS e REB</div></div><div style="font-size:13px;font-weight:700;color:${!ip?'var(--green)':'var(--mt)'}">${!ip?'Ativo':'—'}</div></div>
+        <div class="pplanrow" onclick="${!ip?'openPro()':''}" style="${!ip?'cursor:pointer':''}"><div><div class="pplannm" style="${ip?'color:var(--green)':''}">Pro ${ip?'<span class="protag">ATIVO</span>':'<span style="font-size:9px;background:var(--s4);color:var(--mt);border-radius:4px;padding:2px 5px;font-weight:700;vertical-align:middle">R$24,90/mês</span>'}</div><div class="pplansb">Todos os jogos · Todos os jogadores · Todas as stats</div></div>${!ip?'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>':''}</div>
+      </div>
+    </div>
+    <div class="psec"><div class="psectitle">Conta</div>
+      <div class="pcard">
+        <div class="prow" onclick="openEdit()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="prowlbl">Editar perfil</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="prow" id="rowSeg"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span class="prowlbl">Segurança</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="prow" onclick="toggleTheme()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span class="prowlbl">Tema</span><span style="font-size:12px;color:var(--mt);margin-left:auto">${dark?'Escuro':'Claro'}</span></div>
+      </div>
+    </div>
+    <div class="psec" style="padding-bottom:4px"><div class="psectitle">Suporte</div>
+      <div class="pcard">
+        <div class="prow" id="rowFaq"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="prowlbl">Perguntas frequentes</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="prow" id="rowContato"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span class="prowlbl">Falar com suporte</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="prow" id="rowBug"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="prowlbl">Reportar um problema</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="prow" id="rowTermos"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="prowlbl">Termos de uso</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="prow" id="rowCancel" style="${ip?'':'display:none'}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--red);flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span class="prowlbl" style="color:var(--red)">Cancelar assinatura</span><svg class="pchev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>
+    <div class="plogout"><button id="logoutBtn">Sair da conta</button></div>`;
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('rowFaq').addEventListener('click', openFaq);
+  document.getElementById('rowContato').addEventListener('click', openContato);
+  document.getElementById('rowBug').addEventListener('click', openBug);
+  document.getElementById('rowTermos').addEventListener('click', openTermos);
+  document.getElementById('rowSeg').addEventListener('click', openSeg);
+  const rc = document.getElementById('rowCancel');
+  if(rc) rc.addEventListener('click', cancelarPlano);
+}
+function logout(){
+  plan='free';uName='Usuário';uEmail='usuario@email.com';
+  stack=['sAuth'];
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on','bk'));
+  document.getElementById('sAuth').classList.add('on');
+  // Esconde sidebar no logout
+  const sb=document.getElementById('sidebarDesk');
+  if(sb) sb.style.display='none';
+  toast('Você saiu da conta.');
+}
+
+// ═══ PLANOS E CUPOM ═══════════════════════════════════════════════════════════
+let selectedPlan='anual';
+const PRECOS={mensal:24.90, anual:197.00};
+// Cupons serão gerenciados pelo painel admin e validados via API
+const CUPONS={};
+
+function selectPlan(plan){
+  selectedPlan=plan;
+  const mEl=document.getElementById('planMensal');
+  const aEl=document.getElementById('planAnual');
+  if(!mEl||!aEl) return;
+  if(plan==='mensal'){
+    mEl.style.border='2px solid var(--green)';
+    mEl.style.background='var(--gdim)';
+    mEl.querySelector('div').style.color='var(--green)';
+    aEl.style.border='2px solid var(--bd)';
+    aEl.style.background='none';
+  } else {
+    aEl.style.border='2px solid var(--green)';
+    aEl.style.background='var(--gdim)';
+    mEl.style.border='2px solid var(--bd)';
+    mEl.style.background='none';
+  }
+  atualizarPreco();
+}
+
+function aplicarCupom(){
+  const code=document.getElementById('cupomInput').value.trim().toUpperCase();
+  const msgEl=document.getElementById('cupomMsg');
+  if(!code){msgEl.style.display='none';return;}
+  if(CUPONS[code]){
+    msgEl.style.display='block';
+    msgEl.style.color='var(--green)';
+    msgEl.textContent='✓ Cupom aplicado: '+CUPONS[code].desc;
+  } else {
+    msgEl.style.display='block';
+    msgEl.style.color='var(--red)';
+    msgEl.textContent='✗ Cupom inválido ou expirado';
+  }
+  atualizarPreco();
+}
+
+function atualizarPreco(){
+  const precoEl=document.getElementById('precoValor');
+  const btnEl=document.getElementById('btnAssinar');
+  if(!precoEl) return;
+  const code=document.getElementById('cupomInput')?.value.trim().toUpperCase()||'';
+  const cupom=CUPONS[code];
+  let preco=PRECOS[selectedPlan];
+  if(cupom) preco=preco*(1-cupom.pct);
+  precoEl.textContent='R$'+preco.toFixed(2).replace('.',',');
+  if(btnEl) btnEl.textContent='Assinar Plano '+(selectedPlan==='anual'?'Anual':'Mensal')+' — R$'+preco.toFixed(2).replace('.',',');
+}
+
+function openPro(){
+  document.getElementById('mPro').style.display='flex';
+  // Reset ao abrir
+  selectedPlan='anual';
+  const inp=document.getElementById('cupomInput');
+  const msg=document.getElementById('cupomMsg');
+  if(inp) inp.value='';
+  if(msg) msg.style.display='none';
+  atualizarPreco();
+}
+
+// ═══ MODAIS ═══════════════════════════════════════════════════════════════════
+function closePro(){document.getElementById('mPro').style.display='none';}
+function activatePro(){plan='pro';closePro();renderGames();renderProf();updateSidebar();toast('Plano Pro ativado! ⚡');}
+function openTermos(){document.getElementById('mTermos').style.display='flex';}
+function closeTermos(){document.getElementById('mTermos').style.display='none';}
+function openEdit(){document.getElementById('inName').value=uName;document.getElementById('inEmail').value=uEmail;document.getElementById('mEdit').style.display='flex';}
+function closeEdit(){document.getElementById('mEdit').style.display='none';}
+function saveEdit(){const n=document.getElementById('inName').value.trim(),e=document.getElementById('inEmail').value.trim();if(n)uName=n;if(e)uEmail=e;closeEdit();renderProf();toast('Perfil atualizado!');}
+
+// ═══ TEMA ═════════════════════════════════════════════════════════════════════
+function toggleTheme(){
+  dark=!dark;
+  const ico=document.getElementById('thico');
+  if(ico)ico.innerHTML=dark
+    ?'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+    :'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  const v=dark
+    ?{bg:'#000',s1:'#0a0a0a',s2:'#111',s3:'#1a1a1a',s4:'#222',bd:'#2a2a2a',bd2:'#333',tx:'#fff',mt:'#888',mt2:'#555'}
+    :{bg:'#f5f5f7',s1:'#ebebed',s2:'#fff',s3:'#f0f0f2',s4:'#e5e5e7',bd:'#e0e0e2',bd2:'#d0d0d2',tx:'#0a0a0a',mt:'#666',mt2:'#999'};
+  const r=document.documentElement.style;
+  r.setProperty('--bg',v.bg);r.setProperty('--s1',v.s1);r.setProperty('--s2',v.s2);
+  r.setProperty('--s3',v.s3);r.setProperty('--s4',v.s4);r.setProperty('--bd',v.bd);
+  r.setProperty('--bd2',v.bd2);r.setProperty('--tx',v.tx);r.setProperty('--mt',v.mt);r.setProperty('--mt2',v.mt2);
+  if(stack[stack.length-1]==='s4')renderProf();
+}
+
+function toggleFaq(el){
+  const ans=el.querySelector('.faq-ans');
+  const arrow=el.querySelector('.faq-arrow');
+  const open=ans.style.display==='block';
+  ans.style.display=open?'none':'block';
+  arrow.style.transform=open?'':'rotate(180deg)';
+}
+
+function openSeg(){ document.getElementById('mSeg').style.display='flex'; }
+function closeSeg(){ document.getElementById('mSeg').style.display='none'; }
+function saveSeg(){
+  const atual = document.getElementById('segAtual').value;
+  const nova  = document.getElementById('segNova').value;
+  const conf  = document.getElementById('segConf').value;
+  if(!atual){ toast('Digite sua senha atual.'); return; }
+  if(nova.length < 6){ toast('Nova senha precisa ter mínimo 6 caracteres.'); return; }
+  if(nova !== conf){ toast('As senhas não coincidem.'); return; }
+  closeSeg();
+  toast('Senha alterada com sucesso! 🔒');
+}
+
+// ═══ SUPORTE ══════════════════════════════════════════════════════════════════
+function openFaq(){ document.getElementById('mFaq').style.display='flex'; }
+function closeFaq(){ document.getElementById('mFaq').style.display='none'; }
+
+function openContato(){ document.getElementById('mContato').style.display='flex'; }
+function closeContato(){ document.getElementById('mContato').style.display='none'; }
+function enviarContato(){
+  const msg = document.getElementById('contatoMsg').value.trim();
+  if(!msg){ toast('Descreva sua dúvida.'); return; }
+  closeContato();
+  toast('Mensagem enviada! Retornaremos em até 24h ✉️');
+}
+
+function openBug(){ document.getElementById('mBug').style.display='flex'; }
+function closeBug(){ document.getElementById('mBug').style.display='none'; }
+function enviarBug(){
+  const desc = document.getElementById('bugDesc').value.trim();
+  if(!desc){ toast('Descreva o problema.'); return; }
+  closeBug();
+  toast('Problema reportado! Obrigado 🙏');
+}
+
+function cancelarPlano(){
+  document.getElementById('mCancel').style.display='flex';
+}
+function closeCancel(){ document.getElementById('mCancel').style.display='none'; }
+function confirmarCancelamento(){
+  plan='free'; closeCancel(); renderProf();
+  toast('Assinatura cancelada. Seu acesso Pro continua até o fim do período.');
+}
+
+// ═══ DESKTOP ══════════════════════════════════════════════════════════════════
+function isDesktop(){ return window.innerWidth >= 768; }
+
+function updateSidebar(){
+  const sb = document.getElementById('sidebarDesk');
+  if(!sb) return;
+  // Só mostra sidebar se estiver logado E em desktop
+  const currentScr = stack[stack.length-1];
+  const isLoggedIn = currentScr !== 'sAuth' && currentScr !== 'sOtp';
+  sb.style.display = (isDesktop() && isLoggedIn) ? 'flex' : 'none';
+  const avEl = document.getElementById('sdAvLetter');
+  const nmEl = document.getElementById('sdUserName');
+  const plEl = document.getElementById('sdUserPlan');
+  if(avEl) avEl.textContent = uName[0].toUpperCase();
+  if(nmEl) nmEl.textContent = uName;
+  if(plEl) plEl.textContent = pro() ? '⚡ Plano Pro' : 'Plano Gratuito';
+}
+
+function sdNav(section){
+  document.querySelectorAll('.sd-item').forEach(i=>i.classList.remove('on'));
+  if(section==='jogos'){
+    document.getElementById('sdJogos').classList.add('on');
+    stack=['s1']; show('s1',false);
+  } else if(section==='perfil'){
+    document.getElementById('sdPerfil').classList.add('on');
+    nav(4);
+  }
+}
+
+window.addEventListener('resize', updateSidebar);
+
+// ═══ INIT ═════════════════════════════════════════════════════════════════════
+show('sAuth',false);
+updateSidebar();
+</script>
+</body>
+</html>
