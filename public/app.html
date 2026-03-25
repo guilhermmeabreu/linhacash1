@@ -1190,7 +1190,21 @@ function openPro(){
 
 // ═══ MODAIS ═══════════════════════════════════════════════════════════════════
 function closePro(){document.getElementById('mPro').style.display='none';}
-function activatePro(){plan='pro';closePro();renderGames();renderProf();updateSidebar();toast('Plano Pro ativado! ⚡');}
+async function activatePro(){
+  toast('Redirecionando para pagamento...');
+  try{
+    const res=await fetch('/api/checkout',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan:planType})
+    });
+    const data=await res.json();
+    if(data.url) window.location.href=data.url;
+    else toast('Erro ao gerar pagamento. Tente novamente.');
+  }catch(e){
+    toast('Erro ao conectar. Tente novamente.');
+  }
+}
 function openTermos(){document.getElementById('mTermos').style.display='flex';}
 function closeTermos(){document.getElementById('mTermos').style.display='none';}
 function openEdit(){document.getElementById('inName').value=uName;document.getElementById('inEmail').value=uEmail;document.getElementById('mEdit').style.display='flex';}
@@ -1298,6 +1312,11 @@ function sdNav(section){
 window.addEventListener('resize', updateSidebar);
 
 // ═══ INIT ═════════════════════════════════════════════════════════════════════
+const urlParams=new URLSearchParams(window.location.search);
+if(urlParams.get('status')==='success'){
+  plan='pro';
+  setTimeout(()=>toast('Pagamento aprovado! Bem-vindo ao Pro ⚡'),1000);
+}
 show('sAuth',false);
 updateSidebar();
 </script>
