@@ -1202,6 +1202,7 @@ async function activatePro(){
     if(data.url) window.location.href=data.url;
     else toast('Erro ao gerar pagamento. Tente novamente.');
   }catch(e){
+    console.error(e);
     toast('Erro ao conectar. Tente novamente.');
   }
 }
