@@ -17,7 +17,7 @@ export default function AdminLogin() {
     });
     const data = await res.json();
     if (data.ok) {
-      router.push('/admin');
+      window.location.href = '/admin';
     } else {
       setError('Email ou senha incorretos.');
     }

@@ -10,12 +10,14 @@ export async function POST(req: Request) {
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set('admin_auth', email, {
+  response.cookies.set({
+    name: 'admin_auth',
+    value: email,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
-    sameSite: 'lax'
+    sameSite: 'none'
   });
 
   return response;
