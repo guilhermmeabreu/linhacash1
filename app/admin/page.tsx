@@ -48,10 +48,13 @@ export default function AdminPage() {
         fetch('/api/admin/referral-uses')
       ]);
       const [s, u, r, ru] = await Promise.all([statsRes.json(), usersRes.json(), refRes.json(), refUsesRes.json()]);
-      setStats(s);
-      setUsers(u);
-      setReferrals(r);
-      setReferralUses(ru);
+      if (s && !s.error) setStats(s);
+      if (Array.isArray(u)) setUsers(u);
+      if (Array.isArray(r)) setReferrals(r);
+      if (Array.isArray(ru)) setReferralUses(ru);
+      if (s?.error === 'Unauthorized' || u?.error === 'Unauthorized') {
+        router.push('/admin/login');
+      }
     } catch (e) { console.error(e); }
     setLoading(false);
   }
