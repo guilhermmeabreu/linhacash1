@@ -1,171 +1,136 @@
-# LinhaCash
+# 🏀 LinhaCash
 
-O LinhaCash é uma plataforma que estou construindo com foco em análise de props da NBA.
+Plataforma de análise de props da NBA para apostadores brasileiros.
 
-A ideia surgiu de um problema simples: quem aposta ou analisa jogadores precisa ficar abrindo vários sites, conferindo estatísticas manualmente e organizando tudo na cabeça. Isso toma tempo e gera erro.
+## 🌐 Links
 
-O objetivo aqui é concentrar tudo em um único lugar, com uma interface rápida, limpa e feita pra uso diário.
-
----
-
-## 🧠 Proposta
-
-O produto não é uma casa de apostas e nem entrega “palpites”.
-
-A proposta é ser uma ferramenta de apoio baseada em dados, mostrando:
-
-- desempenho recente do jogador
-- consistência em relação à linha
-- histórico de acertos (over/under)
-- contexto básico da partida
-
-Tudo de forma visual, simples e sem poluição.
+- **Site:** https://linhacash1.vercel.app
+- **Admin:** https://linhacash1.vercel.app/admin
 
 ---
 
-## ⚙️ Como funciona (visão geral)
+## ✅ O que está pronto
 
-O fluxo principal da aplicação:
-
-1. Usuário entra na plataforma (login/registro)
-2. Visualiza os jogos do dia
-3. Seleciona um jogo
-4. Vê a lista de jogadores disponíveis
-5. Clica em um jogador
-6. Analisa os dados detalhados antes de tomar decisão
-
----
-
-## 📊 Dados exibidos
-
-Para cada jogador, a plataforma vai mostrar:
-
-### 📈 Períodos
-- L5 (últimos 5 jogos)
-- L10
-- L15
-- L20
-- Season (temporada completa)
-
-### 🎯 Métricas
-- Pontos (PTS)
-- Rebotes (REB)
-- Assistências (AST)
-- Combinações (P+R, P+A, etc.)
-
-### 📉 Linha ajustável
-O usuário pode alterar a linha manualmente e ver:
-
-- média no período
-- taxa de acerto
-- comportamento recente
-
-### 📊 Gráfico
-- histórico jogo a jogo
-- identificação visual de hits/miss
-- comparação com a linha atual
-
-### 🧩 Contexto (planejado)
-- adversário
-- histórico contra o time (H2H)
-- minutos por jogo
+- Frontend completo (mobile + desktop)
+- Login/registro com Supabase Auth
+- Jogos do dia em tempo real
+- Jogadores e estatísticas reais
+- Médias L5/L10/L20 e splits Casa/Fora
+- Plano Free/Pro com bloqueios
+- Checkout Mercado Pago
+- Webhook MP ativa Pro automaticamente
+- Sync automático todo dia às 04h (Brasília)
+- Painel Admin completo
+- RLS no Supabase
+- Cache de métricas (player_props_cache)
 
 ---
 
-## 👤 Sistema de usuário
+## 🗄️ Banco de dados (Supabase)
 
-### Gratuito
-- acesso limitado
-- poucos jogos por dia
-- poucos jogadores por time
-- stats básicas
-
-### Pro (planejado)
-- acesso completo
-- todos os jogos
-- todos os jogadores
-- todas as métricas
-- períodos avançados
+| Tabela | Descrição |
+|---|---|
+| `profiles` | Usuários e planos |
+| `games` | Jogos do dia |
+| `players` | Jogadores NBA |
+| `player_stats` | Estatísticas históricas |
+| `player_metrics` | Médias calculadas |
+| `player_props_cache` | Cache otimizado de props |
+| `referral_codes` | Códigos de influenciadores |
 
 ---
 
-## 🧱 Estrutura atual
+## ⚙️ Variáveis de ambiente
 
-O projeto hoje já tem:
-
-- layout completo (mobile + desktop)
-- sistema de navegação entre telas
-- telas principais estruturadas:
-  - autenticação
-  - jogos do dia
-  - lista de jogadores
-  - detalhe do jogador
-  - perfil
-- base pronta pra integração com backend
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_KEY=
+NBA_API_KEY=
+MP_ACCESS_TOKEN=
+NEXT_PUBLIC_URL=
+ADMIN_EMAIL=
+```
 
 ---
 
-## 🔌 Integrações
+## 🔄 Sync automático
 
-### Banco e autenticação
-- Supabase (auth + database)
+O cron roda todo dia às **07:00 UTC (04:00 Brasília)**:
 
-### Dados esportivos
-- API Sports (NBA)
+```json
+{
+  "crons": [{ "path": "/api/sync", "schedule": "0 7 * * *" }]
+}
+```
 
-A ideia é buscar:
-- jogos do dia
-- estatísticas de jogadores
-- histórico de partidas
+Para rodar manualmente:
+```bash
+node scripts/fetchNBA.js
+```
 
----
-
-## 💻 Stack
-
-- Next.js (frontend)
-- Supabase (backend)
-- API Sports (dados)
-- CSS custom (sem framework pesado)
+Ou pelo browser:
+```
+https://linhacash1.vercel.app/api/sync
+```
 
 ---
 
-## 🚧 Status atual
+## 📁 Estrutura do projeto
 
-Em desenvolvimento.
-
-O foco no momento é:
-- adaptar o layout para Next.js corretamente
-- organizar componentes
-- conectar com banco de dados
-- iniciar integração com API
+```
+linhacash/
+├── app/
+│   ├── admin/
+│   │   ├── page.tsx          # Painel admin
+│   │   └── login/
+│   │       └── page.tsx      # Login admin
+│   ├── api/
+│   │   ├── sync/
+│   │   │   └── route.ts      # Cron sync NBA
+│   │   ├── checkout/
+│   │   │   └── route.ts      # Checkout MP
+│   │   ├── webhook/mp/
+│   │   │   └── route.ts      # Webhook MP
+│   │   └── admin/
+│   │       ├── auth/route.ts
+│   │       ├── stats/route.ts
+│   │       ├── users/route.ts
+│   │       └── referrals/route.ts
+│   ├── page.tsx              # Redirect para app.html
+│   ├── layout.tsx
+│   └── globals.css
+├── public/
+│   └── app.html              # Frontend completo
+├── scripts/
+│   └── fetchNBA.js           # Script de sync local
+├── lib/
+│   └── supabase.ts
+├── middleware.ts             # Proteção do admin
+└── vercel.json               # Cron config
+```
 
 ---
 
-## 🛣️ Próximos passos
+## 💳 Pagamentos
 
-- [ ] Converter todo frontend para React (Next.js)
-- [ ] Conectar Supabase (login real)
-- [ ] Integrar API da NBA
-- [ ] Implementar lógica de cálculo (médias, hit rate)
-- [ ] Criar sistema de planos
-- [ ] Implementar pagamento
-- [ ] Criar trial gratuito (2 dias)
-- [ ] Otimizar performance
+- **Mensal:** R$24,90/mês
+- **Anual:** R$197,00/ano (R$16,41/mês)
+- **Taxa MP:** ~5%
+- **Comissão influenciadores:** 25% recorrente
 
 ---
 
-## 🎯 Objetivo do projeto
+## 🚀 Próximos passos
 
-Construir uma ferramenta simples, rápida e confiável para análise de props, que realmente ajude no dia a dia — sem excesso de informação e sem depender de vários sites ao mesmo tempo.
-
----
-
-## 🌐 Deploy
-
-https://linhacash1.vercel.app
+- [ ] Comprar domínio linhacash.com.br
+- [ ] Configurar email profissional (Resend)
+- [ ] Suporte via WhatsApp Business
+- [ ] Assinar API Sports Pro ($15/mês)
+- [ ] Parcerias com influenciadores
 
 ---
 
-## 📌 Observação
+## 💰 Break-even
 
-Projeto sendo desenvolvido do zero, ainda em evolução.
+Apenas **4 assinantes Pro** cobrem todos os custos fixos (~R$92/mês).
