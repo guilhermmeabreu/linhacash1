@@ -7,14 +7,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
-function checkAuth() {
-  const cookieStore = cookies();
+async function checkAuth() {
+  const cookieStore = await cookies();
   const auth = cookieStore.get('admin_auth');
   return auth?.value === process.env.ADMIN_EMAIL;
 }
 
 export async function GET() {
-  if (!checkAuth()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!await checkAuth()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const [profiles, games, players] = await Promise.all([
     supabase.from('profiles').select('plan'),

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set('admin_auth', email, {
     httpOnly: true,
     secure: true,
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete('admin_auth');
   return NextResponse.json({ ok: true });
 }
