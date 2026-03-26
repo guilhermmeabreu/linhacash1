@@ -6,6 +6,23 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
+async function sendNotification(email: string, plan: string, referralCode: string | null) {
+  if (!process.env.RESEND_API_KEY) return;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'LinhaCash <onboarding@resend.dev>',
+      to: process.env.ADMIN_EMAIL,
+      subject: '⚡ Novo assinante Pro!',
+      html: `<h2>Novo assinante Pro!</h2><p><strong>Email:</strong> ${email}</p><p><strong>Plano:</strong> ${plan}</p>${referralCode ? `<p><strong>Código de indicação:</strong> ${referralCode}</p>` : ''}<p><strong>Data:</strong> ${new Date().toLocaleString('pt-BR')}</p>`
+    })
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -22,6 +39,7 @@ export async function POST(req: Request) {
       if (payment.status === 'approved') {
         const email = payment.payer?.email;
         const referralCode = payment.metadata?.referral_code || null;
+        const plan = payment.transaction_amount >= 197 ? 'anual' : 'mensal';
 
         if (email) {
           const { data: profile } = await supabase
@@ -37,7 +55,6 @@ export async function POST(req: Request) {
               .eq('id', profile.id);
 
             if (referralCode) {
-              // Incrementa contador de usos
               const { data: refData } = await supabase
                 .from('referral_codes')
                 .select('uses')
@@ -51,7 +68,6 @@ export async function POST(req: Request) {
                   .eq('code', referralCode);
               }
 
-              // Salva uso detalhado
               await supabase.from('referral_uses').insert({
                 code: referralCode,
                 user_id: profile.id,
@@ -59,6 +75,9 @@ export async function POST(req: Request) {
                 created_at: new Date().toISOString()
               });
             }
+
+            // Notifica admin por email
+            await sendNotification(email, plan, referralCode);
           }
         }
       }

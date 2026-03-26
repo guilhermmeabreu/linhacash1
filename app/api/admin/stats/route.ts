@@ -17,19 +17,20 @@ export async function GET() {
   if (!await checkAuth()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const [profiles, games, players] = await Promise.all([
-    supabase.from('profiles').select('plan'),
+    supabase.from('profiles').select('plan, created_at, name, email').order('created_at', { ascending: false }),
     supabase.from('games').select('id', { count: 'exact' }),
     supabase.from('players').select('id', { count: 'exact' })
   ]);
 
   const total_users = profiles.data?.length || 0;
   const pro_users = profiles.data?.filter(p => p.plan === 'pro').length || 0;
+  const recent_signups = profiles.data?.slice(0, 10) || [];
 
   return NextResponse.json({
-    total_users,
-    pro_users,
+    total_users, pro_users,
     free_users: total_users - pro_users,
     total_games: games.count || 0,
-    total_players: players.count || 0
+    total_players: players.count || 0,
+    recent_signups
   });
 }
