@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { rateLimit, getIP } from '@/lib/rate-limit';
+import { emailSuporte, sendEmail } from '@/lib/emails';
 
 export async function POST(req: Request) {
-  // Rate limit: máx 3 mensagens por hora por IP
   if (!rateLimit(getIP(req), 3, 3600000)) {
     return NextResponse.json({ error: 'Muitas mensagens. Tente novamente em 1 hora.' }, { status: 429 });
   }
@@ -10,7 +10,6 @@ export async function POST(req: Request) {
   try {
     const { name, email, subject, message } = await req.json();
 
-    // Validação
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'Preencha todos os campos.' }, { status: 400 });
     }
@@ -21,58 +20,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Mensagem muito longa.' }, { status: 400 });
     }
 
-    // Envia email para o admin via Resend
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'LinhaCash Suporte <onboarding@resend.dev>',
-        to: process.env.ADMIN_EMAIL,
-        reply_to: email,
-        subject: `[Suporte] ${subject || 'Nova mensagem'} - ${name}`,
-        html: `
-          <h2>Nova mensagem de suporte</h2>
-          <p><strong>Nome:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Assunto:</strong> ${subject || 'Sem assunto'}</p>
-          <hr/>
-          <p><strong>Mensagem:</strong></p>
-          <p>${message.replace(/\n/g, '<br>')}</p>
-          <hr/>
-          <p style="color:#888;font-size:12px">Para responder, clique em Responder no seu email — vai direto para ${email}</p>
-        `
-      })
-    });
+    // Envia para o admin
+    const adminEmail = emailSuporte(name, email, subject || 'Sem assunto', message);
+    await sendEmail(process.env.ADMIN_EMAIL!, adminEmail, email);
 
-    if (!res.ok) {
-      console.error('Resend error:', await res.text());
-      return NextResponse.json({ error: 'Erro ao enviar mensagem.' }, { status: 500 });
-    }
-
-    // Envia confirmação para o cliente
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'LinhaCash <onboarding@resend.dev>',
-        to: email,
-        subject: 'Recebemos sua mensagem! ✅',
-        html: `
-          <h2>Olá, ${name}!</h2>
-          <p>Recebemos sua mensagem e responderemos em breve.</p>
-          <p><strong>Sua mensagem:</strong></p>
-          <p style="background:#f5f5f5;padding:12px;border-radius:8px">${message.replace(/\n/g, '<br>')}</p>
-          <p>Tempo médio de resposta: <strong>até 24 horas</strong></p>
-          <br/>
-          <p>Equipe LinhaCash 🏀</p>
-        `
-      })
+    // Confirmação para o cliente
+    await sendEmail(email, {
+      subject: 'Recebemos sua mensagem! ✅',
+      html: `
+        <div style="font-family:Inter,sans-serif;background:#000;color:#fff;padding:40px 20px;max-width:600px;margin:0 auto">
+          <div style="text-align:center;margin-bottom:32px">
+            <img src="${process.env.NEXT_PUBLIC_URL}/logo.png" width="60" height="60" style="object-fit:contain"><br>
+            <span style="font-size:24px;font-weight:800">Linha<span style="color:#00e676">Cash</span></span>
+          </div>
+          <h2 style="color:#00e676">Olá, ${name}!</h2>
+          <p style="color:#ccc">Recebemos sua mensagem e responderemos em até 24 horas.</p>
+          <div style="background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:20px;margin:20px 0">
+            <p style="color:#888;font-size:12px">SUA MENSAGEM</p>
+            <p style="color:#fff">${message.replace(/\n/g, '<br>')}</p>
+          </div>
+          <p style="color:#888;font-size:13px">Equipe LinhaCash 🏀</p>
+        </div>
+      `
     });
 
     return NextResponse.json({ ok: true });

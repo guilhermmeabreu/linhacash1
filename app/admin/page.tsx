@@ -150,6 +150,32 @@ export default function AdminPage() {
 
   const usesForCode = (code: string) => referralUses.filter(u => u.code === code);
 
+  function SyncHistory() {
+    const [logs, setLogs] = useState<any[]>([]);
+    useEffect(() => {
+      const token = localStorage.getItem('admin_token') || '';
+      fetch('/api/admin/sync-logs', { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json()).then(d => { if (Array.isArray(d)) setLogs(d); });
+    }, []);
+    return (
+      <div style={S.card}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Histórico de syncs</div>
+        {logs.length === 0 && <div style={{ color: '#888', fontSize: 13 }}>Nenhum sync registrado ainda</div>}
+        {logs.map((l, i) => (
+          <div key={i} style={{ padding: '10px 0', borderBottom: i < logs.length - 1 ? '1px solid #2a2a2a' : 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: l.status === 'success' ? '#00e676' : l.status === 'error' ? '#ff4d4d' : '#888' }}>
+                {l.status === 'success' ? '✓' : l.status === 'error' ? '✗' : '○'} {l.status}
+              </span>
+              <span style={{ fontSize: 11, color: '#888' }}>{new Date(l.created_at).toLocaleString('pt-BR')}</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{l.games_synced} jogos · {l.errors ? 'com erros' : 'sem erros'}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div style={S.bg}>
       <div style={S.hdr}>
@@ -347,13 +373,14 @@ export default function AdminPage() {
               <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Força o sync de jogos e estatísticas agora, sem esperar o cron das 04h.</div>
               <button onClick={runSync} style={S.btn}>⚡ Rodar sync agora</button>
               {syncMsg && <div style={{ marginTop: 12, fontSize: 13, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '8px 12px' }}>{syncMsg}</div>}
-              {syncLogs && <pre style={{ marginTop: 10, fontSize: 11, color: '#888', background: '#0a0a0a', borderRadius: 8, padding: 12, overflow: 'auto', maxHeight: 200 }}>{syncLogs}</pre>}
+              {syncLogs && <pre style={{ marginTop: 10, fontSize: 11, color: '#888', background: '#0a0a0a', borderRadius: 8, padding: 12, overflow: 'auto', maxHeight: 300 }}>{syncLogs}</pre>}
             </div>
-            <div style={S.card}>
+            <div style={{ ...S.card, marginBottom: 16 }}>
               <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Cron automático</div>
               <div style={{ fontSize: 14, fontWeight: 600 }}>Todo dia às 04:00 (horário de Brasília)</div>
               <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>schedule: "0 7 * * *" (UTC)</div>
             </div>
+            <SyncHistory />
           </div>
         )}
 

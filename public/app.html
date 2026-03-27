@@ -4,6 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>LinhaCash</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<link rel="apple-touch-icon" href="/logo.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="LinhaCash"/>
+<meta name="description" content="Análise de props da NBA para apostadores brasileiros"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -281,7 +289,7 @@ body{min-height:100dvh}
 
 <!-- SIDEBAR DESKTOP (visível só no PC) -->
 <div class="sidebar-desk" id="sidebarDesk" style="display:none">
-  <div class="sd-logo">Linha<em>Cash</em></div>
+  <div class="sd-logo"><img src="/logo.png" style="width:28px;height:28px;object-fit:contain;margin-right:8px;vertical-align:middle">Linha<em>Cash</em></div>
   <div class="sd-nav">
     <div class="sd-item on" id="sdJogos" onclick="sdNav('jogos')">
       <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -311,7 +319,7 @@ body{min-height:100dvh}
   <div class="scrl">
     <div class="awrap">
       <div class="alogo">
-        <div class="amark">L</div>
+        <div class="amark"><img src="/logo.png" style="width:40px;height:40px;object-fit:contain"></div>
         <div class="aname">Linha<em>Cash</em></div>
         <div class="asub">Análise de props da NBA</div>
       </div>
@@ -958,7 +966,12 @@ async function openPlayer(id){
     return `<div class="stab ${s==='PTS'?'on':''} ${lk?'lk':''}" onclick="${lk?'openPro()':'changeTab(\''+s+'\',this)'}">${s}${lk?' 🔒':''}</div>`;
   }).join('');
   // Buscar métricas do jogador no Supabase
-  const {data}=await sb.from('player_metrics').select('*').eq('player_id',id);
+  // Tenta player_props_cache primeiro (mais rápido), fallback para player_metrics
+  let {data}=await sb.from('player_props_cache').select('*').eq('player_id',id);
+  if(!data||data.length===0){
+    const fallback=await sb.from('player_metrics').select('*').eq('player_id',id);
+    data=fallback.data;
+  }
   METRICS[id]={};
   if(data) data.forEach(m=>{ METRICS[id][m.stat]=m; });
   renderDetail();
@@ -1335,9 +1348,20 @@ function cancelarPlano(){
   document.getElementById('mCancel').style.display='flex';
 }
 function closeCancel(){ document.getElementById('mCancel').style.display='none'; }
-function confirmarCancelamento(){
-  plan='free'; closeCancel(); renderProf();
-  toast('Assinatura cancelada. Seu acesso Pro continua até o fim do período.');
+async function confirmarCancelamento(){
+  if(!supabaseUser){ toast('Erro: usuário não identificado.'); return; }
+  toast('Cancelando...');
+  try{
+    const {error}=await sb.from('profiles').update({plan:'free'}).eq('id',supabaseUser.id);
+    if(error){ toast('Erro ao cancelar. Tente novamente.'); return; }
+    plan='free';
+    closeCancel();
+    renderProf();
+    updateSidebar();
+    toast('Assinatura cancelada. Seu acesso Pro continua até o fim do período pago.');
+  }catch(e){
+    toast('Erro ao cancelar. Tente novamente.');
+  }
 }
 
 // ═══ DESKTOP ══════════════════════════════════════════════════════════════════
@@ -1398,6 +1422,25 @@ sb.auth.getSession().then(async ({data})=>{
     }
   }
   updateSidebar();
+});
+
+// ═══ PWA: Service Worker ══════════════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js')
+      .then(()=>console.log('SW registrado'))
+      .catch(e=>console.log('SW erro:',e));
+  });
+}
+
+// ═══ PWA: Install prompt ══════════════════════════════════════════════════════
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  // Mostra botão de instalar no perfil se disponível
+  const btn=document.getElementById('installBtn');
+  if(btn) btn.style.display='flex';
 });
 </script>
 </body>
