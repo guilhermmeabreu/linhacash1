@@ -179,7 +179,10 @@ export default function AdminPage() {
   return (
     <div style={S.bg}>
       <div style={S.hdr}>
-        <div style={{ fontSize: 18, fontWeight: 800 }}>Linha<span style={{ color: '#00e676' }}>Cash</span> <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>Admin</span></div>
+        <div style={{ fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/logo.png" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+          Linha<span style={{ color: '#00e676' }}>Cash</span> <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>Admin</span>
+        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: '#888' }}>
             {stats ? `${stats.total_users} usuários · ${stats.pro_users} Pro` : ''}
