@@ -30,21 +30,63 @@ function apiGet(path: string): Promise<any> {
 }
 
 async function fetchGames() {
-  const today = new Date().toISOString().split('T')[0];
-  log(`Buscando jogos: ${today}`);
-  const data = await apiGet(`/games?date=${today}`);
-  if (!data.response || data.response.length === 0) { log('Nenhum jogo hoje.'); return []; }
-  const games = data.response.map((g: any) => ({
-    game_date: today,
+  const now = new Date();
+  const brOffset = -3 * 60 * 60 * 1000;
+  const nowBR = new Date(now.getTime() + brOffset);
+
+  // Se for antes das 15h BRT, os jogos são do "dia anterior" (os tardios de ontem)
+  // Janela: 15:00 BRT de hoje até 02:30 BRT de amanhã
+  let brDate = nowBR.toISOString().split('T')[0];
+  const hourBR = nowBR.getUTCHours();
+  // Se for madrugada (00:00-02:30 BRT), os jogos pertencem ao dia anterior BR
+  if (hourBR < 3) {
+    const yesterday = new Date(nowBR.getTime() - 24*60*60*1000);
+    brDate = yesterday.toISOString().split('T')[0];
+  }
+
+  // Janela: 15:00 BRT até 02:30 BRT do dia seguinte
+  const windowStart = new Date(brDate + 'T15:00:00-03:00').getTime();
+  const windowEnd = new Date(brDate + 'T26:30:00-03:00').getTime();
+
+  // Busca 3 dias UTC para cobertura total
+  const dates = [
+    new Date(now.getTime() - 24*60*60*1000).toISOString().split('T')[0],
+    now.toISOString().split('T')[0],
+    new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0]
+  ];
+
+  log(`Buscando jogos para ${brDate} BRT (janela 15h até 02:30h)`);
+
+  const results = await Promise.all(dates.map((d: string) => apiGet(`/games?date=${d}`)));
+  const allGames = results.flatMap((r: any) => r.response || []);
+
+  // Remove duplicatas por ID
+  const seen = new Set();
+  const unique = allGames.filter((g: any) => {
+    if (seen.has(g.id)) return false;
+    seen.add(g.id);
+    return true;
+  });
+
+  const filtered = unique.filter((g: any) => {
+    const t = new Date(g.date.start).getTime();
+    return t >= windowStart && t <= windowEnd;
+  });
+
+  if (filtered.length === 0) { log('Nenhum jogo na janela de hoje (BR).'); return []; }
+
+  const games = filtered.map((g: any) => ({
+    game_date: brDate,
     home_team: g.teams.home.name, away_team: g.teams.visitors.name,
     home_team_id: g.teams.home.id, away_team_id: g.teams.visitors.id,
     home_logo: g.teams.home.logo || null, away_logo: g.teams.visitors.logo || null,
     game_time: g.date.start, status: g.status.long
   }));
+
   const { error } = await supabase.from('games').upsert(games, { onConflict: 'game_date,home_team,away_team' });
   if (error) log(`Erro jogos: ${error.message}`);
-  else log(`${games.length} jogos salvos!`);
-  return data.response;
+  else log(`${games.length} jogos salvos para ${brDate}!`);
+  return filtered;
 }
 
 async function fetchPlayers(teamId: number) {
