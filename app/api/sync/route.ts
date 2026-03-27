@@ -99,12 +99,14 @@ async function calcMetrics(playerId: number) {
 }
 
 async function saveLog(status: string, games: number, errors: string[]) {
-  await supabase.from('sync_logs').insert({
-    status, games_synced: games,
-    log: logs.join('\n'),
-    errors: errors.join('\n') || null,
-    created_at: new Date().toISOString()
-  }).catch(() => {});
+  try {
+    await supabase.from('sync_logs').insert({
+      status, games_synced: games,
+      log: logs.join('\n'),
+      errors: errors.join('\n') || null,
+      created_at: new Date().toISOString()
+    });
+  } catch (e) { console.error('Erro ao salvar log:', e); }
 }
 
 export async function GET() {
