@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Análise de análise de apostas da NBA em português. Dados reais, decisões inteligentes."/>
+<title>LinhaCash — Análise de apostas da NBA</title>
+<link rel="icon" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050505;
+  --s1:#0a0a0a;
+  --s2:#111;
+  --bd:#1a1a1a;
+  --bd2:#2a2a2a;
+  --tx:#f0f0f0;
+  --mt:#888;
+  --green:#00e676;
+  --gdim:rgba(0,230,118,.08);
+  --red:#ff3d3d;
+}
+html{scroll-behavior:smooth}
+body.light{
+  --bg:#f2f0eb;
+  --s1:#e8e6e0;
+  --s2:#faf9f6;
+  --bd:#c8c5be;
+  --bd2:#b0ada6;
+  --tx:#111;
+  --mt:#555;
+  --green:#00897b;
+  --gdim:rgba(0,137,123,.08);
+  --red:#c62828;
+}
+body{
+  background:var(--bg);
+  color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;
+  background:rgba(5,5,5,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bd);
+}
+.nav-logo{
+  display:flex;align-items:center;gap:10px;
+  font-size:18px;font-weight:800;color:var(--tx);
+  text-decoration:none;letter-spacing:0.01em;
+}
+.nav-logo img{width:28px;height:28px;object-fit:contain}
+.nav-logo span{color:var(--green)}
+.nav-cta{
+  background:var(--green);color:#000;
+  padding:9px 20px;
+  font-size:13px;font-weight:700;
+  text-decoration:none;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  transition:opacity .15s;
+}
+.nav-cta:hover{opacity:.85}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:120px 24px 80px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,230,118,.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-tag{
+  display:inline-block;
+  font-size:11px;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--green);
+  border:1px solid rgba(0,230,118,.3);
+  padding:5px 14px;
+  margin-bottom:28px;
+}
+.hero h1{
+  font-size:clamp(36px, 7vw, 72px);
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:-0.02em;
+  margin-bottom:20px;
+  max-width:720px;
+}
+.hero h1 span{color:var(--green)}
+.hero p{
+  font-size:clamp(16px, 2.5vw, 20px);
+  color:var(--mt);
+  max-width:480px;
+  margin-bottom:40px;
+  line-height:1.7;
+}
+.hero-btns{
+  display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+}
+.btn-primary{
+  background:var(--green);color:#000;
+  padding:14px 32px;
+  font-size:15px;font-weight:700;
+  text-decoration:none;
+  letter-spacing:0.06em;text-transform:uppercase;
+  transition:opacity .15s;
+}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{
+  background:none;color:var(--mt);
+  padding:14px 32px;
+  font-size:15px;font-weight:500;
+  text-decoration:none;
+  border:1px solid var(--bd2);
+  transition:color .15s,border-color .15s;
+}
+.btn-secondary:hover{color:var(--tx);border-color:var(--tx)}
+.hero-note{
+  margin-top:24px;
+  font-size:14px;color:var(--mt);
+  letter-spacing:0.02em;
+}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  display:flex;justify-content:center;gap:0;
+  border-top:1px solid var(--bd);
+  border-bottom:1px solid var(--bd);
+  background:var(--s1);
+}
+.stat-item{
+  flex:1;max-width:200px;
+  padding:28px 24px;
+  text-align:center;
+  border-right:1px solid var(--bd);
+}
+.stat-item:last-child{border-right:none}
+.stat-num{
+  font-size:28px;font-weight:800;
+  color:var(--green);
+  font-variant-numeric:tabular-nums;
+}
+.stat-lbl{
+  font-size:12px;color:var(--mt);
+  letter-spacing:0.04em;
+  margin-top:4px;
+}
+
+/* ── SECTIONS ── */
+section{padding:80px 24px}
+.container{max-width:960px;margin:0 auto}
+.section-tag{
+  font-size:11px;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--green);margin-bottom:16px;
+}
+.section-title{
+  font-size:clamp(26px, 4vw, 42px);
+  font-weight:800;line-height:1.2;
+  letter-spacing:-0.02em;
+  margin-bottom:16px;
+}
+.section-sub{
+  font-size:17px;color:var(--mt);
+  max-width:540px;line-height:1.7;
+  margin-bottom:48px;
+}
+
+/* ── FEATURES ── */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--bd)}
+.feature{
+  background:var(--bg);
+  padding:32px 28px;
+  border-left:3px solid transparent;
+  transition:border-color .15s;
+}
+.feature:hover{border-left-color:var(--green)}
+.feature-icon{
+  width:36px;height:36px;
+  background:var(--gdim);
+  border:1px solid rgba(0,230,118,.2);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;
+}
+.feature-icon svg{color:var(--green)}
+.feature h3{
+  font-size:16px;font-weight:700;
+  margin-bottom:8px;letter-spacing:0.01em;
+}
+.feature p{font-size:14px;color:var(--mt);line-height:1.6}
+
+/* ── COMO FUNCIONA ── */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px}
+.step{position:relative}
+.step-num{
+  font-size:11px;font-weight:700;
+  color:var(--green);
+  letter-spacing:0.1em;
+  margin-bottom:12px;
+}
+.step h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.step p{font-size:14px;color:var(--mt);line-height:1.6}
+.step-line{
+  position:absolute;top:6px;left:28px;right:-16px;
+  height:1px;background:var(--bd2);
+}
+
+/* ── COMPARAÇÃO ── */
+.compare{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1px;background:var(--bd);
+  border:1px solid var(--bd);
+}
+.compare-col{background:var(--s1);padding:28px}
+.compare-col.highlight{background:var(--s2);border-left:3px solid var(--green)}
+.compare-header{
+  font-size:13px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;
+  margin-bottom:20px;color:var(--mt);
+}
+.compare-col.highlight .compare-header{color:var(--green)}
+.compare-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid var(--bd);
+  font-size:14px;
+}
+.compare-item:last-child{border-bottom:none}
+.compare-item.yes{color:var(--tx)}
+.compare-item.no{color:var(--mt);text-decoration:line-through}
+.ci{width:16px;height:16px;flex-shrink:0}
+
+/* ── PLANOS ── */
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd)}
+.plan{background:var(--s1);padding:32px}
+.plan.pro{background:var(--s2);border-top:3px solid var(--green)}
+.plan-name{font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mt);margin-bottom:8px}
+.plan.pro .plan-name{color:var(--green)}
+.plan-price{font-size:36px;font-weight:800;margin-bottom:4px}
+.plan-price span{font-size:14px;font-weight:400;color:var(--mt)}
+.plan-desc{font-size:14px;color:var(--mt);margin-bottom:24px}
+.plan-features{list-style:none;margin-bottom:28px}
+.plan-features li{
+  font-size:14px;padding:8px 0;
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:8px;
+  color:var(--mt);
+}
+.plan-features li:last-child{border-bottom:none}
+.plan-features li.active{color:var(--tx)}
+.plan-features li.active::before{content:'';width:6px;height:6px;background:var(--green);flex-shrink:0}
+.plan-features li:not(.active)::before{content:'';width:6px;height:6px;background:var(--bd2);flex-shrink:0}
+.plan-btn{
+  display:block;width:100%;
+  padding:13px;text-align:center;
+  font-size:13px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;
+  text-decoration:none;
+  transition:opacity .15s;
+}
+.plan-btn.free{background:none;color:var(--mt);border:1px solid var(--bd2)}
+.plan-btn.free:hover{color:var(--tx);border-color:var(--bd)}
+.plan-btn.pro-btn{background:var(--green);color:#000}
+.plan-btn.pro-btn:hover{opacity:.85}
+
+/* ── CTA FINAL ── */
+.cta-section{
+  text-align:center;
+  padding:100px 24px;
+  border-top:1px solid var(--bd);
+  position:relative;overflow:hidden;
+}
+.cta-section::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse 50% 60% at 50% 100%, rgba(0,230,118,.05) 0%, transparent 70%);
+  pointer-events:none;
+}
+.cta-section h2{
+  font-size:clamp(28px,5vw,52px);
+  font-weight:800;letter-spacing:-0.02em;
+  margin-bottom:16px;
+}
+.cta-section h2 span{color:var(--green)}
+.cta-section p{font-size:16px;color:var(--mt);margin-bottom:36px}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--bd);
+  padding:32px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+}
+.footer-logo{
+  display:flex;align-items:center;gap:8px;
+  font-size:15px;font-weight:800;
+  color:var(--tx);text-decoration:none;
+  letter-spacing:0.01em;
+}
+.footer-logo img{width:22px;height:22px;object-fit:contain}
+.footer-logo span{color:var(--green)}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap}
+.footer-links a{
+  font-size:12px;color:var(--mt);
+  text-decoration:none;letter-spacing:0.04em;
+  transition:color .15s;
+}
+.footer-links a:hover{color:var(--tx)}
+.footer-copy{font-size:12px;color:var(--mt)}
+.footer-disclaimer{
+  width:100%;font-size:11px;color:var(--mt);
+  line-height:1.6;padding-top:16px;
+  border-top:1px solid var(--bd);
+}
+
+/* ── THEME BUTTON ── */
+#themeBtn:hover{border-color:var(--tx);color:var(--tx)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .stats-bar{flex-wrap:wrap}
+  .stat-item{flex:1 1 45%;border-right:none;border-bottom:1px solid var(--bd)}
+  .compare,.plans{grid-template-columns:1fr}
+  .compare-col.highlight,.plan.pro{border-left:none;border-top:3px solid var(--green)}
+  nav{padding:14px 16px}
+  .step-line{display:none}
+}
+
+/* ── ANIMATE ON SCROLL ── */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.fade-in.visible{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">
+    <img src="/logo.png" alt="LinhaCash"/>
+    Linha<span>Cash</span>
+  </a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button id="themeBtn" onclick="toggleTheme()" aria-label="Alternar tema" style="background:none;border:1px solid var(--bd2);color:var(--mt);width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s">
+      <svg id="themeIcon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <a href="/app.html" class="nav-cta">Começar grátis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">NBA — Apostas Inteligentes</div>
+  <h1>Analise apostas da NBA<br/><span>com dados reais</span></h1>
+  <p>Pare de apostar no achismo. L5, L10, L20, splits casa/fora e score de confiança — tudo em português.</p>
+  <div class="hero-btns">
+    <a href="/app.html" class="btn-primary">Começar grátis</a>
+    <a href="#planos" class="btn-secondary">Ver planos</a>
+  </div>
+  <p class="hero-note">Grátis &nbsp;·&nbsp; Pro por <strong style="color:var(--tx)">R$16,41/mês</strong> <span style="font-size:11px">(cobrado R$197/ano)</span></p>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar fade-in">
+  <div class="stat-item">
+    <div class="stat-num">L5/L10</div>
+    <div class="stat-lbl">Médias por período</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" style="font-size:18px;letter-spacing:-0.02em">Todas</div>
+    <div class="stat-lbl">Stats por jogador</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" style="font-size:18px;letter-spacing:-0.02em">Todos</div>
+    <div class="stat-lbl">Times da NBA</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">100%</div>
+    <div class="stat-lbl">Em português</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section style="padding:80px 24px;background:var(--s1)">
+  <div class="container">
+    <div class="section-tag fade-in">Funcionalidades</div>
+    <h2 class="section-title fade-in">Tudo que você precisa<br/>para decidir melhor</h2>
+    <p class="section-sub fade-in">Sem precisar abrir 5 sites diferentes. Tudo centralizado e em português.</p>
+    <div class="features fade-in">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Médias L5, L10, L20</h3>
+        <p>Veja a tendência real do jogador nos últimos jogos. Muito mais relevante que a média da temporada.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>Split Casa/Fora</h3>
+        <p>Jogadores performam diferente em casa e fora. Veja a diferença antes de apostar.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Score de confiança</h3>
+        <p>Cada aposta recebe um score de 1 a 10. Aposte com mais segurança nas apostas com maior confiança.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h3>9 tipos de stats</h3>
+        <p>PTS, REB, AST, 3PM, P+A, P+R, A+R, FG2A e FG3A. Todas as principais categorias de aposta em um lugar só.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3>Gráfico por jogo</h3>
+        <p>Veja a performance jogo a jogo em verde e vermelho. Identifique padrões em segundos.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>H2H vs adversário</h3>
+        <p>Como o jogador se sai historicamente contra o time de hoje. Contexto que muda a aposta.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section>
+  <div class="container">
+    <div class="section-tag fade-in">Como funciona</div>
+    <h2 class="section-title fade-in">Simples e direto</h2>
+    <p class="section-sub fade-in">Em menos de 1 minuto você tem a análise que precisa.</p>
+    <div class="steps fade-in">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Escolha o jogo</h3>
+        <p style="font-size:14px;color:var(--mt)">Veja todos os jogos do dia atualizados automaticamente toda manhã.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Selecione o jogador</h3>
+        <p style="font-size:14px;color:var(--mt)">Encontre qualquer jogador dos dois times com stats completas.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Analise a prop</h3>
+        <p style="font-size:14px;color:var(--mt)">Veja L5/L10/L20, splits, gráfico e score de confiança de 1 a 10.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>Decida com dados</h3>
+        <p style="font-size:14px;color:var(--mt)">Aposte com base em dados reais, não em achismo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARAÇÃO -->
+<section style="background:var(--s1)">
+  <div class="container">
+    <div class="section-tag fade-in">Comparação</div>
+    <h2 class="section-title fade-in">LinhaCash vs outros sites</h2>
+    <p class="section-sub fade-in">Feito para o apostador brasileiro. Em português, com preço justo.</p>
+    <div class="compare fade-in">
+      <div class="compare-col">
+        <div class="compare-header">Outros sites</div>
+        <div class="compare-item no">Em inglês</div>
+        <div class="compare-item no">Preço em dólar (~R$115/mês)</div>
+        <div class="compare-item no">Sem split casa/fora claro</div>
+        <div class="compare-item no">Sem score de confiança simples</div>
+      </div>
+      <div class="compare-col highlight">
+        <div class="compare-header">LinhaCash</div>
+        <div class="compare-item yes">
+          <svg class="ci" fill="none" stroke="var(--green)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          100% em português
+        </div>
+        <div class="compare-item yes">
+          <svg class="ci" fill="none" stroke="var(--green)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          R$24,90/mês — preço justo
+        </div>
+        <div class="compare-item yes">
+          <svg class="ci" fill="none" stroke="var(--green)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Split casa/fora em destaque
+        </div>
+        <div class="compare-item yes">
+          <svg class="ci" fill="none" stroke="var(--green)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Score de confiança 1 a 10
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANOS -->
+<section id="planos">
+  <div class="container">
+    <div class="section-tag fade-in">Planos</div>
+    <h2 class="section-title fade-in">Comece grátis agora</h2>
+    <p class="section-sub fade-in">Sem cartão de crédito. Sem pegadinha.</p>
+    <div class="plans fade-in">
+      <div class="plan">
+        <div class="plan-name">Gratuito</div>
+        <div class="plan-price">R$0 <span>/mês</span></div>
+        <div class="plan-desc">Para conhecer a plataforma. Sem cartão.</div>
+        <ul class="plan-features">
+          <li class="active">1 jogo por dia</li>
+          <li class="active">1 jogador por time</li>
+          <li class="active">Estatística de PTS</li>
+          <li>Todos os jogos</li>
+          <li>Todos os jogadores</li>
+          <li>9 tipos de stats</li>
+          <li>Score de confiança</li>
+          <li>H2H vs adversário</li>
+        </ul>
+        <a href="/app.html" class="plan-btn free">Começar grátis</a>
+      </div>
+      <div class="plan pro">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">R$24,90 <span>/mês</span></div>
+        <div class="plan-desc">Ou R$197/ano — equivale a R$16,41/mês.</div>
+        <ul class="plan-features">
+          <li class="active">Todos os jogos do dia</li>
+          <li class="active">Todos os jogadores</li>
+          <li class="active">9 tipos de stats completas</li>
+          <li class="active">Score de confiança 1-10</li>
+          <li class="active">H2H vs adversário</li>
+          <li class="active">Médias L5/L10/L20/L30</li>
+          <li class="active">Gráfico jogo a jogo</li>
+          <li class="active">Alertas de lesão</li>
+        </ul>
+        <a href="/app.html" class="plan-btn pro-btn">Assinar Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section">
+  <h2>Chega de apostar<br/><span>no achismo</span></h2>
+  <p>Dados reais. Decisões inteligentes. Em português.</p>
+  <a href="/app.html" class="btn-primary">Começar agora — é grátis</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="/" class="footer-logo">
+    <img src="/logo.png" alt="LinhaCash"/>
+    Linha<span>Cash</span>
+  </a>
+  <div class="footer-links">
+    <a href="/app.html">Entrar</a>
+    <a href="#planos">Planos</a>
+    <a href="/privacidade">Privacidade</a>
+    <a href="/app.html">Termos</a>
+    <a href="/cdn-cgi/l/email-protection#92e1e7e2fde0e6f7d2fefbfcfaf3f1f3e1fabcf1fdffbcf0e0">Contato</a>
+  </div>
+  <div class="footer-copy">© 2026 LinhaCash</div>
+  <div class="footer-disclaimer">
+    O LinhaCash é uma plataforma de análise de dados estatísticos da NBA para fins exclusivamente informativos. 
+    Não somos uma casa de apostas e não nos responsabilizamos por decisões financeiras tomadas com base nos dados exibidos. 
+    Aposte com responsabilidade. Se precisar de ajuda: CVV 188.
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// Theme
+let isDark = true;
+function toggleTheme(){
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  const icon = document.getElementById('themeIcon');
+  if(isDark){
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  }
+  // Salvar preferência
+  localStorage.setItem('lc_theme', isDark ? 'dark' : 'light');
+}
+
+// Aplicar tema salvo
+const savedTheme = localStorage.getItem('lc_theme');
+if(savedTheme === 'light'){ toggleTheme(); }
+
+// Smooth scroll para âncoras
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// Fade in on scroll
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.ta
