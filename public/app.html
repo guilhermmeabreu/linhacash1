@@ -216,7 +216,7 @@ body{min-height:100dvh}
  padding:24px 0;
  height:100dvh;
  }
- .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:-0.02em}
+ .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:0}
  .sd-logo em{color:var(--green);font-style:normal}
  .sd-nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
  .sd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:0;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;transition:.15s}
@@ -286,7 +286,7 @@ body{min-height:100dvh}
 .drawer-overlay.open{display:block;opacity:1}
 .drawer{position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--bg);border-right:1px solid var(--bd);z-index:201;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:0}
 .drawer.open{transform:translateX(0)}
-.drawer-logo{padding:24px 20px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;letter-spacing:-0.02em;color:var(--tx)}
+.drawer-logo{padding:24px 20px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;letter-spacing:0;color:var(--tx)}
 .drawer-logo img{width:26px;height:26px;object-fit:contain}
 .drawer-logo em{color:var(--green);font-style:normal}
 .drawer-item{display:flex;align-items:center;gap:10px;padding:14px 20px;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;border-left:2px solid transparent;transition:.15s}
@@ -320,7 +320,7 @@ body{min-height:100dvh}
 .hbk{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hbk.hide{visibility:hidden}
 .htl{flex:1;font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hlogo{font-size:18px;font-weight:800;letter-spacing:-0.02em}
+.hlogo{font-size:18px;font-weight:800;letter-spacing:0}
 .hlogo em{color:var(--green);font-style:normal}
 .hact{display:flex;gap:6px;flex-shrink:0}
 .hico{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--mt);cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -329,7 +329,7 @@ body{min-height:100dvh}
 .awrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 24px 48px}
 .alogo{text-align:center;margin-bottom:36px}
 .amark{width:80px;height:80px;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
-.aname{font-size:26px;font-weight:800;letter-spacing:-0.02em}
+.aname{font-size:26px;font-weight:800;letter-spacing:0}
 .aname em{color:var(--green);font-style:normal}
 .asub{font-size:13px;color:var(--mt);margin-top:5px}
 .atabs{display:flex;background:var(--s2);border:1px solid var(--bd);border-radius:0;padding:4px;margin-bottom:22px}
@@ -380,7 +380,7 @@ body{min-height:100dvh}
 .tabbr{font-size:15px;font-weight:800}
 
 
-.gvs-wrap{display:flex;align-items:center;justify-content:center;width:36px;flex-shrink:0}
+.gvs-wrap{display:flex;align-items:center;justify-content:center;width:24px;flex-shrink:0}
 .gvs-x{font-size:12px;font-weight:600;color:var(--mt2)}
 
 .gfoot{display:flex;align-items:center;padding:7px 12px;background:var(--s3);border-top:1px solid var(--bd);font-size:11px;color:var(--mt);font-weight:500}
@@ -491,7 +491,7 @@ body{min-height:100dvh}
 
 <!-- SIDEBAR DESKTOP (visível só no PC) -->
 <div class="sidebar-desk" id="sidebarDesk" style="display:none">
- <div class="sd-logo" style="display:flex;align-items:center;gap:8px"><img src="/logo.png" style="width:26px;height:26px;object-fit:contain;flex-shrink:0"><span style="letter-spacing:-0.01em">Linha</span><em style="color:var(--green);font-style:normal;letter-spacing:-0.01em"> Cash</em></div>
+ <div class="sd-logo" style="display:flex;align-items:center;gap:8px"><img src="/logo.png" style="width:26px;height:26px;object-fit:contain;flex-shrink:0"><span style="color:var(--tx)">Linha</span><em style="color:var(--green);font-style:normal">Cash</em></div>
  <div class="sd-nav">
  <div class="sd-item on" id="sdJogos" onclick="sdNav('jogos')">
  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -525,7 +525,7 @@ body{min-height:100dvh}
  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="authThemeIcon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
 </button>
  <div class="amark"><img src="/logo.png" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,230,118,0.3))"></div>
- <div class="aname"><span style="letter-spacing:-0.01em">Linha</span><em style="color:var(--green);font-style:normal;letter-spacing:-0.01em"> Cash</em></div>
+ <div class="aname"><span style="color:var(--tx)">Linha</span><em style="color:var(--green);font-style:normal">Cash</em></div>
  <div class="asub">Análise de props da NBA</div>
  </div>
  <div class="atabs">
@@ -588,7 +588,7 @@ body{min-height:100dvh}
 <!-- MOBILE DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
-  <div class="drawer-logo"><img src="/logo.png" alt=""/><span style="letter-spacing:-0.01em">Linha</span><em style="color:var(--green);font-style:normal;letter-spacing:-0.01em"> Cash</em></div>
+  <div class="drawer-logo"><img src="/logo.png" alt=""/><span style="color:var(--tx)">Linha</span><em style="color:var(--green);font-style:normal">Cash</em></div>
   <div class="drawer-item on" id="dJogos" onclick="drawerNav('jogos')">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     Jogos do dia
