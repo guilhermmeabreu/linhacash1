@@ -31,14 +31,14 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 body.light{
   --bg:#f5f3ef;--s1:#edeae4;--s2:#fdfcfa;
   --bd:#c8c5be;--bd2:#b0ada6;
-  --tx:#111;--mt:#555;
-  --green:#00c06a;--gdim:rgba(0,192,106,.08);
+  --tx:#0a0a0a;--mt:#444;
+  --green:#00b359;--gdim:rgba(0,179,89,.1);
 }
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(5,5,5,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
-body.light nav{background:rgba(242,240,235,.97)}
-.logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:18px;font-weight:800;color:var(--tx);letter-spacing:-0.04em}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(5,5,5,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);transition:background .3s}
+body.light nav{background:rgba(245,243,239,.97)}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:18px;font-weight:800;color:var(--tx);letter-spacing:-0.06em}
 .logo img{width:26px;height:26px;object-fit:contain}
 .logo em{color:var(--green);font-style:normal}
 .nav-r{display:flex;align-items:center;gap:10px}
@@ -325,12 +325,34 @@ var dark = true;
 function toggleTheme() {
   dark = !dark;
   document.body.classList.toggle('light', !dark);
-  var btn = document.getElementById('tbtn');
+  var r = document.documentElement.style;
   if (!dark) {
-    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    r.setProperty('--bg','#f5f3ef');
+    r.setProperty('--s1','#edeae4');
+    r.setProperty('--s2','#fdfcfa');
+    r.setProperty('--bd','#c8c5be');
+    r.setProperty('--bd2','#b0ada6');
+    r.setProperty('--tx','#0a0a0a');
+    r.setProperty('--mt','#444');
+    r.setProperty('--green','#00b359');
+    r.setProperty('--gdim','rgba(0,179,89,.1)');
+    document.querySelector('nav').style.background = 'rgba(245,243,239,.97)';
   } else {
-    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    r.setProperty('--bg','#050505');
+    r.setProperty('--s1','#0a0a0a');
+    r.setProperty('--s2','#111');
+    r.setProperty('--bd','#1a1a1a');
+    r.setProperty('--bd2','#2a2a2a');
+    r.setProperty('--tx','#f0f0f0');
+    r.setProperty('--mt','#777');
+    r.setProperty('--green','#00e676');
+    r.setProperty('--gdim','rgba(0,230,118,.08)');
+    document.querySelector('nav').style.background = 'rgba(5,5,5,.95)';
   }
+  var btn = document.getElementById('tbtn');
+  btn.innerHTML = dark
+    ? '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+    : '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
   localStorage.setItem('lc_theme', dark ? 'dark' : 'light');
 }
 if (localStorage.getItem('lc_theme') === 'light') toggleTheme();
