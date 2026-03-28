@@ -301,20 +301,8 @@ body{min-height:100dvh}
 
 
 
-/* Logos no dark mode — fundo circular branco semi-transparente */
-body:not(.lt) .logo-dark-team{
-  background: rgba(255,255,255,.9) !important;
-  border-radius: 50%;
-  padding: 3px;
-  box-sizing: border-box;
-}
-/* Todas as logos — leve brilho */
-body:not(.lt) .tcirc img{
-  filter: drop-shadow(0 0 2px rgba(255,255,255,.1));
-}
 
 
-.sd-logo em, .hlogo em, .aname em, .drawer-logo em { color: var(--green); font-style: normal; }
 
 /* SCREENS */
 .scr{display:none;flex-direction:column;height:100%;position:absolute;inset:0;background:var(--bg)}
@@ -503,7 +491,7 @@ body:not(.lt) .tcirc img{
 
 <!-- SIDEBAR DESKTOP (visível só no PC) -->
 <div class="sidebar-desk" id="sidebarDesk" style="display:none">
- <div class="sd-logo" style="display:flex;align-items:center;gap:8px"><img src="/logo.png" style="width:26px;height:26px;object-fit:contain;flex-shrink:0">LinhaCash</div>
+ <div class="sd-logo" style="display:flex;align-items:center;gap:8px"><img src="/logo.png" style="width:26px;height:26px;object-fit:contain;flex-shrink:0">Linha<em style="color:var(--green);font-style:normal">Cash</em></div>
  <div class="sd-nav">
  <div class="sd-item on" id="sdJogos" onclick="sdNav('jogos')">
  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -537,7 +525,7 @@ body:not(.lt) .tcirc img{
  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="authThemeIcon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
 </button>
  <div class="amark"><img src="/logo.png" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,230,118,0.3))"></div>
- <div class="aname">LinhaCash</div>
+ <div class="aname">Linha<em>Cash</em></div>
  <div class="asub">Análise de props da NBA</div>
  </div>
  <div class="atabs">
@@ -600,7 +588,7 @@ body:not(.lt) .tcirc img{
 <!-- MOBILE DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
-  <div class="drawer-logo"><img src="/logo.png" alt=""/>LinhaCash</div>
+  <div class="drawer-logo"><img src="/logo.png" alt=""/>Linha<em style="color:var(--green);font-style:normal">Cash</em></div>
   <div class="drawer-item on" id="dJogos" onclick="drawerNav('jogos')">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     Jogos do dia
@@ -1135,13 +1123,9 @@ async function renderGames(){
  const time=new Date(g.game_time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  const awayIni=ini(g.away_team),homeIni=ini(g.home_team);
  
-const darkLogoTeams = ['Spurs','Bulls','Nets','Heat','Brooklyn','Oklahoma','Thunder','Jazz','Timberwolves','Bucks'];
-function isDarkLogoTeam(name){
-  return darkLogoTeams.some(t => name.includes(t));
-}
 
-const awayImg=g.away_logo?`<img src="${g.away_logo}" class="${isDarkLogoTeam(g.away_team)?'logo-dark-team':''}" style="width:56px;height:56px;object-fit:contain;background:transparent" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
- const homeImg=g.home_logo?`<img src="${g.home_logo}" class="${isDarkLogoTeam(g.home_team)?'logo-dark-team':''}" style="width:56px;height:56px;object-fit:contain;background:transparent" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:56px;height:56px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+ const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:56px;height:56px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
  return `<div class="gcard" onclick="openGame(${g.id})">
  <div class="gctop"><span class="gtime">${time}</span></div>
  <div class="gteams">
