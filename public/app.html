@@ -222,6 +222,7 @@ body{min-height:100dvh}
  .sd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:0;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;transition:.15s}
  .sd-item:hover{background:var(--s2);color:var(--tx)}
  .sd-item.on{background:var(--gdim);color:var(--green);font-weight:600}
+.sd-item-soon{opacity:.45;cursor:not-allowed!important;pointer-events:none}
  .sd-bottom{padding:12px}
  .sd-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:0;background:var(--s2);border:1px solid var(--bd);cursor:pointer}
  .sd-av{width:32px;height:32px;border-radius:0;background:linear-gradient(135deg,var(--green),#00897b);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0}
@@ -376,12 +377,12 @@ body{min-height:100dvh}
 .glock{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mt)}
 .gteams{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 14px}
 .tside{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
-.tcirc{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--tx);background:transparent;border:none}
+.tcirc{width:68px;height:68px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--tx);background:transparent;border:none}
 .tabbr{font-size:15px;font-weight:800}
 
 
-.gvs-wrap{display:flex;align-items:center;justify-content:center;width:16px;flex-shrink:0}
-.gvs-x{font-size:12px;font-weight:600;color:var(--mt2)}
+.gvs-wrap{display:flex;align-items:center;justify-content:center;width:32px;flex-shrink:0}
+.gvs-x{font-size:11px;font-weight:700;color:var(--mt);letter-spacing:0.05em;text-transform:uppercase}
 
 .gfoot{display:flex;align-items:center;padding:7px 12px;background:var(--s3);border-top:1px solid var(--bd);font-size:11px;color:var(--mt);font-weight:500}
 
@@ -592,6 +593,16 @@ body{min-height:100dvh}
   <div class="drawer-item on" id="dJogos" onclick="drawerNav('jogos')">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     Jogos do dia
+  </div>
+  <div class="drawer-item" style="opacity:.45;pointer-events:none;cursor:not-allowed">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Calendário
+    <span style="font-size:9px;color:var(--mt);margin-left:auto;text-transform:uppercase;letter-spacing:0.06em">Em breve</span>
+  </div>
+  <div class="drawer-item" style="opacity:.45;pointer-events:none;cursor:not-allowed">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Classificação
+    <span style="font-size:9px;color:var(--mt);margin-left:auto;text-transform:uppercase;letter-spacing:0.06em">Em breve</span>
   </div>
   <div class="drawer-item" id="dPerfil" onclick="drawerNav('perfil')">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1124,8 +1135,8 @@ async function renderGames(){
  const awayIni=ini(g.away_team),homeIni=ini(g.home_team);
  
 
-const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:52px;height:52px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
- const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:52px;height:52px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+ const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
  return `<div class="gcard" onclick="openGame(${g.id})">
  <div class="gctop"><span class="gtime">${time}</span></div>
  <div class="gteams">
