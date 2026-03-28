@@ -2,17 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const S = {
- bg: (d:boolean) => ({ minHeight: '100vh', background: d?'#050505':'#f5f3ef', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', color: d?'#f0f0f0':'#111' }),
- hdr: (d:boolean) => ({ display: 'flex' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, padding: '16px 24px', borderBottom: `1px solid ${d?'#1a1a1a':'#d0cdc7'}`, background: d?'#050505':'#f5f3ef', position: 'sticky' as const, top: 0, zIndex: 10 }),
- card: { background: '#111', border: '1px solid #2a2a2a', borderRadius: 0, padding: '16px 20px' },
+const S_static = {
  btn: { background: '#00e676', border: 'none', borderRadius: 0, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#000', cursor: 'pointer', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' },
  btnDanger: { background: 'none', border: '1px solid #ff4d4d', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#ff4d4d', cursor: 'pointer', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' },
- btnSec: { background: 'none', border: '1px solid #2a2a2a', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' },
  btnInfo: { background: 'none', border: '1px solid #0077ff', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#0077ff', cursor: 'pointer', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' },
- input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: 0, padding: '8px 12px', fontSize: 13, color: '#fff', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', outline: 'none' },
- label: { fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 5, display: 'block' as const },
- tag: (c: string) => ({ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 0, background: c === 'pro' ? 'rgba(0,230,118,.15)' : '#1a1a1a', color: c === 'pro' ? '#00e676' : '#888', border: `1px solid ${c === 'pro' ? 'rgba(0,230,118,.3)' : '#2a2a2a'}` })
 };
 
 interface Profile { id: string; name: string; email: string; plan: string; created_at: string; referral_code_used?: string; }
@@ -188,6 +181,20 @@ export default function AdminPage() {
  </div>
  );
  }
+
+ const d = darkMode;
+ const S = {
+   bg: { minHeight: '100vh', background: d?'#050505':'#f5f3ef', fontFamily: 'Hele,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', color: d?'#f0f0f0':'#111' },
+   hdr: { display: 'flex' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, padding: '16px 24px', borderBottom: `1px solid ${d?'#1a1a1a':'#cac7c0'}`, background: d?'#050505':'#f5f3ef', position: 'sticky' as const, top: 0, zIndex: 10 },
+   card: { background: d?'#0f0f0f':'#fdfcfa', border: `1px solid ${d?'#1e1e1e':'#cac7c0'}`, borderLeft: `3px solid ${d?'#00e676':'#00b359'}`, borderRadius: 0, padding: '16px 20px' },
+   btn: { background: d?'#00e676':'#00b359', border: 'none', borderRadius: 0, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#000', cursor: 'pointer', fontFamily: 'Hele,-apple-system,sans-serif' },
+   btnDanger: { background: 'none', border: '1px solid #ff4d4d', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#ff4d4d', cursor: 'pointer', fontFamily: 'Hele,-apple-system,sans-serif' },
+   btnSec: { background: 'none', border: `1px solid ${d?'#2a2a2a':'#b0ada6'}`, borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: d?'#888':'#555', cursor: 'pointer', fontFamily: 'Hele,-apple-system,sans-serif' },
+   btnInfo: { background: 'none', border: '1px solid #0077ff', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#0077ff', cursor: 'pointer', fontFamily: 'Hele,-apple-system,sans-serif' },
+   input: { background: d?'#1a1a1a':'#fff', border: `1px solid ${d?'#333':'#b0ada6'}`, borderRadius: 0, padding: '8px 12px', fontSize: 13, color: d?'#fff':'#111', fontFamily: 'Hele,-apple-system,sans-serif', outline: 'none' },
+   label: { fontSize: 11, fontWeight: 700, color: d?'#888':'#555', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 5, display: 'block' as const },
+   tag: (c: string) => ({ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 0, background: c==='pro'?(d?'rgba(0,230,118,.15)':'rgba(0,179,89,.12)'):(d?'#1a1a1a':'#edeae4'), color: c==='pro'?(d?'#00e676':'#00955a'):(d?'#888':'#555'), border: `1px solid ${c==='pro'?(d?'rgba(0,230,118,.3)':'rgba(0,179,89,.4)'):(d?'#2a2a2a':'#cac7c0')}` }),
+ };
 
  return (
  <div style={S.bg}>
