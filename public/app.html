@@ -216,7 +216,7 @@ body{min-height:100dvh}
  padding:24px 0;
  height:100dvh;
  }
- .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:0.04em}
+ .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:-0.04em}
  .sd-logo em{color:var(--green);font-style:normal}
  .sd-nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
  .sd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:0;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;transition:.15s}
@@ -296,7 +296,7 @@ body{min-height:100dvh}
 .hbk{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hbk.hide{visibility:hidden}
 .htl{flex:1;font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hlogo{font-size:18px;font-weight:800;letter-spacing:0.04em}
+.hlogo{font-size:18px;font-weight:800;letter-spacing:-0.04em}
 .hlogo em{color:var(--green);font-style:normal}
 .hact{display:flex;gap:6px;flex-shrink:0}
 .hico{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--mt);cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -305,7 +305,7 @@ body{min-height:100dvh}
 .awrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 24px 48px}
 .alogo{text-align:center;margin-bottom:36px}
 .amark{width:80px;height:80px;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
-.aname{font-size:26px;font-weight:800;letter-spacing:0.05em}
+.aname{font-size:26px;font-weight:800;letter-spacing:-0.04em}
 .aname em{color:var(--green);font-style:normal}
 .asub{font-size:13px;color:var(--mt);margin-top:5px}
 .atabs{display:flex;background:var(--s2);border:1px solid var(--bd);border-radius:0;padding:4px;margin-bottom:22px}
@@ -494,6 +494,9 @@ body{min-height:100dvh}
  <div class="scrl">
  <div class="awrap">
  <div class="alogo" style="position:relative">
+ <button onclick="toggleTheme()" style="position:absolute;top:0;right:0;background:none;border:1px solid var(--bd2);color:var(--mt);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+ <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="authThemeIcon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
  <div class="amark"><img src="/logo.png" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,230,118,0.3))"></div>
  <div class="aname">Linha<em>Cash</em></div>
  <div class="asub">Análise de props da NBA</div>
@@ -508,6 +511,12 @@ body{min-height:100dvh}
  <div class="afield"><label>Senha</label><input type="password" id="lPass" placeholder="••••••••"/></div>
  <button class="abtn" onclick="doLogin()">Entrar</button>
  <div class="aforgot" onclick="doForgot()">Esqueceu a senha? <em>Recuperar</em></div>
+
+ <div class="adiv">ou</div>
+ <button class="abtn" style="background:var(--s3);color:var(--tx);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none" onclick="doGoogle()">
+  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+  Continuar com Google
+ </button>
  </div>
  <!-- REGISTRO -->
  <div id="fReg" style="display:none">
@@ -965,6 +974,15 @@ function authTab(t){
  document.getElementById('fLogin').style.display=t==='login'?'block':'none';
  document.getElementById('fReg').style.display=t==='reg'?'block':'none';
 }
+
+async function doGoogle(){
+  const {data,error}=await sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo: window.location.origin+'/app.html'}
+  });
+  if(error) toast('Erro ao conectar com Google: '+error.message);
+}
+
 async function doLogin(){
  const e=document.getElementById('lEmail').value.trim();
  const p=document.getElementById('lPass').value;

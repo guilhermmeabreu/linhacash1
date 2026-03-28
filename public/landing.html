@@ -38,7 +38,7 @@ body.light{
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(5,5,5,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
 body.light nav{background:rgba(242,240,235,.97)}
-.logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:18px;font-weight:800;color:var(--tx);letter-spacing:-0.04em;word-spacing:-0.1em}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:18px;font-weight:800;color:var(--tx);letter-spacing:-0.04em}
 .logo img{width:26px;height:26px;object-fit:contain}
 .logo em{color:var(--green);font-style:normal}
 .nav-r{display:flex;align-items:center;gap:10px}
@@ -152,7 +152,7 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
 <body>
 
 <nav>
-  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/><span style="letter-spacing:-0.04em">Linha<em style="letter-spacing:-0.04em">Cash</em></span></a>
+  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/>Linha<em>Cash</em></a>
   <div class="nav-r">
     <button id="tbtn" onclick="toggleTheme()" title="Alternar tema">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -308,19 +308,19 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
 </section>
 
 <footer>
-  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/><span style="letter-spacing:-0.04em">Linha<em style="letter-spacing:-0.04em">Cash</em></span></a>
+  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/>Linha<em>Cash</em></a>
   <div class="fl">
     <a href="/app.html">Entrar</a>
     <a href="#planos">Planos</a>
     <a href="/privacidade">Privacidade</a>
     <a href="/app.html">Termos</a>
-    <a href="mailto:suporte@linhacash.com.br">Contato</a>
+    <a href="/cdn-cgi/l/email-protection#8ffcfaffe0fdfbeacfe3e6e1e7eeeceefce7a1ece0e2a1edfd">Contato</a>
   </div>
   <div class="fc2">© 2026 LinhaCash</div>
   <div class="fd">O LinhaCash é uma plataforma de análise de dados estatísticos da NBA para fins exclusivamente informativos. Não somos uma casa de apostas e não nos responsabilizamos por decisões financeiras tomadas com base nos dados exibidos. Aposte com responsabilidade. Se precisar de ajuda: CVV 188.</div>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var dark = true;
 function toggleTheme() {
   dark = !dark;
@@ -337,10 +337,4 @@ if (localStorage.getItem('lc_theme') === 'light') toggleTheme();
 
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   a.addEventListener('click', function(e) {
-    var target = document.getElementById(a.getAttribute('href').slice(1));
-    if (target) { e.preventDefault(); target.scrollIntoView({behavior:'smooth'}); }
-  });
-});
-</script>
-</body>
-</html>
+    var target = document.getElementById
