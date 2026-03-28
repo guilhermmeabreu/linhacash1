@@ -365,8 +365,15 @@ if (typeof localStorage !== 'undefined' && localStorage.getItem('lc_theme') === 
   <div class="fd">O LinhaCash é uma plataforma de análise de dados estatísticos da NBA para fins exclusivamente informativos. Não somos uma casa de apostas e não nos responsabilizamos por decisões financeiras tomadas com base nos dados exibidos. Aposte com responsabilidade. Se precisar de ajuda: CVV 188.</div>
 </footer>
 
-
-
+<script>
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   a.addEventListener('click', function(e) {
-    var target = document.getElementById
+    e.preventDefault();
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>
