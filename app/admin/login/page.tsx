@@ -46,7 +46,7 @@ export default function AdminLogin() {
         </div>
         {error && <div style={{ fontSize: 12, color: '#ff4d4d', marginBottom: 10 }}>{error}</div>}
         <button onClick={handleLogin} disabled={loading}
-          style={{ width: '100%', padding: 13, background: loading ? '#888' : '#00e676', border: 'none', borderRadius: 0, fontSize: 13, fontWeight: 700, color: '#000', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'Barlow, sans-serif', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Barlow, sans-serif' }}>
+          style={{ width: '100%', padding: 13, background: loading ? '#888' : '#00e676', border: 'none', borderRadius: 0, fontSize: 13, fontWeight: 700, color: '#000', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'Barlow, sans-serif', cursor: loading ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
       </div>
