@@ -110,6 +110,8 @@ async function fetchPlayerStats(playerId: number, apiPlayerId: number) {
     opponent: s.team?.name || '', is_home: true,
     points: s.points || 0, rebounds: s.totReb || 0,
     assists: s.assists || 0, three_pointers: s.tpm || 0,
+    fgm: s.fgm || 0,
+    fga: s.fga || 0,
     minutes: parseInt(s.min) || 0
   }));
   await supabase.from('player_stats').upsert(stats);
@@ -120,10 +122,10 @@ async function calcMetrics(playerId: number) {
     .eq('player_id', playerId).order('game_date', { ascending: false }).limit(20);
   if (!stats || stats.length === 0) return;
   const calc = (arr: number[]) => arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)) : 0;
-  for (const stat of ['points', 'rebounds', 'assists', 'three_pointers']) {
-    const all = stats.map((s: any) => s[stat]);
-    const home = stats.filter((s: any) => s.is_home).map((s: any) => s[stat]);
-    const away = stats.filter((s: any) => !s.is_home).map((s: any) => s[stat]);
+  for (const stat of ['points', 'rebounds', 'assists', 'three_pointers', 'fgm', 'fga']) {
+    const all = stats.map((s: any) => s[stat] || 0);
+    const home = stats.filter((s: any) => s.is_home).map((s: any) => s[stat] || 0);
+    const away = stats.filter((s: any) => !s.is_home).map((s: any) => s[stat] || 0);
     const avg_l5 = calc(all.slice(0, 5)), avg_l10 = calc(all.slice(0, 10));
     const avg_l20 = calc(all), avg_home = calc(home), avg_away = calc(away);
     const line = avg_l10;

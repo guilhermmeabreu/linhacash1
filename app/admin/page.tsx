@@ -3,16 +3,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const S = {
-  bg: { minHeight: '100vh', background: '#000', fontFamily: 'Inter, sans-serif', color: '#fff' },
+  bg: { minHeight: '100vh', background: '#000', fontFamily: 'Barlow, sans-serif', color: '#fff' },
   hdr: { display: 'flex' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, padding: '16px 24px', borderBottom: '1px solid #2a2a2a', background: '#000', position: 'sticky' as const, top: 0, zIndex: 10 },
-  card: { background: '#111', border: '1px solid #2a2a2a', borderRadius: 14, padding: '16px 20px' },
-  btn: { background: '#00e676', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#000', cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
-  btnDanger: { background: 'none', border: '1px solid #ff4d4d', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#ff4d4d', cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
-  btnSec: { background: 'none', border: '1px solid #2a2a2a', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
-  btnInfo: { background: 'none', border: '1px solid #0077ff', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#0077ff', cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
-  input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#fff', fontFamily: 'Inter, sans-serif', outline: 'none' },
+  card: { background: '#111', border: '1px solid #2a2a2a', borderRadius: 0, padding: '16px 20px' },
+  btn: { background: '#00e676', border: 'none', borderRadius: 0, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#000', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' },
+  btnDanger: { background: 'none', border: '1px solid #ff4d4d', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#ff4d4d', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' },
+  btnSec: { background: 'none', border: '1px solid #2a2a2a', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' },
+  btnInfo: { background: 'none', border: '1px solid #0077ff', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#0077ff', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' },
+  input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: 0, padding: '8px 12px', fontSize: 13, color: '#fff', fontFamily: 'Barlow, sans-serif', outline: 'none' },
   label: { fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 5, display: 'block' as const },
-  tag: (c: string) => ({ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: c === 'pro' ? 'rgba(0,230,118,.15)' : '#1a1a1a', color: c === 'pro' ? '#00e676' : '#888', border: `1px solid ${c === 'pro' ? 'rgba(0,230,118,.3)' : '#2a2a2a'}` })
+  tag: (c: string) => ({ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 0, background: c === 'pro' ? 'rgba(0,230,118,.15)' : '#1a1a1a', color: c === 'pro' ? '#00e676' : '#888', border: `1px solid ${c === 'pro' ? 'rgba(0,230,118,.3)' : '#2a2a2a'}` })
 };
 
 interface Profile { id: string; name: string; email: string; plan: string; created_at: string; referral_code_used?: string; }
@@ -179,10 +179,7 @@ export default function AdminPage() {
   return (
     <div style={S.bg}>
       <div style={S.hdr}>
-        <div style={{ fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo.png" style={{ width: 28, height: 28, objectFit: 'contain' }} />
-          Linha<span style={{ color: '#00e676' }}>Cash</span> <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>Admin</span>
-        </div>
+        <div style={{ fontSize: 18, fontWeight: 800 }}>Linha<span style={{ color: '#00e676' }}>Cash</span> <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>Admin</span></div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: '#888' }}>
             {stats ? `${stats.total_users} usuários · ${stats.pro_users} Pro` : ''}
@@ -375,8 +372,8 @@ export default function AdminPage() {
               <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Sync manual</div>
               <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Força o sync de jogos e estatísticas agora, sem esperar o cron das 04h.</div>
               <button onClick={runSync} style={S.btn}>⚡ Rodar sync agora</button>
-              {syncMsg && <div style={{ marginTop: 12, fontSize: 13, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '8px 12px' }}>{syncMsg}</div>}
-              {syncLogs && <pre style={{ marginTop: 10, fontSize: 11, color: '#888', background: '#0a0a0a', borderRadius: 8, padding: 12, overflow: 'auto', maxHeight: 300 }}>{syncLogs}</pre>}
+              {syncMsg && <div style={{ marginTop: 12, fontSize: 13, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 0, padding: '8px 12px' }}>{syncMsg}</div>}
+              {syncLogs && <pre style={{ marginTop: 10, fontSize: 11, color: '#888', background: '#0a0a0a', borderRadius: 0, padding: 12, overflow: 'auto', maxHeight: 300 }}>{syncLogs}</pre>}
             </div>
             <div style={{ ...S.card, marginBottom: 16 }}>
               <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Cron automático</div>
@@ -396,17 +393,17 @@ export default function AdminPage() {
                 Configure um canal de suporte para seus clientes entrarem em contato.
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, padding: 14 }}>
+                <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 0, padding: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>📱 WhatsApp Business</div>
                   <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>Crie um número separado para o negócio. Clientes clicam e abrem direto no WhatsApp.</div>
                   <div style={{ fontSize: 12, color: '#00e676' }}>Em breve — adicione seu número do WhatsApp Business nas configurações</div>
                 </div>
-                <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, padding: 14 }}>
+                <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 0, padding: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>📧 Email de suporte</div>
                   <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>Quando tiver o domínio: suporte@linhacash.com.br</div>
                   <div style={{ fontSize: 12, color: '#00e676' }}>Configure após comprar o domínio linhacash.com.br</div>
                 </div>
-                <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, padding: 14 }}>
+                <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 0, padding: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>📊 Estatísticas de suporte</div>
                   <div style={{ fontSize: 12, color: '#888' }}>Total de chamados, tempo médio de resposta e satisfação dos clientes. Disponível quando integrar um canal.</div>
                 </div>
