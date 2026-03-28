@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const S = {
- bg: { minHeight: '100vh', background: '#000', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', color: '#fff' },
- hdr: { display: 'flex' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, padding: '16px 24px', borderBottom: '1px solid #2a2a2a', background: '#000', position: 'sticky' as const, top: 0, zIndex: 10 },
+ bg: (d:boolean) => ({ minHeight: '100vh', background: d?'#050505':'#f2f0eb', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', color: d?'#f0f0f0':'#111' }),
+ hdr: (d:boolean) => ({ display: 'flex' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, padding: '16px 24px', borderBottom: `1px solid ${d?'#1a1a1a':'#d0cdc7'}`, background: d?'#050505':'#f2f0eb', position: 'sticky' as const, top: 0, zIndex: 10 }),
  card: { background: '#111', border: '1px solid #2a2a2a', borderRadius: 0, padding: '16px 20px' },
  btn: { background: '#00e676', border: 'none', borderRadius: 0, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#000', cursor: 'pointer', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' },
  btnDanger: { background: 'none', border: '1px solid #ff4d4d', borderRadius: 0, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#ff4d4d', cursor: 'pointer', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' },
@@ -35,11 +35,17 @@ export default function AdminPage() {
  const [search, setSearch] = useState('');
  const [planFilter, setPlanFilter] = useState<'all' | 'pro' | 'free'>('all');
  const [selectedRef, setSelectedRef] = useState<string | null>(null);
+ const [darkMode, setDarkMode] = useState(true);
+
+ const toggleTheme = () => {
+   const next = !darkMode;
+   setDarkMode(next);
+   localStorage.setItem('admin_theme', next ? 'dark' : 'light');
+ };
 
  useEffect(() => {
- const token = localStorage.getItem('admin_token');
- if (!token) { router.push('/admin/login'); return; }
- loadAll();
+   const saved = localStorage.getItem('admin_theme');
+   if (saved === 'light') setDarkMode(false);
  }, []);
 
  function getHeaders() {
