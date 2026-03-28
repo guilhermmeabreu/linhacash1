@@ -172,11 +172,11 @@ export default function AdminPage() {
  return (
  <div style={S.card}>
  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Histórico de syncs</div>
- {logs.length === 0 && <div style={{ color: '#888', fontSize: 13 }}>Nenhum sync registrado ainda</div>}
+ {logs.length === 0 && <div style={{ color: d?'#888':'#555', fontSize: 13 }}>Nenhum sync registrado ainda</div>}
  {logs.map((l, i) => (
- <div key={i} style={{ padding: '10px 0', borderBottom: i < logs.length - 1 ? '1px solid #2a2a2a' : 'none' }}>
+ <div key={i} style={{ padding: '10px 0', borderBottom: i < logs.length - 1 ? `1px solid ${d?'#2a2a2a':'#cac7c0'}` : 'none' }}>
  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
- <span style={{ fontSize: 13, fontWeight: 600, color: l.status === 'success' ? '#00e676' : l.status === 'error' ? '#ff4d4d' : '#888' }}>
+ <span style={{ fontSize: 13, fontWeight: 600, color: l.status === 'success' ? (d?'#00e676':'#00955a') : l.status === 'error' ? '#ff4d4d' : (d?'#888':'#555') }}>
  {l.status === 'success' ? '' : l.status === 'error' ? '' : ''} {l.status}
  </span>
  <span style={{ fontSize: 11, color: '#888' }}>{new Date(l.created_at).toLocaleString('pt-BR')}</span>
@@ -189,9 +189,9 @@ export default function AdminPage() {
  }
 
  return (
- <div style={S.bg(darkMode)}>
- <div style={S.hdr(darkMode)}>
- <div style={{ fontSize: 18, fontWeight: 800 }}>Linha<span style={{ color: '#00e676' }}>Cash</span> <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>Admin</span></div>
+ <div style={S.bg}>
+ <div style={S.hdr}>
+ <div style={{ fontSize: 18, fontWeight: 800 }}>Linha<span style={{ color: d?'#00e676':'#00b359' }}>Cash</span> <span style={{ fontSize: 13, color: d?'#888':'#666', fontWeight: 400 }}>Admin</span></div>
  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
  <span style={{ fontSize: 12, color: '#888' }}>
  {stats ? `${stats.total_users} usuários · ${stats.pro_users} Pro` : ''}
@@ -207,7 +207,7 @@ export default function AdminPage() {
  </div>
 
  {/* Tabs */}
- <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #2a2a2a', padding: '0 24px', overflowX: 'auto' }}>
+ <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${d?'#2a2a2a':'#cac7c0'}`, padding: '0 24px', overflowX: 'auto' }}>
  {([
  { k: 'dashboard', l: 'Dashboard' },
  { k: 'users', l: 'Usuários' },
@@ -216,24 +216,24 @@ export default function AdminPage() {
  { k: 'support', l: 'Suporte' }
  ] as const).map(t => (
  <div key={t.k} onClick={() => setTab(t.k)}
- style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: tab === t.k ? '#00e676' : '#888', borderBottom: tab === t.k ? '2px solid #00e676' : '2px solid transparent', whiteSpace: 'nowrap' }}>
+ style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: tab === t.k ? (d?'#00e676':'#00955a') : (d?'#888':'#555'), borderBottom: tab === t.k ? `2px solid ${d?'#00e676':'#00955a'}` : '2px solid transparent', whiteSpace: 'nowrap' }}>
  {t.l}
  </div>
  ))}
  </div>
 
  <div style={{ padding: 24 }}>
- {loading && <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Carregando...</div>}
+ {loading && <div style={{ color: d?'#888':'#555', textAlign: 'center', padding: 40 }}>Carregando...</div>}
 
  {/* DASHBOARD */}
  {!loading && tab === 'dashboard' && stats && (
  <div>
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
  {[
- { lbl: 'Total usuários', val: stats.total_users, color: '#fff' },
+ { lbl: 'Total usuários', val: stats.total_users, color: d?'#fff':'#111' },
  { lbl: 'Plano Pro', val: stats.pro_users, color: '#00e676' },
- { lbl: 'Plano Free', val: stats.free_users, color: '#888' },
- { lbl: 'Jogos no banco', val: stats.total_games, color: '#fff' },
+ { lbl: 'Plano Free', val: stats.free_users, color: d?'#888':'#555' },
+ { lbl: 'Jogos no banco', val: stats.total_games, color: d?'#fff':'#111' },
  { lbl: 'Jogadores', val: stats.total_players, color: '#fff' },
  ].map(m => (
  <div key={m.lbl} style={S.card}>

@@ -38,8 +38,9 @@ body.light{
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(5,5,5,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);transition:background .3s}
 body.light nav{background:rgba(245,243,239,.97)}
-.logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:18px;font-weight:800;color:var(--tx);letter-spacing:-0.06em}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--tx)}
 .logo img{width:26px;height:26px;object-fit:contain}
+.logo-txt{font-size:18px;font-weight:800;letter-spacing:-0.06em;line-height:1}
 .logo em{color:var(--green);font-style:normal}
 .nav-r{display:flex;align-items:center;gap:10px}
 #tbtn{background:none;border:1px solid var(--bd2);color:var(--mt);width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .15s,color .15s}
@@ -70,7 +71,7 @@ body.light nav{background:rgba(245,243,239,.97)}
 .sl{font-size:12px;color:var(--mt);margin-top:4px;letter-spacing:.03em}
 
 /* SECTIONS */
-.sec{padding:80px 24px}
+.sec{padding:96px 24px}
 .sec.alt{background:var(--s1)}
 .cont{max-width:960px;margin:0 auto}
 .stag{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:14px}
@@ -104,7 +105,7 @@ body.light nav{background:rgba(245,243,239,.97)}
 
 /* PLANS */
 .pg{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd)}
-.plan{background:var(--s1);padding:32px}
+.plan{background:var(--s1);padding:36px 32px}
 .plan.pro{background:var(--s2);border-top:3px solid var(--green)}
 .pnm{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mt);margin-bottom:8px}
 .plan.pro .pnm{color:var(--green)}
@@ -148,11 +149,55 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
   .plan.pro{border-top:3px solid var(--green)}
 }
 </style>
+<script>
+var dark = true;
+function toggleTheme() {
+  dark = !dark;
+  var body = document.body;
+  if (!dark) {
+    body.classList.add('light');
+    var r = document.documentElement.style;
+    r.setProperty('--bg','#f5f3ef');
+    r.setProperty('--s1','#edeae4');
+    r.setProperty('--s2','#fdfcfa');
+    r.setProperty('--bd','#c8c5be');
+    r.setProperty('--bd2','#b0ada6');
+    r.setProperty('--tx','#0a0a0a');
+    r.setProperty('--mt','#444');
+    r.setProperty('--green','#00b359');
+    r.setProperty('--gdim','rgba(0,179,89,.1)');
+    var nav = document.querySelector('nav');
+    if (nav) nav.style.background = 'rgba(245,243,239,.97)';
+  } else {
+    body.classList.remove('light');
+    var r = document.documentElement.style;
+    r.setProperty('--bg','#050505');
+    r.setProperty('--s1','#0a0a0a');
+    r.setProperty('--s2','#111');
+    r.setProperty('--bd','#1a1a1a');
+    r.setProperty('--bd2','#2a2a2a');
+    r.setProperty('--tx','#f0f0f0');
+    r.setProperty('--mt','#777');
+    r.setProperty('--green','#00e676');
+    r.setProperty('--gdim','rgba(0,230,118,.08)');
+    var nav = document.querySelector('nav');
+    if (nav) nav.style.background = 'rgba(5,5,5,.95)';
+  }
+  var btn = document.getElementById('tbtn');
+  if (btn) btn.innerHTML = dark
+    ? '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+    : '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  localStorage.setItem('lc_theme', dark ? 'dark' : 'light');
+}
+if (typeof localStorage !== 'undefined' && localStorage.getItem('lc_theme') === 'light') {
+  document.addEventListener('DOMContentLoaded', function(){ toggleTheme(); });
+}
+</script>
 </head>
 <body>
 
 <nav>
-  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/>Linha<em>Cash</em></a>
+  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/><span class="logo-txt">Linha<em>Cash</em></span></a>
   <div class="nav-r">
     <button id="tbtn" onclick="toggleTheme()" title="Alternar tema">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -277,7 +322,6 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
           <li class="off">Todos os jogadores</li>
           <li class="off">Todas as estatísticas</li>
           <li class="off">Score de confiança</li>
-          <li class="off">H2H vs adversário</li>
         </ul>
         <a href="/app.html" class="pb fr">Começar grátis</a>
       </div>
@@ -293,7 +337,6 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
           <li class="on">H2H vs adversário</li>
           <li class="on">Médias L5/L10/L20/L30</li>
           <li class="on">Gráfico jogo a jogo</li>
-          <li class="on">Alertas de lesão</li>
         </ul>
         <a href="/app.html" class="pb pr">Assinar Pro</a>
       </div>
@@ -308,7 +351,7 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
 </section>
 
 <footer>
-  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/>Linha<em>Cash</em></a>
+  <a href="/landing.html" class="logo"><img src="/logo.png" alt=""/><span class="logo-txt">Linha<em>Cash</em></span></a>
   <div class="fl">
     <a href="/app.html">Entrar</a>
     <a href="#planos">Planos</a>
@@ -320,42 +363,7 @@ footer{border-top:1px solid var(--bd);padding:32px;display:flex;align-items:cent
   <div class="fd">O LinhaCash é uma plataforma de análise de dados estatísticos da NBA para fins exclusivamente informativos. Não somos uma casa de apostas e não nos responsabilizamos por decisões financeiras tomadas com base nos dados exibidos. Aposte com responsabilidade. Se precisar de ajuda: CVV 188.</div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-var dark = true;
-function toggleTheme() {
-  dark = !dark;
-  document.body.classList.toggle('light', !dark);
-  var r = document.documentElement.style;
-  if (!dark) {
-    r.setProperty('--bg','#f5f3ef');
-    r.setProperty('--s1','#edeae4');
-    r.setProperty('--s2','#fdfcfa');
-    r.setProperty('--bd','#c8c5be');
-    r.setProperty('--bd2','#b0ada6');
-    r.setProperty('--tx','#0a0a0a');
-    r.setProperty('--mt','#444');
-    r.setProperty('--green','#00b359');
-    r.setProperty('--gdim','rgba(0,179,89,.1)');
-    document.querySelector('nav').style.background = 'rgba(245,243,239,.97)';
-  } else {
-    r.setProperty('--bg','#050505');
-    r.setProperty('--s1','#0a0a0a');
-    r.setProperty('--s2','#111');
-    r.setProperty('--bd','#1a1a1a');
-    r.setProperty('--bd2','#2a2a2a');
-    r.setProperty('--tx','#f0f0f0');
-    r.setProperty('--mt','#777');
-    r.setProperty('--green','#00e676');
-    r.setProperty('--gdim','rgba(0,230,118,.08)');
-    document.querySelector('nav').style.background = 'rgba(5,5,5,.95)';
-  }
-  var btn = document.getElementById('tbtn');
-  btn.innerHTML = dark
-    ? '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
-    : '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-  localStorage.setItem('lc_theme', dark ? 'dark' : 'light');
-}
-if (localStorage.getItem('lc_theme') === 'light') toggleTheme();
+
 
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   a.addEventListener('click', function(e) {
