@@ -371,12 +371,12 @@ body{min-height:100dvh}
 .glock{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mt)}
 .gteams{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 14px}
 .tside{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
-.tcirc{width:54px;height:54px;border-radius:0;display:flex;align-items:center;justify-content:center;font-family:'SF Mono','Fira Code','Fira Mono','Roboto Mono',monospace;font-size:13px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.08)}
+.tcirc{width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--tx);background:transparent;border:none}
 .tabbr{font-size:15px;font-weight:800}
 
 
-.gvs-wrap{display:flex;align-items:center;justify-content:center;width:44px;flex-shrink:0}
-.gvs-logo{width:32px;height:32px;object-fit:contain;opacity:.7}
+.gvs-wrap{display:flex;align-items:center;justify-content:center;width:36px;flex-shrink:0}
+.gvs-x{font-size:13px;font-weight:700;color:var(--mt);letter-spacing:0.05em}
 
 .gfoot{display:flex;align-items:center;padding:9px 16px;background:var(--s3);border-top:1px solid var(--bd);font-size:11px;color:var(--mt);font-weight:500;letter-spacing:0.02em}
 
@@ -1117,18 +1117,18 @@ async function renderGames(){
  const hc=getClr(g.home_team),ac=getClr(g.away_team);
  const time=new Date(g.game_time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  const awayIni=ini(g.away_team),homeIni=ini(g.home_team);
- const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:36px;height:36px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
- const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:36px;height:36px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+ const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:56px;height:56px;object-fit:contain;background:transparent" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+ const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:56px;height:56px;object-fit:contain;background:transparent" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
  return `<div class="gcard" onclick="openGame(${g.id})">
  <div class="gctop"><span class="gtime">${time}</span></div>
  <div class="gteams">
  <div class="tside">
- <div class="tcirc" style="background:linear-gradient(135deg,${ac}dd,${ac}77);overflow:hidden">${awayImg}<span style="display:${g.away_logo?'none':'flex'};width:100%;height:100%;align-items:center;justify-content:center">${awayIni}</span></div>
+ <div class="tcirc">${awayImg}<span style="display:${g.away_logo?'none':'flex'}">${awayIni}</span></div>
  <div class="tabbr">${g.away_team.split(' ').slice(-1)[0]}</div>
  </div>
- <div class="gvs-wrap"><img class="gvs-logo" src="/logo.png" alt=""/></div>
+ <div class="gvs-wrap"><span class="gvs-x">X</span></div>
  <div class="tside">
- <div class="tcirc" style="background:linear-gradient(135deg,${hc}dd,${hc}77);overflow:hidden">${homeImg}<span style="display:${g.home_logo?'none':'flex'};width:100%;height:100%;align-items:center;justify-content:center">${homeIni}</span></div>
+ <div class="tcirc">${homeImg}<span style="display:${g.home_logo?'none':'flex'}">${homeIni}</span></div>
  <div class="tabbr">${g.home_team.split(' ').slice(-1)[0]}</div>
  </div>
  </div>
@@ -1143,7 +1143,7 @@ async function renderGames(){
  <div class="gctop"><span class="gtime" style="background:var(--s4);border-color:var(--bd);color:var(--mt)">${time}</span><span class="glock"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pro</span></div>
  <div class="gteams">
  <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${ac}44,${ac}22)">${awayIni}</div><div class="tabbr">${awayIni}</div><div class="tcity">${g.away_team.split(' ').slice(-1)[0]}</div></div>
- <div class="gvs-wrap"><img class="gvs-logo" src="/logo.png" alt=""/></div>
+ <div class="gvs-wrap"><span class="gvs-x">X</span></div>
  <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${hc}44,${hc}22)">${homeIni}</div><div class="tabbr">${homeIni}</div><div class="tcity">${g.home_team.split(' ').slice(-1)[0]}</div></div>
  </div>
  </div>`;
