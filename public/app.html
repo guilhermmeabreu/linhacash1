@@ -40,7 +40,7 @@ html, body { font-family: var(--font-body); letter-spacing: 0.01em; }
 .sd-logo, .hlogo, .aname {
   font-family: var(--font-display) !important;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.04em;
   font-size: 22px;
 }
 
@@ -159,7 +159,7 @@ html, body { font-family: var(--font-body); letter-spacing: 0.01em; }
 h1, h2, h3, .henm, .aname {
   font-family: var(--font-display) !important;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
 }
 
 /* Heading de seção */
@@ -193,9 +193,9 @@ h1, h2, h3, .henm, .aname {
 :root{
   --bg:#000;--s1:#0a0a0a;--s2:#111;--s3:#1a1a1a;--s4:#222;
   --bd:#2a2a2a;--bd2:#333;--tx:#fff;--mt:#888;--mt2:#555;
-  --green:#00e676;--gdim:rgba(0,230,118,.12);
-  --red:#ff1744;--rdim:rgba(255,23,68,.12);
-  --amber:#ffab00;
+  --green:#00c853;--gdim:rgba(0,200,83,.12);
+  --red:#d32f2f;--rdim:rgba(211,47,47,.1);
+  --amber:#f57f17;
 }
 html,body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;height:100%}
 body{min-height:100dvh}
@@ -216,7 +216,7 @@ body{min-height:100dvh}
     padding:24px 0;
     height:100dvh;
   }
-  .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:-.3px}
+  .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:0.04em}
   .sd-logo em{color:var(--green);font-style:normal}
   .sd-nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
   .sd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:0;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;transition:.15s}
@@ -296,7 +296,7 @@ body{min-height:100dvh}
 .hbk{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hbk.hide{visibility:hidden}
 .htl{flex:1;font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hlogo{font-size:18px;font-weight:800}
+.hlogo{font-size:18px;font-weight:800;letter-spacing:0.04em}
 .hlogo em{color:var(--green);font-style:normal}
 .hact{display:flex;gap:6px;flex-shrink:0}
 .hico{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--mt);cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -305,7 +305,7 @@ body{min-height:100dvh}
 .awrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 24px 48px}
 .alogo{text-align:center;margin-bottom:36px}
 .amark{width:80px;height:80px;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
-.aname{font-size:26px;font-weight:800;letter-spacing:-.4px}
+.aname{font-size:26px;font-weight:800;letter-spacing:0.05em}
 .aname em{color:var(--green);font-style:normal}
 .asub{font-size:13px;color:var(--mt);margin-top:5px}
 .atabs{display:flex;background:var(--s2);border:1px solid var(--bd);border-radius:0;padding:4px;margin-bottom:22px}
@@ -1496,11 +1496,23 @@ function toggleTheme(){
     :'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
   const v=dark
     ?{bg:'#000',s1:'#0a0a0a',s2:'#111',s3:'#1a1a1a',s4:'#222',bd:'#2a2a2a',bd2:'#333',tx:'#fff',mt:'#888',mt2:'#555'}
-    :{bg:'#f5f5f7',s1:'#ebebed',s2:'#fff',s3:'#f0f0f2',s4:'#e5e5e7',bd:'#e0e0e2',bd2:'#d0d0d2',tx:'#0a0a0a',mt:'#666',mt2:'#999'};
+    :{bg:'#f2f0eb',s1:'#e8e6e0',s2:'#faf9f6',s3:'#ede9e2',s4:'#dddbd5',bd:'#c8c5be',bd2:'#b0ada6',tx:'#111',mt:'#555',mt2:'#888'};
   const r=document.documentElement.style;
   r.setProperty('--bg',v.bg);r.setProperty('--s1',v.s1);r.setProperty('--s2',v.s2);
   r.setProperty('--s3',v.s3);r.setProperty('--s4',v.s4);r.setProperty('--bd',v.bd);
   r.setProperty('--bd2',v.bd2);r.setProperty('--tx',v.tx);r.setProperty('--mt',v.mt);r.setProperty('--mt2',v.mt2);
+  // Ajusta verde e cores para legibilidade no light mode
+  if(dark){
+    r.setProperty('--green','#00e676');
+    r.setProperty('--gdim','rgba(0,230,118,.12)');
+    r.setProperty('--red','#ff1744');
+    r.setProperty('--rdim','rgba(255,23,68,.12)');
+  } else {
+    r.setProperty('--green','#00897b');
+    r.setProperty('--gdim','rgba(0,137,123,.1)');
+    r.setProperty('--red','#c62828');
+    r.setProperty('--rdim','rgba(198,40,40,.08)');
+  }
   if(stack[stack.length-1]==='s4')renderProf();
 }
 

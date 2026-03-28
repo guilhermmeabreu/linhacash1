@@ -35,7 +35,7 @@ async function fetchGames() {
   const nowBR = new Date(now.getTime() + brOffset);
 
   // Se for antes das 15h BRT, os jogos são do "dia anterior" (os tardios de ontem)
-  // Janela: 15:00 BRT de hoje até 02:30 BRT de amanhã
+  // Janela: 00:00 BRT de hoje até 02:30 BRT de amanhã
   let brDate = nowBR.toISOString().split('T')[0];
   const hourBR = nowBR.getUTCHours();
   // Se for madrugada (00:00-02:30 BRT), os jogos pertencem ao dia anterior BR
@@ -44,8 +44,8 @@ async function fetchGames() {
     brDate = yesterday.toISOString().split('T')[0];
   }
 
-  // Janela: 15:00 BRT até 02:30 BRT do dia seguinte
-  const windowStart = new Date(brDate + 'T15:00:00-03:00').getTime();
+  // Janela: 00:00 BRT até 02:30 BRT do dia seguinte — cobre jogos de qualquer horário
+  const windowStart = new Date(brDate + 'T00:00:00-03:00').getTime();
   const windowEnd = new Date(brDate + 'T26:30:00-03:00').getTime();
 
   // Busca 3 dias UTC para cobertura total
@@ -55,7 +55,7 @@ async function fetchGames() {
     new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0]
   ];
 
-  log(`Buscando jogos para ${brDate} BRT (janela 15h até 02:30h)`);
+  log(`Buscando jogos para ${brDate} BRT (janela 00h até 02:30h)`);
 
   const results = await Promise.all(dates.map((d: string) => apiGet(`/games?date=${d}`)));
   const allGames = results.flatMap((r: any) => r.response || []);
