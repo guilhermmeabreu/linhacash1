@@ -33,29 +33,17 @@ async function fetchGames() {
   const now = new Date();
   const brOffset = -3 * 60 * 60 * 1000;
   const nowBR = new Date(now.getTime() + brOffset);
+  const brDate = nowBR.toISOString().split('T')[0];
 
-  // Se for antes das 15h BRT, os jogos são do "dia anterior" (os tardios de ontem)
-  // Janela: 00:00 BRT de hoje até 02:30 BRT de amanhã
-  let brDate = nowBR.toISOString().split('T')[0];
-  const hourBR = nowBR.getUTCHours();
-  // Se for madrugada (00:00-02:30 BRT), os jogos pertencem ao dia anterior BR
-  if (hourBR < 3) {
-    const yesterday = new Date(nowBR.getTime() - 24*60*60*1000);
-    brDate = yesterday.toISOString().split('T')[0];
-  }
-
-  // Janela: 00:00 BRT até 02:30 BRT do dia seguinte — cobre jogos de qualquer horário
-  const windowStart = new Date(brDate + 'T00:00:00-03:00').getTime();
-  const windowEnd = new Date(brDate + 'T26:30:00-03:00').getTime();
-
-  // Busca 3 dias UTC para cobertura total
+  // Busca 3 dias UTC para garantir cobertura total
+  // (jogos de 21h BRT aparecem como dia seguinte na API UTC)
   const dates = [
     new Date(now.getTime() - 24*60*60*1000).toISOString().split('T')[0],
     now.toISOString().split('T')[0],
     new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0]
   ];
 
-  log(`Buscando jogos para ${brDate} BRT (janela 00h até 02:30h)`);
+  log(`Buscando jogos para ${brDate} BRT (buscando datas UTC: ${dates.join(', ')})`);
 
   const results = await Promise.all(dates.map((d: string) => apiGet(`/games?date=${d}`)));
   const allGames = results.flatMap((r: any) => r.response || []);
@@ -68,12 +56,25 @@ async function fetchGames() {
     return true;
   });
 
+  // Filtra jogos cujo horário BRT cai no dia correto
+  // Ex: 00:00 UTC = 21:00 BRT do dia anterior
   const filtered = unique.filter((g: any) => {
-    const t = new Date(g.date.start).getTime();
-    return t >= windowStart && t <= windowEnd;
+    const gameTimeBR = new Date(new Date(g.date.start).getTime() + brOffset);
+    const gameDateBR = gameTimeBR.toISOString().split('T')[0];
+    return gameDateBR === brDate;
   });
 
-  if (filtered.length === 0) { log('Nenhum jogo na janela de hoje (BR).'); return []; }
+  log(`Encontrados ${unique.length} jogos no total, ${filtered.length} são do dia ${brDate} BRT`);
+
+  // Log detalhado para debug
+  unique.slice(0, 5).forEach((g: any) => {
+    const gameTimeBR = new Date(new Date(g.date.start).getTime() + brOffset);
+    const gameDateBR = gameTimeBR.toISOString().split('T')[0];
+    const gameHourBR = gameTimeBR.toISOString().slice(11, 16);
+    log(`  Jogo: ${g.teams.home.name} vs ${g.teams.visitors.name} | UTC: ${g.date.start} | BRT: ${gameDateBR} ${gameHourBR} | Match: ${gameDateBR === brDate}`);
+  });
+
+  if (filtered.length === 0) { log('Nenhum jogo hoje (BR).'); return []; }
 
   const games = filtered.map((g: any) => ({
     game_date: brDate,
