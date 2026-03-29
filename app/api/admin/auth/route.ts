@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   const { email, password } = await req.json();
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL!;
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+  if (!ADMIN_PASSWORD) return NextResponse.json({ error: 'Servidor mal configurado' }, { status: 500 });
 
   if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
     return NextResponse.json({ ok: false }, { status: 401 });

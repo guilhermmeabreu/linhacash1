@@ -9,7 +9,10 @@ const supabase = createClient(
 );
 
 function verifyMPSignature(req: Request): boolean {
-  if (!process.env.MP_WEBHOOK_SECRET) return true;
+  if (!process.env.MP_WEBHOOK_SECRET) {
+    console.error('[WEBHOOK] MP_WEBHOOK_SECRET não configurado — rejeitando');
+    return false;
+  }
   const signature = req.headers.get('x-signature') || '';
   const requestId = req.headers.get('x-request-id') || '';
   const parts = signature.split(',');
