@@ -1780,30 +1780,63 @@ const urlParams=new URLSearchParams(window.location.search);
 
 // Verificar sessão existente
 (async function checkSession(){
- if(data.session?.user){
- supabaseUser=data.session.user;
- uEmail=data.session.user.email||'';
- uName=uEmail.split('@')[0];
- // perfil já carregado via /api/auth acima
- const prof = sessData?.user || null;
- if(prof){uName=prof.name||uName;plan=prof.plan||'free';}
- // Se voltou de pagamento aprovado, atualiza para Pro
+ // Capturar token OAuth do hash da URL (Google redirect)
+ const hashParams = new URLSearchParams(window.location.hash.slice(1));
+ const oauthToken = hashParams.get('access_token');
+ if(oauthToken){
+   // Limpar hash da URL sem reload
+   history.replaceState(null,'',window.location.pathname + window.location.search);
+   localStorage.setItem('lc_token', oauthToken);
+   authToken = oauthToken;
+   const sessData = await api('/api/auth');
+   if(sessData && !sessData.error){
+     const prof = sessData.user;
+     supabaseUser = { id: prof.id };
+     uEmail = prof.email || '';
+     uName = prof.name || uEmail.split('@')[0];
+     plan = prof.plan || 'free';
+     if(prof.theme){ const sd=prof.theme==='dark'; if(sd!==dark)toggleTheme(); }
+     enterApp();
+     updateSidebar();
+     return;
+   }
+ }
+
+ const savedToken = localStorage.getItem('lc_token');
+ if(!savedToken){
+   if(urlParams.get('status')==='success'){
+     show('sAuth',false);
+     setTimeout(()=>toast('Pagamento aprovado! Faça login para acessar o Pro 🏆'),500);
+   } else {
+     show('sAuth',false);
+   }
+   updateSidebar();
+   return;
+ }
+ // Verificar sessão via /api/auth
+ authToken = savedToken;
+ const sessData = await api('/api/auth');
+ if(!sessData || sessData.error){
+   // Token expirado ou inválido
+   localStorage.removeItem('lc_token');
+   authToken = null;
+   show('sAuth',false);
+   updateSidebar();
+   return;
+ }
+ const prof = sessData.user;
+ supabaseUser = { id: prof.id };
+ uEmail = prof.email || '';
+ uName = prof.name || uEmail.split('@')[0];
+ plan = prof.plan || 'free';
+ if(prof.theme){ const sd=prof.theme==='dark'; if(sd!==dark)toggleTheme(); }
  if(urlParams.get('status')==='success'){
- // Plano atualizado via webhook — verificar sessão
- plan='pro';
- setTimeout(()=>toast('Pagamento aprovado! Bem-vindo ao Pro '),500);
+   plan='pro';
+   setTimeout(()=>toast('Pagamento aprovado! Bem-vindo ao Pro 🏆'),500);
  }
  enterApp();
- } else {
- if(urlParams.get('status')==='success'){
- show('sAuth',false);
- setTimeout(()=>toast('Pagamento aprovado! Faça login para acessar o Pro '),500);
- } else {
- show('sAuth',false);
- }
- }
  updateSidebar();
-});
+})();
 
 // PWA: Service Worker 
 // Desregistra qualquer SW antigo que possa estar cacheando versões antigas
