@@ -970,6 +970,41 @@ const CLR={
 };
 function getClr(t){return CLR[t]||'#2a2a2a';}
 
+// ═══ API CLIENT — Frontend nunca fala com banco diretamente ═════════════════
+let authToken = null;
+
+function getHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (authToken) h['Authorization'] = 'Bearer ' + authToken;
+  return h;
+}
+
+async function api(path, opts) {
+  opts = opts || {};
+  try {
+    const res = await fetch(path, {
+      ...opts,
+      headers: { ...getHeaders(), ...(opts.headers || {}) }
+    });
+    if (res.status === 401) {
+      authToken = null;
+      localStorage.removeItem('lc_token');
+      toast('Sessão expirada. Faça login novamente.');
+      setTimeout(function(){ supabaseUser=null; show('sAuth',false); }, 1500);
+      return null;
+    }
+    return await res.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+// Suprimir logs em produção
+if (location.hostname !== 'localhost') {
+  console.log = function(){};
+  console.debug = function(){};
+}
+
 // STATE 
 let GAMES=[],PBG={},METRICS={};
 let cGame=null,cPlayer=null,cStat='PTS',cPeriod='L10',cLine=null;
