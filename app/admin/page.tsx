@@ -42,28 +42,24 @@ export default function AdminPage() {
  }, []);
 
  useEffect(() => {
-   const token = localStorage.getItem('admin_token');
-   if (!token) { router.push('/admin/login'); return; }
    loadAll();
  }, []);
 
  function getHeaders() {
- const token = localStorage.getItem('admin_token') || '';
- return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+ return { 'Content-Type': 'application/json' };
  }
 
  async function loadAll() {
  setLoading(true);
  try {
- const headers = { 'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}` };
  const [statsRes, usersRes, refRes, refUsesRes] = await Promise.all([
- fetch('/api/admin/stats', { headers }),
- fetch('/api/admin/users', { headers }),
- fetch('/api/admin/referrals', { headers }),
- fetch('/api/admin/referral-uses', { headers })
+ fetch('/api/admin/stats'),
+ fetch('/api/admin/users'),
+ fetch('/api/admin/referrals'),
+ fetch('/api/admin/referral-uses')
  ]);
  const [s, u, r, ru] = await Promise.all([statsRes.json(), usersRes.json(), refRes.json(), refUsesRes.json()]);
- if (s?.error === 'Unauthorized') { localStorage.removeItem('admin_token'); router.push('/admin/login'); return; }
+ if (statsRes.status === 401) { router.push('/admin/login'); return; }
  if (s && !s.error) setStats(s);
  if (Array.isArray(u)) setUsers(u);
  if (Array.isArray(r)) setReferrals(r);
@@ -143,7 +139,7 @@ export default function AdminPage() {
  }
 
  async function logout() {
- localStorage.removeItem('admin_token'); localStorage.removeItem('admin_email');
+ await fetch('/api/admin/auth', { method: 'DELETE' });
  router.push('/admin/login');
  }
 
@@ -158,8 +154,7 @@ export default function AdminPage() {
  function SyncHistory({ dark }: { dark: boolean }) {
  const [logs, setLogs] = useState<any[]>([]);
  useEffect(() => {
- const token = localStorage.getItem('admin_token') || '';
- fetch('/api/admin/sync-logs', { headers: { 'Authorization': `Bearer ${token}` } })
+ fetch('/api/admin/sync-logs')
  .then(r => r.json()).then(d => { if (Array.isArray(d)) setLogs(d); });
  }, []);
  const cardStyle = { background: dark?'#0f0f0f':'#fdfcfa', border: `1px solid ${dark?'#1e1e1e':'#cac7c0'}`, borderLeft: `3px solid ${dark?'#00e676':'#00b359'}`, borderRadius: 0, padding: '16px 20px' };

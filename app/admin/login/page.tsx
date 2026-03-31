@@ -19,9 +19,7 @@ export default function AdminLogin() {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    if (data.ok && data.token) {
-      localStorage.setItem('admin_token', data.token);
-      localStorage.setItem('admin_email', data.email);
+    if (data.ok) {
       window.location.href = '/admin';
     } else {
       setError('Email ou senha incorretos.');

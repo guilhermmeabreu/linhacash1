@@ -1,38 +1,67 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdminUser } from '@/lib/auth/authorization';
+import { AppError } from '@/lib/http/errors';
+import { fail, internalError, options } from '@/lib/http/responses';
+import { asNumber, asString, ensureObject } from '@/lib/validators/common';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
-function checkAuth(req: Request) {
-  const auth = req.headers.get('authorization') || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token) return false;
-  try { const email = Buffer.from(token, 'base64').toString('utf-8').split(':')[0]; return email === process.env.ADMIN_EMAIL; } catch { return false; }
-}
-
 export async function GET(req: Request) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data } = await supabase.from('referral_codes').select('*').order('uses', { ascending: false });
-  return NextResponse.json(data || []);
+  const origin = req.headers.get('origin') || undefined;
+  try {
+    await requireAdminUser(req);
+    const { data } = await supabase.from('referral_codes').select('*').order('uses', { ascending: false });
+    return NextResponse.json(data || []);
+  } catch (error) {
+    if (error instanceof AppError) return fail(error, origin);
+    return internalError(origin);
+  }
 }
 
 export async function POST(req: Request) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { code, influencer_name } = await req.json();
-  await supabase.from('referral_codes').insert({ code, influencer_name, uses: 0, commission_pct: 25, active: true });
-  return NextResponse.json({ ok: true });
+  const origin = req.headers.get('origin') || undefined;
+  try {
+    await requireAdminUser(req);
+    const body = ensureObject(await req.json());
+    const code = asString(body.code, 'code', 20).toUpperCase();
+    const influencer_name = asString(body.influencer_name, 'influencer_name', 120);
+    await supabase.from('referral_codes').insert({ code, influencer_name, uses: 0, commission_pct: 25, active: true });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof AppError) return fail(error, origin);
+    return internalError(origin);
+  }
 }
 
 export async function PATCH(req: Request) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { id, active } = await req.json();
-  await supabase.from('referral_codes').update({ active }).eq('id', id);
-  return NextResponse.json({ ok: true });
+  const origin = req.headers.get('origin') || undefined;
+  try {
+    await requireAdminUser(req);
+    const body = ensureObject(await req.json());
+    const id = asNumber(body.id, 'id');
+    await supabase.from('referral_codes').update({ active: !!body.active }).eq('id', id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof AppError) return fail(error, origin);
+    return internalError(origin);
+  }
 }
 
 export async function DELETE(req: Request) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { id } = await req.json();
-  await supabase.from('referral_codes').delete().eq('id', id);
-  return NextResponse.json({ ok: true });
+  const origin = req.headers.get('origin') || undefined;
+  try {
+    await requireAdminUser(req);
+    const body = ensureObject(await req.json());
+    const id = asNumber(body.id, 'id');
+    await supabase.from('referral_codes').delete().eq('id', id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof AppError) return fail(error, origin);
+    return internalError(origin);
+  }
+}
+
+export async function OPTIONS(req: Request) {
+  return options(req.headers.get('origin') || undefined);
 }

@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import https from 'https';
+import { requireCronRequest } from '@/lib/auth/authorization';
+import { AppError } from '@/lib/http/errors';
+import { fail, options } from '@/lib/http/responses';
+import { getIP, rateLimit } from '@/lib/rate-limit';
+import { auditLog } from '@/lib/services/audit-log-service';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -146,17 +151,27 @@ async function saveLog(status: string, games: number, errors: string[]) {
   } catch (e) { console.error('Erro ao salvar log:', e); }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const origin = req.headers.get('origin') || undefined;
+  const startedAt = Date.now();
   logs.length = 0;
   const errors: string[] = [];
   let gamesCount = 0;
 
   try {
+    if (!(await rateLimit(`sync:${getIP(req)}`, 10, 60_000))) {
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many sync requests'), origin);
+    }
+
+    const auth = await requireCronRequest(req);
+    console.info('[SYNC]', JSON.stringify({ event: 'start', origin: auth.origin }));
+
     log('=== LinhaCash Sync Iniciado ===');
     const games = await fetchGames();
     gamesCount = games.length;
     if (games.length === 0) {
       await saveLog('no_games', 0, []);
+      await auditLog('sync_execution', { origin: auth.origin, status: 'no_games', durationMs: Date.now() - startedAt });
       return NextResponse.json({ message: 'Nenhum jogo hoje', logs });
     }
 
@@ -175,27 +190,21 @@ export async function GET() {
       } catch (e: any) { errors.push(`Time ${teamId}: ${e.message}`); }
     }
 
-    log('=== Sync Completo! ===');
     await saveLog('success', gamesCount, errors);
-
-    // Notifica admin se houve erros
-    if (errors.length > 0 && process.env.RESEND_API_KEY) {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: 'LinhaCash Sistema <onboarding@resend.dev>',
-          to: process.env.ADMIN_EMAIL,
-          subject: `⚠️ Sync com ${errors.length} erros`,
-          html: `<h2>Sync concluído com erros</h2><p>Jogos: ${gamesCount}</p><pre>${errors.join('\n')}</pre>`
-        })
-      }).catch(() => {});
-    }
-
+    const durationMs = Date.now() - startedAt;
+    console.info('[SYNC]', JSON.stringify({ event: 'finish', origin: auth.origin, success: true, durationMs, errors: errors.length }));
+    await auditLog('sync_execution', { origin: auth.origin, status: 'success', durationMs, errors: errors.length });
     return NextResponse.json({ message: 'Sync completo!', games: gamesCount, errors: errors.length, logs });
   } catch (e: any) {
-    log(`ERRO CRÍTICO: ${e.message}`);
-    await saveLog('error', gamesCount, [e.message]);
-    return NextResponse.json({ error: e.message, logs }, { status: 500 });
+    const durationMs = Date.now() - startedAt;
+    log(`ERRO CRÍTICO: ${e?.message || 'unknown'}`);
+    await saveLog('error', gamesCount, [String(e?.message || 'unknown')]);
+    await auditLog('sync_execution', { status: 'error', durationMs });
+    if (e instanceof AppError) return fail(e, origin);
+    return NextResponse.json({ error: 'Sync failed', logs }, { status: 500 });
   }
+}
+
+export async function OPTIONS(req: Request) {
+  return options(req.headers.get('origin') || undefined);
 }

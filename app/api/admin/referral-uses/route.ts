@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdminUser } from '@/lib/auth/authorization';
+import { AppError } from '@/lib/http/errors';
+import { fail, internalError, options } from '@/lib/http/responses';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
-function checkAuth(req: Request) {
-  const auth = req.headers.get('authorization') || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token) return false;
-  try { const email = Buffer.from(token, 'base64').toString('utf-8').split(':')[0]; return email === process.env.ADMIN_EMAIL; } catch { return false; }
+export async function GET(req: Request) {
+  const origin = req.headers.get('origin') || undefined;
+  try {
+    await requireAdminUser(req);
+    const { data } = await supabase.from('referral_uses').select('*, profiles(name, email)').order('created_at', { ascending: false });
+    return NextResponse.json(data || []);
+  } catch (error) {
+    if (error instanceof AppError) return fail(error, origin);
+    return internalError(origin);
+  }
 }
 
-export async function GET(req: Request) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data } = await supabase.from('referral_uses').select('*, profiles(name, email)').order('created_at', { ascending: false });
-  return NextResponse.json(data || []);
+export async function OPTIONS(req: Request) {
+  return options(req.headers.get('origin') || undefined);
 }
