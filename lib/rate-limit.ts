@@ -29,7 +29,7 @@ async function rateLimitRedis(key: string, limit: number, windowMs: number): Pro
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify([
         ['INCR', key],
-        ['EXPIRE', key, windowSec]
+        ['EXPIRE', key, windowSec, 'NX']
       ])
     });
     const data = await res.json();
@@ -46,6 +46,12 @@ export async function rateLimit(ip: string, limit: number = 30, windowMs: number
   return rateLimitRedis(key, limit, windowMs);
 }
 
+export function deploymentNamespace(): string {
+  const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
+  const deploymentId = process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_URL || 'local';
+  return `${environment}:${deploymentId}`;
+}
+
 // Versão síncrona para compatibilidade (usa só memória)
 export function rateLimitSync(ip: string, limit: number = 30, windowMs: number = 60000): boolean {
   return rateLimitMemory(`${ip}:${windowMs}`, limit, windowMs);
@@ -53,8 +59,15 @@ export function rateLimitSync(ip: string, limit: number = 30, windowMs: number =
 
 export function getIP(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-  return ip;
+  if (forwarded) return forwarded.split(',')[0].trim();
+
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
+  const vercelForwardedFor = req.headers.get('x-vercel-forwarded-for');
+  if (vercelForwardedFor) return vercelForwardedFor.split(',')[0].trim();
+
+  return 'unknown';
 }
 
 // Limpa entradas antigas a cada 10 minutos

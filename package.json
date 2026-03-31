@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "attribution:payload": "node scripts/buildAttributionPayload.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.46.0",

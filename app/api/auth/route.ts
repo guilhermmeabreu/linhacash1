@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { rateLimit, getIP } from '@/lib/rate-limit';
-import { loginRateLimit, errorResponse, okResponse, sanitizeProfile } from '@/lib/security';
+import { rateLimit, getIP, deploymentNamespace } from '@/lib/rate-limit';
+import { hashEmail, loginRateLimit, errorResponse, okResponse, sanitizeProfile } from '@/lib/security';
 import { getBillingState } from '@/lib/services/billing-service';
+import { assertAllowedOrigin, assertJsonRequest } from '@/lib/http/request-guards';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,8 +10,23 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+function isEmailDeliveryError(errorMessage: string): boolean {
+  const message = errorMessage.toLowerCase();
+  return (
+    message.includes('email') &&
+    (message.includes('smtp') ||
+      message.includes('send') ||
+      message.includes('confirmation') ||
+      message.includes('provider') ||
+      message.includes('resend') ||
+      message.includes('domain'))
+  );
+}
+
 // POST /api/auth — login, registro, google, forgot, session
 export async function POST(req: Request) {
+  assertAllowedOrigin(req);
+  assertJsonRequest(req);
   const ip = getIP(req);
   const body = await req.json().catch(() => ({}));
   const { action } = body;
@@ -55,17 +70,50 @@ export async function POST(req: Request) {
     if (!name || !email || !password) return errorResponse('Dados incompletos');
     if (password.length < 6) return errorResponse('Senha muito curta');
 
-    // Rate limit no registro
-    if (!await rateLimit(`register:${ip}`, 3, 3600000)) {
-      return errorResponse('Muitos cadastros. Aguarde 1 hora.', 429);
+    // Rate limit no registro (bucket separado de login/google; mais tolerante em preview)
+    const isProduction = process.env.VERCEL_ENV === 'production';
+    const registerWindowMs = isProduction ? 60 * 60 * 1000 : 10 * 60 * 1000;
+    const namespace = deploymentNamespace();
+    const emailHash = hashEmail(email);
+    const ipLimit = isProduction ? 5 : 25;
+    const emailLimit = isProduction ? 3 : 8;
+    const byIpAllowed = await rateLimit(`register:ip:${namespace}:${ip}`, ipLimit, registerWindowMs);
+    const byEmailAllowed = await rateLimit(`register:email:${namespace}:${emailHash}`, emailLimit, registerWindowMs);
+    if (!byIpAllowed || !byEmailAllowed) {
+      const waitMessage = isProduction
+        ? 'Muitos cadastros. Aguarde 1 hora.'
+        : 'Muitos cadastros. Aguarde alguns minutos.';
+      return errorResponse(waitMessage, 429);
     }
 
     const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return errorResponse('Erro ao criar conta. Tente novamente.');
+    let createdUser = data.user;
+    let confirmationNotice = 'Verifique seu email para confirmar a conta';
 
-    if (data.user) {
+    if (error) {
+      const fallbackAllowed = !isProduction && isEmailDeliveryError(error.message || '');
+      if (!fallbackAllowed) {
+        return errorResponse(error.message || 'Erro ao criar conta. Tente novamente.', 400);
+      }
+
+      const { data: fallbackData, error: fallbackError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name: name.trim().slice(0, 100) },
+      });
+
+      if (fallbackError || !fallbackData.user) {
+        return errorResponse('Conta criada parcialmente, mas não foi possível concluir o fluxo de confirmação em ambiente de teste. Tente novamente.', 503);
+      }
+
+      createdUser = fallbackData.user;
+      confirmationNotice = 'Conta criada em modo de teste. A confirmação por email está temporariamente indisponível neste ambiente.';
+    }
+
+    if (createdUser) {
       await supabase.from('profiles').upsert({
-        id: data.user.id,
+        id: createdUser.id,
         name: name.trim().slice(0, 100), // sanitizar comprimento
         email,
         plan: 'free',
@@ -76,14 +124,18 @@ export async function POST(req: Request) {
       });
 
       // Email de boas-vindas via API interna
-      await fetch(`${process.env.NEXT_PUBLIC_URL}/api/emails/welcome`, {
+      const welcomeRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/emails/welcome`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email })
       }).catch(() => {});
+
+      if (!isProduction && welcomeRes && !welcomeRes.ok) {
+        confirmationNotice = 'Conta criada. O envio de email está indisponível neste ambiente de teste.';
+      }
     }
 
-    return okResponse({ ok: true, message: 'Verifique seu email para confirmar a conta' });
+    return okResponse({ ok: true, message: confirmationNotice });
   }
 
   // ── GOOGLE OAUTH ───────────────────────────────────────────────────────────

@@ -1014,6 +1014,8 @@ async function api(path, opts) {
       ...opts,
       headers: { ...getHeaders(), ...(opts.headers || {}) }
     });
+    const payload = await res.json().catch(() => ({}));
+
     if (res.status === 401) {
       authToken = null;
       localStorage.removeItem('lc_token');
@@ -1021,7 +1023,7 @@ async function api(path, opts) {
       setTimeout(function(){ supabaseUser=null; show('sAuth',false); }, 1500);
       return null;
     }
-    return await res.json();
+    return { ...payload, _status: res.status, _ok: res.ok };
   } catch(e) {
     return null;
   }
@@ -1202,7 +1204,7 @@ async function doGoogle(){
   });
   setAuthLoading('googleBtn','Conectando...',false);
   if (data?.url) { toast('Redirecionando para o Google...'); window.location.href = data.url; }
-  else showAuthError('Erro ao conectar com Google. Tente novamente.');
+  else showAuthError(data?.error || 'Erro ao conectar com Google. Tente novamente.');
 }
 
 async function doLogin(){
@@ -1233,22 +1235,33 @@ async function doRegister(){
  if(!e||!e.includes('@')){showAuthError('Email inválido.');return;}
  if(p.length<6){showAuthError('Senha com mínimo 6 caracteres.');return;}
  const regRes = await api('/api/auth', { method:'POST', body:JSON.stringify({action:'register',name:n,email:e,password:p}) });
- if(!regRes||regRes.error){toast(regRes?.error||'Erro ao criar conta.');return;}
+ if(!regRes){toast('Erro de conexão. Tente novamente.');return;}
+ if(regRes.error){
+   if (regRes._status === 429 || regRes._status === 400 || regRes._status === 401 || regRes._status === 403) {
+     toast(regRes.error);
+     return;
+   }
+   toast('Erro ao criar conta. Tente novamente.');
+   return;
+ }
  if(regRes.ok){
    toast('Verifique seu email para confirmar a conta!');
    authTab('login');
  } else {
-   toast('Erro ao criar conta. Tente novamente.');
+   const fallback = regRes._status >= 500 ? 'Erro interno. Tente novamente em instantes.' : 'Erro ao criar conta. Tente novamente.';
+   toast(regRes.message || fallback);
  }
 }
 
 async function doForgot(){
  const e=document.getElementById('lEmail').value.trim();
  if(!e){showAuthError('Digite seu email primeiro.');return;}
- const data = await api('/api/auth', {
+  const data = await api('/api/auth', {
     method: 'POST',
     body: JSON.stringify({ action: 'forgot', email: e })
   });
+ if(!data){toast('Erro de conexão. Tente novamente.');return;}
+ if(data.error){toast(data.error);return;}
  toast('Link de recuperação enviado! ');
 }
 function onOtp(el,nextId){

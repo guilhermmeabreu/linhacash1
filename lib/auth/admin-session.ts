@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { AuthenticationError } from '@/lib/http/errors';
 
-const COOKIE_NAME = 'lc_admin_session';
+const COOKIE_NAME = process.env.NODE_ENV === 'production' ? '__Host-lc_admin_session' : 'lc_admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 const memoryStore = new Map<string, { expiresAt: number; email: string; ipHash: string; uaHash: string }>();
 

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { AuthenticationError, AuthorizationError } from '@/lib/http/errors';
 import { requireAdminSession } from '@/lib/auth/admin-session';
 import { getBillingState } from '@/lib/services/billing-service';
+import { assertAllowedOrigin } from '@/lib/http/request-guards';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -32,6 +33,7 @@ export async function requireAuthenticatedUser(req: Request) {
 }
 
 export async function requireAdminUser(req: Request) {
+  assertAllowedOrigin(req);
   const session = await requireAdminSession(req);
   if (session.email !== process.env.ADMIN_EMAIL) throw new AuthorizationError();
   return session;
