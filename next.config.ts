@@ -10,8 +10,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
-          { key: 'X-DNS-Prefetch-Control', value: 'off' },
+                    { key: 'X-DNS-Prefetch-Control', value: 'off' },
           { key: 'X-Download-Options', value: 'noopen' },
           { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
@@ -22,13 +21,14 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               `connect-src 'self' ${ALLOWED_ORIGIN} https://*.supabase.co https://api.mercadopago.com https://v2.nba.api-sports.io https://api.resend.com https://*.upstash.io`,
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://sdk.mercadopago.com",
+              "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://sdk.mercadopago.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
+              "object-src 'none'",
               "upgrade-insecure-requests",
             ].join('; ')
           },

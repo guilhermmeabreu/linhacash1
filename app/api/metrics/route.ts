@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   const playerId = searchParams.get('playerId');
   const stat = searchParams.get('stat') || 'PTS';
 
-  if (!playerId) return errorResponse('playerId obrigatório');
+  if (!playerId || !/^\d+$/.test(playerId)) return errorResponse('playerId inválido');
 
   // Plano Free: só PTS
   if (session.plan === 'free' && !FREE_STATS.includes(stat)) {

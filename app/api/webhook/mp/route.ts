@@ -5,6 +5,7 @@ import { acquireIdempotencyKey } from '@/lib/services/idempotency-service';
 import { activatePaidPro } from '@/lib/services/billing-service';
 import { validateCheckoutPlan } from '@/lib/validators/billing-validator';
 import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
+import { getIP, rateLimit } from '@/lib/rate-limit';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -15,31 +16,51 @@ function secureCompare(a: string, b: string) {
   return crypto.timingSafeEqual(aBuf, bBuf);
 }
 
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function validateSignature(req: Request, paymentId: string): boolean {
   const signature = req.headers.get('x-signature') || '';
   const requestId = req.headers.get('x-request-id') || '';
-  const ts = signature.split(',').find((part) => part.startsWith('ts='))?.split('=')[1];
+  const tsRaw = signature.split(',').find((part) => part.startsWith('ts='))?.split('=')[1];
   const v1 = signature.split(',').find((part) => part.startsWith('v1='))?.split('=')[1];
-  if (!ts || !v1 || !requestId || !process.env.MP_WEBHOOK_SECRET) return false;
+  const ts = tsRaw ? Number.parseInt(tsRaw, 10) : Number.NaN;
+
+  if (!Number.isFinite(ts) || !v1 || !requestId || !process.env.MP_WEBHOOK_SECRET) return false;
+  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - ts);
+  if (ageSeconds > 5 * 60) return false;
 
   const manifest = `id:${paymentId};request-id:${requestId};ts:${ts};`;
   const expected = crypto.createHmac('sha256', process.env.MP_WEBHOOK_SECRET).update(manifest).digest('hex');
   return secureCompare(expected, v1);
 }
 
-function resolveUserId(payment: any): string | null {
+function resolveAndValidateUserId(payment: any): string | null {
   const externalRef = typeof payment.external_reference === 'string' ? payment.external_reference : '';
   const metadataUserId = typeof payment.metadata?.user_id === 'string' ? payment.metadata.user_id : '';
   const fromExternalRef = externalRef.split(':')[0];
-  return fromExternalRef || metadataUserId || null;
+
+  if (fromExternalRef && metadataUserId && fromExternalRef !== metadataUserId) {
+    return null;
+  }
+
+  const candidate = fromExternalRef || metadataUserId;
+  return candidate && isValidUuid(candidate) ? candidate : null;
 }
 
 export async function POST(req: Request) {
+  const ip = getIP(req);
   const body = await req.json().catch(() => null);
   const paymentId = String(body?.data?.id || '');
 
   try {
-    if (!paymentId || body?.type !== 'payment') {
+    if (!(await rateLimit(`webhook:mp:${ip}`, 120, 60_000))) {
+      await auditLog('webhook_event', { status: 'denied', reason: 'rate_limited' });
+      return Response.json({ error: 'Rate limited' }, { status: 429 });
+    }
+
+    if (!paymentId || !/^\d{4,32}$/.test(paymentId) || body?.type !== 'payment') {
       await auditLog('webhook_event', { status: 'ignored', reason: 'not_payment_event' });
       return Response.json({ ok: true });
     }
@@ -59,6 +80,11 @@ export async function POST(req: Request) {
       headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
       cache: 'no-store',
     });
+    if (!response.ok) {
+      await auditLog('webhook_event', { status: 'failed', reason: 'provider_lookup_failed', paymentId, statusCode: response.status });
+      return Response.json({ ok: true });
+    }
+
     const payment = await response.json();
 
     if (payment.status !== 'approved') {
@@ -66,9 +92,9 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    const userId = resolveUserId(payment);
+    const userId = resolveAndValidateUserId(payment);
     if (!userId) {
-      await auditLog('webhook_event', { status: 'failed', reason: 'missing_user_association', paymentId });
+      await auditLog('webhook_event', { status: 'failed', reason: 'missing_or_inconsistent_user_association', paymentId });
       return Response.json({ ok: true });
     }
 

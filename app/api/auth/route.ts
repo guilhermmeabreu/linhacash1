@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 import { loginRateLimit, errorResponse, okResponse, sanitizeProfile } from '@/lib/security';
 import { getBillingState } from '@/lib/services/billing-service';
+import { assertAllowedOrigin, assertJsonRequest } from '@/lib/http/request-guards';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +12,8 @@ const supabase = createClient(
 
 // POST /api/auth — login, registro, google, forgot, session
 export async function POST(req: Request) {
+  assertAllowedOrigin(req);
+  assertJsonRequest(req);
   const ip = getIP(req);
   const body = await req.json().catch(() => ({}));
   const { action } = body;

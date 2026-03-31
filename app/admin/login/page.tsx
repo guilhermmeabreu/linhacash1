@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [totpCode, setTotpCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [dark, setDark] = useState(true);
@@ -35,7 +36,7 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, totpCode: totpCode || undefined }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -66,6 +67,10 @@ export default function AdminLogin() {
 
         <label style={{ fontSize: 12, color: palette.muted, fontWeight: 600 }}>Senha</label>
         <input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="password" placeholder="••••••••" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
+
+
+        <label style={{ fontSize: 12, color: palette.muted, fontWeight: 600 }}>Código 2FA (se habilitado)</label>
+        <input value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="text" inputMode="numeric" placeholder="000000" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
 
         {error && <div style={{ fontSize: 13, marginBottom: 12, border: '1px solid rgba(240,82,82,.5)', background: 'rgba(240,82,82,.1)', color: '#f29b9b', padding: 10 }}>{error}</div>}
 

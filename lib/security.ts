@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getIP } from './rate-limit';
 import * as crypto from 'crypto';
+import { requireEnv } from '@/lib/env';
 import { getBillingState } from '@/lib/services/billing-service';
 
 // ── Supabase server client — NUNCA exposto ao frontend ──────────────────────
@@ -129,7 +130,7 @@ export function corsHeaders() {
 }
 
 // ── Criptografia AES-256-GCM para dados sensíveis ────────────────────────────
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ENCRYPTION_KEY = requireEnv('ENCRYPTION_KEY');
 
 export function encrypt(text: string): string {
   const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
@@ -165,9 +166,13 @@ export async function loginRateLimit(ip: string, email: string): Promise<boolean
 
 // ── Validar CRON_SECRET para proteger /api/sync ──────────────────────────────
 export function validateCronSecret(req: Request): boolean {
-  const secret = req.headers.get('x-cron-secret') || 
-                 new URL(req.url).searchParams.get('secret');
-  return secret === process.env.CRON_SECRET;
+  const secret = req.headers.get('x-cron-secret') || '';
+  const expected = process.env.CRON_SECRET || '';
+  if (!secret || !expected) return false;
+  const a = Buffer.from(secret, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 // ── Response helpers seguros ─────────────────────────────────────────────────

@@ -6,24 +6,42 @@ import { getIP, rateLimit } from '@/lib/rate-limit';
 import { validateAdminLogin } from '@/lib/validators/auth-validator';
 import { auditLog } from '@/lib/services/audit-log-service';
 import { timingSafeEqualString } from '@/lib/auth/secure-compare';
+import { assertAllowedOrigin, assertJsonRequest } from '@/lib/http/request-guards';
+import { consumeRecoveryCode, verifyTotpCode } from '@/lib/auth/totp';
+
+function admin2faEnabled() {
+  return Boolean(process.env.ADMIN_TOTP_SECRET);
+}
 
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   try {
+    assertAllowedOrigin(req);
+    assertJsonRequest(req);
+
     const ip = getIP(req);
     if (!(await rateLimit(`admin:login:${ip}`, 5, 15 * 60_000))) {
       return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many login attempts'), origin);
     }
 
-    const { email, password } = validateAdminLogin(await req.json());
+    const { email, password, totpCode, recoveryCode } = validateAdminLogin(await req.json());
     const validEmail = timingSafeEqualString(email, process.env.ADMIN_EMAIL || '');
     const validPassword = timingSafeEqualString(password, process.env.ADMIN_PASSWORD || '');
     if (!validEmail || !validPassword) {
-      await auditLog('admin_login_failed', { ip });
+      await auditLog('admin_login_failed', { ip, reason: 'invalid_credentials' });
       throw new AuthenticationError('Invalid credentials');
     }
 
-    const response = NextResponse.json({ ok: true, data: { email } });
+    if (admin2faEnabled()) {
+      const validTotp = totpCode ? verifyTotpCode(process.env.ADMIN_TOTP_SECRET!, totpCode) : false;
+      const validRecovery = recoveryCode ? await consumeRecoveryCode(recoveryCode) : false;
+      if (!validTotp && !validRecovery) {
+        await auditLog('admin_login_failed', { ip, reason: 'missing_or_invalid_2fa' });
+        throw new AuthenticationError('2FA required');
+      }
+    }
+
+    const response = NextResponse.json({ ok: true, data: { email, twoFactorEnabled: admin2faEnabled() } });
     await createAdminSession(response, req, email);
     await auditLog('admin_login_success', { ip });
     return response;
@@ -34,6 +52,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  assertAllowedOrigin(req);
   const response = ok({ ok: true });
   await destroyAdminSession(req, response);
   await auditLog('admin_logout', { ip: getIP(req) });

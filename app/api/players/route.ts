@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get('gameId');
-  if (!gameId) return errorResponse('gameId obrigatório');
+  if (!gameId || !/^\d+$/.test(gameId)) return errorResponse('gameId inválido');
 
   const result = await getCachedValue(`players:${gameId}:${session.plan}`, 5 * 60_000, async () => {
     const { data: game } = await supabase
