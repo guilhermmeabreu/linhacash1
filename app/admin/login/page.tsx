@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 
 export default function AdminLogin() {
@@ -7,58 +8,67 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [dark, setDark] = useState(true);
-  const toggleTheme = () => { const n = !dark; setDark(n); localStorage.setItem('admin_theme', n?'dark':'light'); };
-  useEffect(()=>{ if(localStorage.getItem('admin_theme')==='light') setDark(false); },[]);
+
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    localStorage.setItem('admin_theme', next ? 'dark' : 'light');
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem('admin_theme') === 'light') setDark(false);
+  }, []);
 
   async function handleLogin() {
-    if (!email || !password) { setError('Preencha todos os campos.'); return; }
+    setError('');
+    if (!email || !password) {
+      setError('Preencha todos os campos para continuar.');
+      return;
+    }
+
     setLoading(true);
-    const res = await fetch('/api/admin/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      window.location.href = '/admin';
-    } else {
-      setError('Email ou senha incorretos.');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        window.location.href = '/admin';
+        return;
+      }
+      setError('Não foi possível entrar. Verifique email e senha.');
+    } catch {
+      setError('Erro de conexão. Tente novamente em instantes.');
+    } finally {
       setLoading(false);
     }
   }
 
-  return (<>
-    <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}`}</style>
-    <div style={{ minHeight: '100vh', position: 'relative' as const, background: dark?'#050505':'#f5f3ef', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' }}>
-      <button onClick={toggleTheme} style={{ position: 'absolute' as const, top: 20, right: 20, background: 'none', border: `1px solid ${dark?'#2a2a2a':'#b0ada6'}`, color: dark?'#888':'#444', width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {dark
-          ? <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          : <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        }
+  return (
+    <div style={{ minHeight: '100vh', background: dark ? '#070909' : '#f4f6f5', display: 'grid', placeItems: 'center', padding: 20, fontFamily: 'Inter, sans-serif' }}>
+      <button onClick={toggleTheme} style={{ position: 'fixed', top: 20, right: 20, width: 38, height: 38, border: `1px solid ${dark ? '#2d3532' : '#c3ccc8'}`, background: dark ? '#111614' : '#ffffff', color: dark ? '#99aba3' : '#5e6f68', cursor: 'pointer' }}>
+        {dark ? '☾' : '☀'}
       </button>
-      <div style={{ background: dark?'transparent':'#fdfcfa', borderTop: `3px solid ${dark?'#00e676':'#00b359'}`, borderLeft: `1px solid ${dark?'#1a1a1a':'#cac7c0'}`, borderRight: `1px solid ${dark?'#1a1a1a':'#cac7c0'}`, borderBottom: `1px solid ${dark?'#1a1a1a':'#cac7c0'}`, borderRadius: 0, padding: 32, width: '100%', maxWidth: 380 }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6 }}>Linha<span style={{ color: '#00e676' }}>Cash</span></div>
-        <div style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>Painel Admin</div>
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: dark?'#888':'#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, fontFamily: 'IBM Plex Mono, monospace' }}>Email</div>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="seu@email.com"
-            style={{ width: '100%', background: 'transparent', borderBottom: `2px solid ${dark?'#333':'#b0ada6'}`, borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0, padding: '11px 13px', fontSize: 14, color: dark?'#fff':'#111', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', outline: 'none' }} />
-        </div>
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: dark?'#888':'#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, fontFamily: 'IBM Plex Mono, monospace' }}>Senha</div>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="••••••••"
-            style={{ width: '100%', background: 'transparent', borderBottom: `2px solid ${dark?'#333':'#b0ada6'}`, borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0, padding: '11px 13px', fontSize: 14, color: dark?'#fff':'#111', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', outline: 'none' }} />
-        </div>
-        {error && <div style={{ fontSize: 12, color: '#ff4d4d', marginBottom: 10 }}>{error}</div>}
-        <button onClick={handleLogin} disabled={loading}
-          style={{ width: '100%', padding: 13, background: loading ? '#888' : (dark?'#00e676':'#00b359'), border: 'none', borderRadius: 0, fontSize: 13, fontWeight: 700, color: '#000', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'Hele, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', cursor: loading ? 'not-allowed' : 'pointer' }}>
-          {loading ? 'Entrando...' : 'Entrar'}
+      <div style={{ width: '100%', maxWidth: 420, background: dark ? '#101513' : '#ffffff', border: `1px solid ${dark ? '#1f2723' : '#d7e0db'}`, padding: 28 }}>
+        <p style={{ fontSize: 12, color: dark ? '#93a59e' : '#62746d', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>Acesso administrativo</p>
+        <h1 style={{ fontSize: 30, fontWeight: 800, marginBottom: 8, color: dark ? '#f2f8f5' : '#1b2521' }}>Linha<span style={{ color: '#00c768' }}>Cash</span></h1>
+        <p style={{ fontSize: 14, color: dark ? '#8da19a' : '#62746d', marginBottom: 22 }}>Entre para gerenciar usuários, assinaturas e sincronizações.</p>
+
+        <label style={{ fontSize: 12, color: dark ? '#9db0a8' : '#62746d' }}>Email</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="admin@linhacash.com" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${dark ? '#2b3632' : '#cad6d1'}`, background: dark ? '#141b18' : '#f9fbfa', color: dark ? '#f4fbf7' : '#18211d' }} />
+
+        <label style={{ fontSize: 12, color: dark ? '#9db0a8' : '#62746d' }}>Senha</label>
+        <input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="password" placeholder="••••••••" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${dark ? '#2b3632' : '#cad6d1'}`, background: dark ? '#141b18' : '#f9fbfa', color: dark ? '#f4fbf7' : '#18211d' }} />
+
+        {error && <div style={{ fontSize: 13, marginBottom: 12, border: '1px solid rgba(240,82,82,.5)', background: 'rgba(240,82,82,.1)', color: '#f29b9b', padding: 10 }}>{error}</div>}
+
+        <button disabled={loading} onClick={handleLogin} style={{ width: '100%', padding: 12, background: loading ? '#73857d' : '#00e676', border: 'none', color: '#04210f', fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer' }}>
+          {loading ? 'Entrando no painel...' : 'Entrar no painel'}
         </button>
       </div>
     </div>
-  </>
   );
 }

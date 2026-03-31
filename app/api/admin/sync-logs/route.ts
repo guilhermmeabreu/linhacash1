@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   try {
     await requireAdminUser(req);
-    const { data } = await supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(20);
+    const { data } = await supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(5);
     return NextResponse.json(data || []);
   } catch (error) {
     if (error instanceof AppError) return fail(error, origin);

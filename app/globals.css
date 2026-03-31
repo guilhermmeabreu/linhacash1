@@ -3,11 +3,29 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --bg: #000; --s1: #0a0a0a; --s2: #111; --s3: #1a1a1a; --s4: #222;
-  --bd: #2a2a2a; --bd2: #333; --tx: #fff; --mt: #888; --mt2: #555;
-  --green: #00e676; --gdim: rgba(0,230,118,.12);
-  --red: #ff1744; --rdim: rgba(255,23,68,.12);
+  --bg: #000;
+  --s1: #0a0a0a;
+  --s2: #111;
+  --s3: #1a1a1a;
+  --s4: #222;
+  --bd: #2a2a2a;
+  --bd2: #333;
+  --tx: #fff;
+  --mt: #888;
+  --mt2: #555;
+  --green: #00e676;
+  --gdim: rgba(0,230,118,.12);
+  --red: #ff1744;
+  --rdim: rgba(255,23,68,.12);
   --amber: #ffab00;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --shadow-sm: 0 4px 12px rgba(0,0,0,.18);
 }
 
 html, body {
@@ -19,6 +37,8 @@ html, body {
 }
 
 body { min-height: 100dvh; }
+
+button, input, select, textarea { font: inherit; }
 
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }

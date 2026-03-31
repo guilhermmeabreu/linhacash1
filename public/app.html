@@ -343,6 +343,8 @@ body{min-height:100dvh}
 .abtn{width:100%;padding:14px;background:var(--green);border:none;border-radius:0;font-size:16px;font-weight:800;color:#000;cursor:pointer;font-family:Hele,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;margin-top:6px}
 .abtn:active{opacity:.85}
 .abtn.sec{background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-weight:600;font-size:14px;margin-top:8px}
+.abtn[disabled]{opacity:.55;cursor:not-allowed}
+.auth-msg{display:none;margin-bottom:10px;padding:10px 12px;font-size:12px;border:1px solid rgba(255,61,61,.45);background:rgba(255,61,61,.12);color:#ff8f8f}
 .aforgot{text-align:center;margin-top:16px;font-size:13px;color:var(--mt);cursor:pointer}
 .aforgot em{color:var(--green);font-style:normal;font-weight:600}
 .adiv{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--mt);font-size:12px}
@@ -493,16 +495,7 @@ body{min-height:100dvh}
 <!-- SIDEBAR DESKTOP (visível só no PC) -->
 <div class="sidebar-desk" id="sidebarDesk" style="display:none">
  <div class="sd-logo" style="display:flex;align-items:center;gap:8px"><img src="/logo.png" style="width:26px;height:26px;object-fit:contain;flex-shrink:0"><span style="font-size:0"><span style="font-size:20px;color:var(--tx)">Linha</span><em style="font-size:20px;color:var(--green);font-style:normal">Cash</em></span></div>
- <div class="sd-nav">
- <div class="sd-item on" id="sdJogos" onclick="sdNav('jogos')">
- <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
- Jogos do dia
- </div>
- <div class="sd-item" id="sdPerfil" onclick="sdNav('perfil')">
- <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
- Meu Perfil
- </div>
- </div>
+ <div class="sd-nav" id="desktopNav"></div>
  <div class="sd-bottom">
  <div class="sd-user" id="sdUserBtn" onclick="sdNav('perfil')">
  <div class="sd-av" id="sdAvLetter">U</div>
@@ -535,13 +528,14 @@ body{min-height:100dvh}
  </div>
  <!-- LOGIN -->
  <div id="fLogin">
+ <div id="authError" class="auth-msg"></div>
  <div class="afield"><label>Email</label><input type="email" id="lEmail" placeholder="seu@email.com"/></div>
  <div class="afield"><label>Senha</label><input type="password" id="lPass" placeholder="••••••••"/></div>
- <button class="abtn" onclick="doLogin()">Entrar</button>
+ <button class="abtn" id="loginBtn" onclick="doLogin()">Entrar</button>
  <div class="aforgot" onclick="doForgot()">Esqueceu a senha? <em>Recuperar</em></div>
 
  <div class="adiv">ou</div>
- <button class="abtn" style="background:var(--s3);color:var(--tx);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none" onclick="doGoogle()">
+ <button class="abtn" style="background:var(--s3);color:var(--tx);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none" id="googleBtn" onclick="doGoogle()">
   <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
   Continuar com Google
  </button>
@@ -590,24 +584,7 @@ body{min-height:100dvh}
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-logo"><img src="/logo.png" alt=""/><span style="font-size:0"><span style="font-size:17px;color:var(--tx)">Linha</span><em style="font-size:17px;color:var(--green);font-style:normal">Cash</em></span></div>
-  <div class="drawer-item on" id="dJogos" onclick="drawerNav('jogos')">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    Jogos do dia
-  </div>
-  <div class="drawer-item" style="opacity:.45;pointer-events:none;cursor:not-allowed">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    Calendário
-    <span style="font-size:9px;color:var(--mt);margin-left:auto;text-transform:uppercase;letter-spacing:0.06em">Em breve</span>
-  </div>
-  <div class="drawer-item" style="opacity:.45;pointer-events:none;cursor:not-allowed">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    Classificação
-    <span style="font-size:9px;color:var(--mt);margin-left:auto;text-transform:uppercase;letter-spacing:0.06em">Em breve</span>
-  </div>
-  <div class="drawer-item" id="dPerfil" onclick="drawerNav('perfil')">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Meu Perfil
-  </div>
+  <div id="mobileNav"></div>
 </div>
 
 <!-- S1: JOGOS DO DIA -->
@@ -1005,6 +982,45 @@ if (location.hostname !== 'localhost') {
   console.debug = function(){};
 }
 
+const NAV_ITEMS = [
+  { key: 'jogos', label: 'Jogos do dia', icon: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', enabled: true },
+  { key: 'calendario', label: 'Calendário', icon: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', enabled: false },
+  { key: 'classificacao', label: 'Classificação', icon: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', enabled: false },
+  { key: 'perfil', label: 'Meu Perfil', icon: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', enabled: true }
+];
+
+function renderNavigation() {
+  const desktop = document.getElementById('desktopNav');
+  const mobile = document.getElementById('mobileNav');
+  if (!desktop || !mobile) return;
+
+  const build = (isMobile) => NAV_ITEMS.map((item) => {
+    const cls = `${isMobile ? 'drawer-item' : 'sd-item'} ${item.key === 'jogos' ? 'on' : ''} ${item.enabled ? '' : 'sd-item-soon'}`;
+    const click = item.enabled ? `${isMobile ? 'drawerNav' : 'sdNav'}('${item.key}')` : '';
+    const suffix = item.enabled ? '' : '<span style="font-size:9px;color:var(--mt);margin-left:auto;text-transform:uppercase;letter-spacing:0.06em">Em breve</span>';
+    return `<div class="${cls}" id="${isMobile ? 'd' : 'sd'}${item.key}" ${item.enabled ? `onclick="${click}"` : ''}>${item.icon}${item.label}${suffix}</div>`;
+  }).join('');
+
+  desktop.innerHTML = build(false);
+  mobile.innerHTML = build(true);
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+function setAuthLoading(buttonId, loadingText, active) {
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
+  if (!btn.dataset.defaultText) btn.dataset.defaultText = btn.textContent;
+  btn.disabled = active;
+  btn.textContent = active ? loadingText : btn.dataset.defaultText;
+}
+
 // STATE 
 let GAMES=[],PBG={},METRICS={};
 let cGame=null,cPlayer=null,cStat='PTS',cPeriod='L10',cLine=null;
@@ -1057,21 +1073,26 @@ function authTab(t){
 }
 
 async function doGoogle(){
+  showAuthError('');
+  setAuthLoading('googleBtn','Conectando...',true);
   const data = await api('/api/auth', {
     method: 'POST',
     body: JSON.stringify({ action: 'google' })
   });
-  if (data?.url) window.location.href = data.url;
-  else toast('Erro ao conectar com Google.');
+  setAuthLoading('googleBtn','Conectando...',false);
+  if (data?.url) { toast('Redirecionando para o Google...'); window.location.href = data.url; }
+  else showAuthError('Erro ao conectar com Google. Tente novamente.');
 }
 
 async function doLogin(){
+ showAuthError('');
  const e=document.getElementById('lEmail').value.trim();
  const p=document.getElementById('lPass').value;
- if(!e||!p){toast('Preencha email e senha.');return;}
- toast('Entrando...');
+ if(!e||!p){showAuthError('Preencha email e senha para continuar.');return;}
+ setAuthLoading('loginBtn','Entrando...',true);
  const loginRes = await api('/api/auth', { method:'POST', body:JSON.stringify({action:'login',email:e,password:p}) });
- if(!loginRes||loginRes.error){toast(loginRes?.error||'Email ou senha incorretos.');return;}
+ setAuthLoading('loginBtn','Entrando...',false);
+ if(!loginRes||loginRes.error){showAuthError(loginRes?.error||'Email ou senha incorretos.');return;}
  authToken=loginRes.token;
  supabaseUser={id:loginRes.user.id};
  plan=loginRes.user.plan||'free';
@@ -1087,10 +1108,9 @@ async function doRegister(){
  const n=document.getElementById('rName').value.trim();
  const e=document.getElementById('rEmail').value.trim();
  const p=document.getElementById('rPass').value;
- if(!n){toast('Digite seu nome.');return;}
- if(!e||!e.includes('@')){toast('Email inválido.');return;}
- if(p.length<6){toast('Senha com mínimo 6 caracteres.');return;}
- toast('Criando conta...');
+ if(!n){showAuthError('Digite seu nome.');return;}
+ if(!e||!e.includes('@')){showAuthError('Email inválido.');return;}
+ if(p.length<6){showAuthError('Senha com mínimo 6 caracteres.');return;}
  const regRes = await api('/api/auth', { method:'POST', body:JSON.stringify({action:'register',name:n,email:e,password:p}) });
  if(!regRes||regRes.error){toast(regRes?.error||'Erro ao criar conta.');return;}
  if(regRes.ok){
@@ -1103,7 +1123,7 @@ async function doRegister(){
 
 async function doForgot(){
  const e=document.getElementById('lEmail').value.trim();
- if(!e){toast('Digite seu email primeiro.');return;}
+ if(!e){showAuthError('Digite seu email primeiro.');return;}
  const data = await api('/api/auth', {
     method: 'POST',
     body: JSON.stringify({ action: 'forgot', email: e })
@@ -1155,7 +1175,7 @@ async function renderGames(){
  const gFinal = await api('/api/games');
  GAMES = gFinal?.games || [];
  if(GAMES.length===0){
- document.getElementById('glist').innerHTML='<div style="padding:32px;text-align:center;color:var(--mt)">Nenhum jogo hoje ainda.<br><span style="font-size:12px">O sync roda automaticamente às 11h</span></div>';
+ document.getElementById('glist').innerHTML='<div style="padding:32px;text-align:center;color:var(--mt)">Nenhum jogo ainda</div>';
  return;
  }
  const vis=pro()?GAMES:GAMES.slice(0,1);
@@ -1606,14 +1626,11 @@ function closeDrawer(){
 }
 function drawerNav(page){
   closeDrawer();
+  if(page==='calendario'||page==='classificacao'){ toast('Em breve.'); return; }
   document.querySelectorAll('.drawer-item').forEach(i=>i.classList.remove('on'));
-  if(page==='jogos'){
-    document.getElementById('dJogos').classList.add('on');
-    nav(1);
-  } else if(page==='perfil'){
-    document.getElementById('dPerfil').classList.add('on');
-    nav(4);
-  }
+  const item=document.getElementById('d'+page); if(item) item.classList.add('on');
+  if(page==='jogos') nav(1);
+  if(page==='perfil') nav(4);
 }
 
 // TEMA 
@@ -1805,20 +1822,19 @@ function updateSidebar(){
 }
 
 function sdNav(section){
+ if(section==='calendario'||section==='classificacao'){ toast('Em breve.'); return; }
  document.querySelectorAll('.sd-item').forEach(i=>i.classList.remove('on'));
- if(section==='jogos'){
- document.getElementById('sdJogos').classList.add('on');
- stack=['s1']; show('s1',false);
- } else if(section==='perfil'){
- document.getElementById('sdPerfil').classList.add('on');
- nav(4);
- }
+ const item=document.getElementById('sd'+section); if(item) item.classList.add('on');
+ if(section==='jogos'){ stack=['s1']; show('s1',false); }
+ if(section==='perfil'){ nav(4); }
 }
 
 window.addEventListener('resize', updateSidebar);
 
 // INIT 
 const urlParams=new URLSearchParams(window.location.search);
+
+renderNavigation();
 
 // Verificar sessão existente
 (async function checkSession(){
