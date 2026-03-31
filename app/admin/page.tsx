@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminData } from './_hooks/use-admin-data';
 import { adminApi, Profile } from './_lib/admin-api';
@@ -13,10 +13,23 @@ const TABS: Array<{ key: AdminTab; label: string }> = [
   { key: 'sync', label: 'Sincronização' },
 ];
 
-function PlanBadge({ user }: { user: Profile }) {
+const PlanBadge = memo(function PlanBadge({ user }: { user: Profile }) {
   if (user.billing?.isManualPro) return <span className="adm-badge admin">PRO ADMIN</span>;
   if (user.billing?.isPaidPro) return <span className="adm-badge paid">PRO PAID</span>;
   return <span className="adm-badge free">FREE</span>;
+});
+
+function AdminSkeleton() {
+  return (
+    <section className="adm-grid">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="adm-card">
+          <div className="adm-skeleton adm-skeleton-label" />
+          <div className="adm-skeleton adm-skeleton-value" />
+        </div>
+      ))}
+    </section>
+  );
 }
 
 export default function AdminPage() {
@@ -45,10 +58,31 @@ export default function AdminPage() {
     });
   }, [users, search, planFilter]);
 
-  const destroy = async (message: string, action: () => Promise<void>) => {
+  const referralUsesByCode = useMemo(() => {
+    const grouped = new Map<string, string[]>();
+    referralUses.forEach((use) => {
+      const list = grouped.get(use.code) || [];
+      if (list.length < 5) {
+        list.push(use.profiles?.email || use.user_id);
+      }
+      grouped.set(use.code, list);
+    });
+    return grouped;
+  }, [referralUses]);
+
+  const destroy = useCallback(async (message: string, action: () => Promise<void>) => {
     if (!window.confirm(message)) return;
     await action();
-  };
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    loadAll();
+  }, [loadAll]);
+
+  const handleLogout = useCallback(async () => {
+    await adminApi.logout();
+    router.push('/admin/login');
+  }, [router]);
 
   return (
     <main className="adm-page">
@@ -81,13 +115,17 @@ export default function AdminPage() {
         .adm-feedback.ok{border-color:#1b7f47;background:rgba(0,230,118,.1);color:#82e8b3}
         .adm-feedback.err{border-color:#913939;background:rgba(255,77,77,.1);color:#ff9c9c}
         .adm-log{display:flex;justify-content:space-between;border-bottom:1px solid #1d2824;padding:10px 0;font-size:13px}
+        .adm-skeleton{background:linear-gradient(90deg,#17201d,#23302c,#17201d);background-size:220px 100%;animation:adm-loading 1.2s infinite ease-in-out}
+        .adm-skeleton-label{height:14px;width:52%;margin-bottom:10px}
+        .adm-skeleton-value{height:34px;width:75%}
+        @keyframes adm-loading{0%{background-position:-220px 0}100%{background-position:220px 0}}
       `}</style>
       <div className="adm-shell">
         <header className="adm-head">
           <h1 className="adm-title">Linha<em>Cash</em> Admin</h1>
           <div className="adm-row">
-            <button className="adm-btn alt" onClick={() => loadAll()}>Atualizar</button>
-            <button className="adm-btn alt" onClick={async () => { await adminApi.logout(); router.push('/admin/login'); }}>Sair</button>
+            <button className="adm-btn alt" onClick={handleRefresh}>Atualizar</button>
+            <button className="adm-btn alt" onClick={handleLogout}>Sair</button>
           </div>
         </header>
 
@@ -99,7 +137,7 @@ export default function AdminPage() {
 
         {feedback && <div className={`adm-feedback ${feedback.type === 'success' ? 'ok' : 'err'}`} onClick={actions.clearFeedback}>{feedback.message}</div>}
 
-        {loading && <div className="adm-card adm-muted">Carregando painel...</div>}
+        {loading && <AdminSkeleton />}
 
         {!loading && tab === 'dashboard' && stats && (
           <section className="adm-grid">
@@ -145,13 +183,13 @@ export default function AdminPage() {
               <button className="adm-btn" onClick={async () => { if (!code || !influencer) return; await actions.createReferral(code, influencer); setCode(''); setInfluencer(''); }}>Criar</button>
             </div>
             {referrals.map((ref) => {
-              const uses = referralUses.filter((use) => use.code === ref.code).slice(0, 5);
+              const uses = referralUsesByCode.get(ref.code) || [];
               return (
                 <div key={ref.id} className="adm-user" style={{ gridTemplateColumns: '1.3fr auto auto auto' }}>
                   <div>
                     <div style={{ fontWeight: 700 }}>{ref.code}</div>
                     <div className="adm-muted">{ref.influencer_name} · {ref.uses} usos</div>
-                    <div className="adm-muted">Últimos usos: {uses.map((use) => use.profiles?.email || use.user_id).join(' · ') || 'nenhum'}</div>
+                    <div className="adm-muted">Últimos usos: {uses.join(' · ') || 'nenhum'}</div>
                   </div>
                   <button className="adm-btn alt" onClick={() => actions.toggleReferral(ref.id, ref.active)}>{ref.active ? 'Pausar' : 'Ativar'}</button>
                   <span className={`adm-badge ${ref.active ? 'paid' : 'free'}`}>{ref.active ? 'ATIVO' : 'INATIVO'}</span>

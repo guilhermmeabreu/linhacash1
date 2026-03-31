@@ -4,6 +4,7 @@ import { auditLog } from '@/lib/services/audit-log-service';
 import { acquireIdempotencyKey } from '@/lib/services/idempotency-service';
 import { activatePaidPro } from '@/lib/services/billing-service';
 import { validateCheckoutPlan } from '@/lib/validators/billing-validator';
+import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -93,6 +94,7 @@ export async function POST(req: Request) {
     }
 
     await supabase.from('referral_uses').insert({ code: referralCode, user_id: userId, payment_id: paymentId, created_at: new Date().toISOString() });
+    invalidateCacheByPrefix('admin:');
 
     await auditLog('webhook_event', { status: 'processed', paymentId, userId, plan });
     return Response.json({ ok: true });
