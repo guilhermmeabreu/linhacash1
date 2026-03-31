@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>Linha Cash — Análise de Apostas da NBA</title>
+<title>LinhaCash — Análise de Apostas da NBA</title>
 <link rel="icon" type="image/png" href="/logo.png"/>
 <link rel="apple-touch-icon" href="/logo.png"/>
 <link rel="manifest" href="/manifest.json"/>
@@ -829,7 +829,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <div style="text-align:center;padding:18px 0 14px">
  <div style="font-size:30px;margin-bottom:8px"></div>
  <div style="font-size:20px;font-weight:800">Assine o Plano Pro</div>
- <div style="font-size:13px;color:var(--mt);margin-top:4px">Acesso completo à plataforma</div>
+ <div style="font-size:13px;color:var(--mt);margin-top:4px">Acesso completo ao serviço</div>
  </div>
 
  <!-- Benefícios -->
@@ -883,7 +883,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  </div>
  <div style="overflow-y:auto;padding:16px 20px 32px;font-size:13px;color:var(--mt);line-height:1.7">
  <p style="font-weight:700;color:var(--tx);margin-bottom:6px">1. Finalidade</p>
- <p style="margin-bottom:14px">O LinhaCash é uma plataforma de análise de dados estatísticos da NBA para fins <strong>exclusivamente informativos</strong>. Não somos uma casa de apostas, não aceitamos apostas e não nos responsabilizamos por decisões financeiras tomadas com base nos dados exibidos.</p>
+ <p style="margin-bottom:14px">O LinhaCash é um serviço de análise de dados estatísticos da NBA para fins <strong>exclusivamente informativos</strong>. Não somos casa de apostas, não aceitamos apostas e não nos responsabilizamos por decisões financeiras tomadas com base nos dados exibidos.</p>
  <p style="font-weight:700;color:var(--tx);margin-bottom:6px">2. Uso Responsável</p>
  <p style="margin-bottom:14px">As informações têm caráter informativo e estatístico. O usuário é o único responsável por suas decisões. Jogue com responsabilidade. Se tiver problemas com apostas, ligue para o CVV: 188.</p>
  <p style="font-weight:700;color:var(--tx);margin-bottom:6px">3. Planos e Pagamentos</p>
@@ -1537,7 +1537,7 @@ function renderDetail(){
    <div class="analytics-card"><div class="analytics-title">Variação casa/fora</div><div class="analytics-value">${Math.abs((m.avg_home||0)-(m.avg_away||0)).toFixed(1)}</div></div>
    <div class="analytics-card"><div class="analytics-title">Tendência</div><div class="analytics-value">${(m.avg_l5>m.avg_l10)?'↑':'↓'}</div></div>
  </div>
- <div class="pro-placeholder">📈 Advanced stats coming soon · Upgrade to Pro para liberar análises preditivas completas, histórico expandido e comparativos por matchup.</div>`;
+ <div class="pro-placeholder">Advanced stats coming soon · Faça upgrade para o Pro e libere análises preditivas completas, histórico expandido e comparativos por matchup.</div>`;
 }
 
 // S4: PERFIL 
@@ -1940,7 +1940,7 @@ renderNavigation();
  if(!savedToken){
    if(urlParams.get('status')==='success'){
      show('sAuth',false);
-     setTimeout(()=>toast('Pagamento aprovado! Faça login para acessar o Pro 🏆'),500);
+     setTimeout(()=>toast('Pagamento aprovado! Faça login para acessar o Pro.'),500);
    } else {
      show('sAuth',false);
    }

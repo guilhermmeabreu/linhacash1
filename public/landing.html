@@ -3,13 +3,21 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<meta name="description" content="LinhaCash: análise de props NBA com foco em conversão, clareza e confiança para apostadores brasileiros."/>
-<title>LinhaCash — Premium NBA Props Intelligence</title>
+<meta name="description" content="LinhaCash ajuda você a encontrar jogos, acompanhar estatísticas e decidir com mais clareza nas apostas de NBA."/>
+<title>LinhaCash | Análise de NBA para apostas</title>
 <link rel="icon" href="/logo.png"/>
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem('lc_theme');
+    if (saved === 'light') document.documentElement.classList.add('theme-light');
+  } catch (_) {}
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#060808;--s1:#0c0f0e;--s2:#131917;--bd:#1f2a26;--bd2:#2a3933;--tx:#ecf5f1;--mt:#91a69d;--green:#00e676;--green-dim:rgba(0,230,118,.12);--space-1:6px;--space-2:10px;--space-3:14px;--space-4:20px;--space-5:28px;--space-6:40px;--radius:0;--shadow:0 20px 50px rgba(0,0,0,.35)}
-body.light{--bg:#f4f7f5;--s1:#ffffff;--s2:#f9fbfa;--bd:#cfdbd5;--bd2:#bccbc4;--tx:#11201a;--mt:#587167;--green:#00b862;--green-dim:rgba(0,184,98,.12)}
+:root{--bg:#070a09;--s1:#0e1311;--s2:#151d19;--bd:#1f2c27;--bd2:#2b3d36;--tx:#eaf3ef;--mt:#90a59b;--green:#00e676;--green-dim:rgba(0,230,118,.12);--space-1:8px;--space-2:12px;--space-3:16px;--space-4:22px;--space-5:30px;--space-6:42px}
+html.theme-light{--bg:#f2f7f4;--s1:#ffffff;--s2:#f8fbf9;--bd:#cfddd6;--bd2:#b9cbc2;--tx:#15231d;--mt:#5d746a;--green:#00b861;--green-dim:rgba(0,184,97,.12)}
 html,body{font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);scroll-behavior:smooth}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:1140px;margin:0 auto;padding:0 var(--space-4)}
@@ -19,54 +27,63 @@ nav{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--bd);backdrop-
 .logo img{width:28px;height:28px}
 .logo em{color:var(--green);font-style:normal}
 .nav-actions{display:flex;gap:10px;align-items:center}
-.btn{padding:11px 18px;border:1px solid var(--bd2);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:.2s}
+.btn{padding:11px 18px;border:1px solid var(--bd2);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:.2s;background:transparent;color:var(--tx);cursor:pointer}
 .btn:hover{border-color:var(--green);color:var(--green)}
 .btn.primary{background:var(--green);border-color:var(--green);color:#00160b}
 .btn.primary:hover{opacity:.9;color:#00160b}
-#theme{width:38px;height:38px;display:grid;place-items:center;background:var(--s1)}
-.hero{padding:84px 0 72px;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:-20% -10% auto;background:radial-gradient(circle at top,rgba(0,230,118,.16),transparent 55%);height:70%;pointer-events:none}
+#theme{width:40px;height:40px;display:grid;place-items:center;padding:0}
+#theme svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.hero{padding:86px 0 74px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:-20% -10% auto;background:radial-gradient(circle at top,rgba(0,230,118,.15),transparent 57%);height:70%;pointer-events:none}
 .badge{display:inline-flex;border:1px solid rgba(0,230,118,.35);padding:7px 12px;color:var(--green);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:var(--space-4)}
-h1{font-size:clamp(36px,6vw,64px);line-height:1.06;max-width:820px;letter-spacing:-.03em}
-.subtitle{margin-top:var(--space-4);max-width:640px;color:var(--mt);font-size:19px;line-height:1.55}
+h1{font-size:clamp(36px,6vw,62px);line-height:1.06;max-width:820px;letter-spacing:-.03em}
+.subtitle{margin-top:var(--space-4);max-width:660px;color:var(--mt);font-size:19px;line-height:1.55}
 .hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:var(--space-5)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bd);margin-top:56px;border:1px solid var(--bd)}
 .kpi{background:var(--s1);padding:20px}
-.kpi strong{font-size:28px;color:var(--green)}
-.kpi span{display:block;color:var(--mt);font-size:12px;margin-top:6px}
-section{padding:78px 0;border-top:1px solid var(--bd)}
-.h2{font-size:clamp(28px,4vw,46px);letter-spacing:-.03em}
-.p{margin-top:12px;color:var(--mt);font-size:17px;max-width:700px;line-height:1.65}
+.kpi strong{font-size:28px;color:var(--green);display:block}
+.kpi span{display:block;color:var(--mt);font-size:12px;margin-top:7px;line-height:1.55}
+section{padding:80px 0;border-top:1px solid var(--bd)}
+.h2{font-size:clamp(28px,4vw,45px);letter-spacing:-.03em}
+.p{margin-top:12px;color:var(--mt);font-size:17px;max-width:720px;line-height:1.65}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bd);margin-top:34px}
-.card{background:var(--s1);padding:26px;min-height:190px;transition:.2s}
+.card{background:var(--s1);padding:28px;min-height:192px;transition:.2s}
 .card:hover{background:var(--s2)}
-.card h3{font-size:18px;margin:14px 0 9px}
-.card p{font-size:14px;line-height:1.65;color:var(--mt)}
+.card h3{font-size:18px;margin-bottom:10px}
+.card p{font-size:14px;line-height:1.68;color:var(--mt)}
 .compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);margin-top:32px;border:1px solid var(--bd)}
 .col{background:var(--s1);padding:24px}
 .col.pro{border-top:2px solid var(--green)}
-.row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);font-size:14px;line-height:1.6}
 .row:last-child{border-bottom:none}
-.plans{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);margin-top:30px}
-.plan{background:var(--s1);padding:28px}
-.price{font-size:44px;font-weight:800;letter-spacing:-.03em;margin:8px 0}
-.small{font-size:13px;color:var(--mt)}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);margin-top:32px}
+.plan{background:var(--s1);padding:30px}
+.plan h3{font-size:22px}
+.price{font-size:42px;font-weight:800;letter-spacing:-.03em;margin:8px 0}
+.small{font-size:13px;color:var(--mt);line-height:1.6}
 .list{margin:18px 0 26px;display:grid;gap:8px}
-.list li{list-style:none;font-size:14px;color:var(--mt)}
+.list li{list-style:none;font-size:14px;color:var(--mt);line-height:1.6}
 .list li.on{color:var(--tx)}
-.final{padding:86px 0;text-align:center}
-.final h2{font-size:clamp(28px,5vw,52px)}
+.price-note{margin-top:14px;padding:10px 12px;border:1px solid var(--bd2);background:var(--s2);font-size:12px;color:var(--mt);line-height:1.5}
+.final{padding:88px 0;text-align:center}
+.final h2{font-size:clamp(28px,5vw,50px);letter-spacing:-.03em}
 .final p{max-width:640px;margin:14px auto 28px;color:var(--mt);line-height:1.65}
-footer{border-top:1px solid var(--bd);padding:24px 0 40px;color:var(--mt);font-size:12px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
-@media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.grid-3,.plans,.compare{grid-template-columns:1fr}}
+.footer{border-top:1px solid var(--bd);padding:34px 0 44px}
+.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:28px}
+.footer-title{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mt);margin-bottom:10px}
+.footer-link{display:block;color:var(--tx);font-size:14px;opacity:.9;margin-bottom:8px}
+.footer-link:hover{opacity:1;color:var(--green)}
+.disclaimer{margin-top:18px;padding-top:18px;border-top:1px solid var(--bd);font-size:12px;color:var(--mt);line-height:1.7}
+.copy{margin-top:16px;font-size:12px;color:var(--mt)}
+@media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.grid-3,.plans,.compare,.footer-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <nav>
   <div class="wrap ninner">
-    <a class="logo" href="/landing.html"><img src="/logo.png" alt=""/>Linha<em>Cash</em></a>
+    <a class="logo" href="/landing.html"><img src="/logo.png" alt="LinhaCash"/>Linha<em>Cash</em></a>
     <div class="nav-actions">
-      <button class="btn" id="theme">☾</button>
+      <button class="btn" id="theme" aria-label="Alternar tema"></button>
       <a class="btn" href="#planos">Planos</a>
       <a class="btn primary" href="/app.html">Começar grátis</a>
     </div>
@@ -74,51 +91,51 @@ footer{border-top:1px solid var(--bd);padding:24px 0 40px;color:var(--mt);font-s
 </nav>
 
 <header class="hero wrap">
-  <span class="badge">Plataforma SaaS para NBA Props</span>
-  <h1>Decisões de aposta mais rápidas, com mais clareza e menos ruído.</h1>
-  <p class="subtitle">LinhaCash organiza os dados certos para você identificar valor em segundos. Funciona hoje com dados parciais e escala sem fricção para cobertura completa no Pro.</p>
+  <span class="badge">Análise de NBA em português</span>
+  <h1>Encontre os melhores jogos do dia e decida com mais clareza.</h1>
+  <p class="subtitle">LinhaCash organiza estatísticas, médias e contexto em uma visão direta. Você economiza tempo, evita confusão e toma decisões com mais segurança.</p>
   <div class="hero-cta">
-    <a class="btn primary" href="/app.html">Testar Plano Free</a>
-    <a class="btn" href="#beneficios">Ver benefícios</a>
+    <a class="btn primary" href="/app.html">Testar plano Free</a>
+    <a class="btn" href="#beneficios">Ver como funciona</a>
   </div>
   <div class="kpis">
-    <div class="kpi"><strong>L5/L10/L20</strong><span>Tendência recente pronta para leitura</span></div>
-    <div class="kpi"><strong>Casa/Fora</strong><span>Split aplicado no fluxo principal</span></div>
-    <div class="kpi"><strong>Score A–B</strong><span>Priorize cenários com mais confiança</span></div>
-    <div class="kpi"><strong>PT-BR</strong><span>Interface e contexto em português</span></div>
+    <div class="kpi"><strong>L5/L10/L20</strong><span>Veja a fase recente de cada jogador de forma clara.</span></div>
+    <div class="kpi"><strong>Casa/Fora</strong><span>Compare o desempenho em cenários diferentes.</span></div>
+    <div class="kpi"><strong>Leitura rápida</strong><span>Entenda o jogo em poucos cliques.</span></div>
+    <div class="kpi"><strong>100% PT-BR</strong><span>Tudo organizado para quem aposta no Brasil.</span></div>
   </div>
 </header>
 
 <section id="beneficios">
   <div class="wrap">
-    <h2 class="h2">Feito para converter análise em decisão.</h2>
-    <p class="p">Cada elemento da interface foi desenhado para reduzir esforço cognitivo: dados essenciais no topo, comparações visuais claras e navegação focada no que gera ação.</p>
+    <h2 class="h2">Tudo para analisar melhor, sem perder tempo.</h2>
+    <p class="p">Da escolha do jogo até a leitura das estatísticas, a experiência foi pensada para ser objetiva e confiável.</p>
     <div class="grid-3">
-      <article class="card"><div>⚡</div><h3>Velocidade operacional</h3><p>Abra um jogo, filtre estatísticas e encontre linhas com leitura imediata sem trocar de plataforma.</p></article>
-      <article class="card"><div>🧠</div><h3>Hierarquia inteligente</h3><p>Cards, tabelas e blocos de contexto destacam sinais-chave para evitar análises rasas.</p></article>
-      <article class="card"><div>🔒</div><h3>Confiança de produto</h3><p>Experiência consistente em desktop e mobile com feedback visual, estados vazios e loading profissional.</p></article>
+      <article class="card"><h3>Escolha jogos com rapidez</h3><p>Veja os confrontos do dia, horários e acesso direto aos jogadores relevantes de cada equipe.</p></article>
+      <article class="card"><h3>Acompanhe estatísticas úteis</h3><p>Médias recentes, splits e comparação de desempenho em um fluxo simples de leitura.</p></article>
+      <article class="card"><h3>Tome decisões com mais confiança</h3><p>Informação organizada, linguagem clara e menos ruído para apoiar seu processo de análise.</p></article>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2 class="h2">Por que LinhaCash converte melhor</h2>
-    <p class="p">Enquanto outras ferramentas exigem múltiplas telas e contexto em inglês, LinhaCash mantém foco na ação com experiência local e estrutura SaaS clara.</p>
+    <h2 class="h2">Por que escolher LinhaCash</h2>
+    <p class="p">Você encontra o que precisa de forma direta: menos telas, menos dúvida e mais foco no que importa para sua análise.</p>
     <div class="compare">
       <div class="col pro">
         <h3>LinhaCash</h3>
-        <div class="row">✅ Fluxo em português com foco em props</div>
-        <div class="row">✅ Plano Free para ativação imediata</div>
-        <div class="row">✅ Pro com cobertura e analytics avançados</div>
-        <div class="row">✅ UI preparada para dados parciais sem quebrar</div>
+        <div class="row">Leitura em português, sem complexidade desnecessária.</div>
+        <div class="row">Plano Free para começar agora, sem cartão.</div>
+        <div class="row">Plano Pro para cobertura completa e visão mais profunda.</div>
+        <div class="row">Navegação clara para economizar tempo no dia a dia.</div>
       </div>
       <div class="col">
-        <h3>Ferramentas genéricas</h3>
-        <div class="row">⚠️ Contexto fragmentado e técnico demais</div>
-        <div class="row">⚠️ Onboarding lento para novos usuários</div>
-        <div class="row">⚠️ Menos clareza entre gratuito e premium</div>
-        <div class="row">⚠️ Baixa adaptação para público brasileiro</div>
+        <h3>Outras opções</h3>
+        <div class="row">Informação espalhada em muitas telas.</div>
+        <div class="row">Terminologia difícil para leitura rápida.</div>
+        <div class="row">Menos clareza entre recursos gratuitos e pagos.</div>
+        <div class="row">Mais tempo gasto para chegar à mesma decisão.</div>
       </div>
     </div>
   </div>
@@ -126,49 +143,101 @@ footer{border-top:1px solid var(--bd);padding:24px 0 40px;color:var(--mt);font-s
 
 <section id="planos">
   <div class="wrap">
-    <h2 class="h2">Free para começar. Pro para escalar resultado.</h2>
-    <p class="p">Escolha com transparência: use o gratuito para validar rotina e desbloqueie o Pro quando quiser profundidade total.</p>
+    <h2 class="h2">Planos claros para o seu ritmo</h2>
+    <p class="p">Comece no Free e evolua para o Pro quando quiser acompanhar mais jogos, mais jogadores e mais estatísticas.</p>
     <div class="plans">
       <article class="plan">
         <h3>Plano Free</h3>
         <div class="price">R$0</div>
-        <div class="small">Ideal para conhecer a plataforma sem cartão.</div>
+        <div class="small">Para conhecer o serviço e testar a rotina de análise.</div>
         <ul class="list">
-          <li class="on">1 jogo por dia</li><li class="on">1 jogador por time</li><li class="on">PTS liberado</li><li>Sem estatísticas avançadas</li>
+          <li class="on">1 jogo por dia</li>
+          <li class="on">1 jogador por time</li>
+          <li class="on">Estatística de PTS</li>
+          <li>Acesso parcial aos recursos avançados</li>
         </ul>
         <a class="btn" href="/app.html">Entrar grátis</a>
       </article>
       <article class="plan" style="border-top:2px solid var(--green)">
         <h3>Plano Pro</h3>
-        <div class="price">R$24,90</div>
-        <div class="small">Cobertura completa para operação diária.</div>
+        <div class="price">R$24,90 <span style="font-size:15px;font-weight:600">/mês</span></div>
+        <div class="small">Acesso completo para quem analisa apostas todos os dias.</div>
         <ul class="list">
-          <li class="on">Todos os jogos e jogadores</li><li class="on">Todas as estatísticas</li><li class="on">Painel avançado e insights premium</li><li class="on">Prioridade em novas features</li>
+          <li class="on">Todos os jogos e jogadores</li>
+          <li class="on">Todas as estatísticas disponíveis</li>
+          <li class="on">Mais contexto para decisões rápidas</li>
+          <li class="on">Prioridade em novas melhorias</li>
         </ul>
-        <a class="btn primary" href="/app.html">Quero o Pro</a>
+        <div class="price-note">
+          <strong style="color:var(--tx)">Pro Anual: R$197/ano</strong><br/>
+          Equivalente a R$16,41/mês. Economia de aproximadamente 34% em relação ao plano mensal.
+        </div>
+        <div style="margin-top:16px"><a class="btn primary" href="/app.html">Quero assinar Pro</a></div>
       </article>
     </div>
   </div>
 </section>
 
 <section class="final wrap">
-  <h2>Você não precisa de mais dados.<br/>Precisa de dados certos em uma interface que converte.</h2>
-  <p>Comece agora no plano gratuito e evolua para Pro quando quiser desbloquear analytics completos e contexto avançado de matchup.</p>
+  <h2>Menos dúvida. Mais clareza para analisar cada jogo.</h2>
+  <p>Comece no plano Free agora e tenha uma rotina de análise mais organizada com LinhaCash.</p>
   <a class="btn primary" href="/app.html">Começar agora</a>
 </section>
 
-<div class="wrap">
-  <footer>
-    <div>© LinhaCash 2026 · Todos os direitos reservados.</div>
-    <div style="display:flex;gap:14px"><a href="/privacidade">Privacidade</a><a href="/app.html">Entrar</a></div>
-  </footer>
-</div>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-title">LinhaCash</div>
+        <p style="font-size:14px;color:var(--mt);line-height:1.7">Serviço de análise de estatísticas da NBA para apoiar decisões de aposta com informação organizada e leitura objetiva.</p>
+      </div>
+      <div>
+        <div class="footer-title">Navegação</div>
+        <a class="footer-link" href="/app.html">Entrar</a>
+        <a class="footer-link" href="#planos">Planos</a>
+        <a class="footer-link" href="#beneficios">Benefícios</a>
+      </div>
+      <div>
+        <div class="footer-title">Informações</div>
+        <a class="footer-link" href="/app.html">Termos de Uso</a>
+        <a class="footer-link" href="/privacidade">Política de Privacidade</a>
+        <a class="footer-link" href="/app.html">Suporte / Contato</a>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      LinhaCash não é casa de apostas e não recebe apostas. O conteúdo oferecido tem caráter informativo e de análise estatística.<br/>
+      Não há garantia de resultado. Toda decisão de aposta é de responsabilidade do usuário. Aposte com responsabilidade.
+    </div>
+
+    <div class="copy">© 2026 LinhaCash. Todos os direitos reservados. Marca e conteúdo protegidos por direitos autorais.</div>
+  </div>
+</footer>
 
 <script>
-const btn=document.getElementById('theme');
-function setTheme(light){document.body.classList.toggle('light',light);localStorage.setItem('lc_theme',light?'light':'dark');btn.textContent=light?'☀':'☾';}
-btn.addEventListener('click',()=>setTheme(!document.body.classList.contains('light')));
-if(localStorage.getItem('lc_theme')==='light')setTheme(true);
+const THEME_KEY='lc_theme';
+const html=document.documentElement;
+const themeBtn=document.getElementById('theme');
+
+function icon(isLight){
+  return isLight
+  ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
+  : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3c0 0-1.21 5.79 2.79 8.79 4 3 7 1 7 1z"></path></svg>';
+}
+
+function applyTheme(light){
+  html.classList.toggle('theme-light', light);
+  themeBtn.innerHTML = icon(light);
+  themeBtn.setAttribute('aria-label', light ? 'Ativar tema escuro' : 'Ativar tema claro');
+  try { localStorage.setItem(THEME_KEY, light ? 'light' : 'dark'); } catch (_) {}
+}
+
+const startLight = html.classList.contains('theme-light');
+applyTheme(startLight);
+
+themeBtn.addEventListener('click', function(){
+  applyTheme(!html.classList.contains('theme-light'));
+});
 </script>
 </body>
 </html>
