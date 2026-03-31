@@ -6,6 +6,7 @@ import { AppError } from '@/lib/http/errors';
 import { fail, options } from '@/lib/http/responses';
 import { getIP, rateLimit } from '@/lib/rate-limit';
 import { auditLog } from '@/lib/services/audit-log-service';
+import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -191,6 +192,10 @@ export async function GET(req: Request) {
     }
 
     await saveLog('success', gamesCount, errors);
+    invalidateCacheByPrefix('games:');
+    invalidateCacheByPrefix('players:');
+    invalidateCacheByPrefix('metrics:');
+    invalidateCacheByPrefix('admin:');
     const durationMs = Date.now() - startedAt;
     console.info('[SYNC]', JSON.stringify({ event: 'finish', origin: auth.origin, success: true, durationMs, errors: errors.length }));
     await auditLog('sync_execution', { origin: auth.origin, status: 'success', durationMs, errors: errors.length });

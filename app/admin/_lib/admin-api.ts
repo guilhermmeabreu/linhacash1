@@ -61,15 +61,17 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export interface AdminOverviewPayload {
+  stats: Stats;
+  users: Profile[];
+  referrals: ReferralCode[];
+  referralUses: ReferralUse[];
+  syncHistory: Array<{ created_at: string; status: string; games_synced: number }>;
+}
+
 export const adminApi = {
   loadAll() {
-    return Promise.all([
-      json<Stats>('/api/admin/stats'),
-      json<Profile[]>('/api/admin/users'),
-      json<ReferralCode[]>('/api/admin/referrals'),
-      json<ReferralUse[]>('/api/admin/referral-uses'),
-      json<Array<{ created_at: string; status: string; games_synced: number }>>('/api/admin/sync-logs').catch(() => []),
-    ]);
+    return json<AdminOverviewPayload>('/api/admin/overview');
   },
   toggleManualPro(id: string, enable: boolean) {
     return json('/api/admin/users', {

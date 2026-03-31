@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { validateSession, sanitizeMetrics, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimit, getIP } from '@/lib/rate-limit';
+import { getCachedValue } from '@/lib/cache/memory-cache';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,64 +38,63 @@ export async function GET(req: Request) {
     return errorResponse('Estatística inválida');
   }
 
-  // Buscar métricas do cache
-  const { data: cache } = await supabase
-    .from('player_props_cache')
-    .select('*')
-    .eq('player_id', parseInt(playerId))
-    .eq('stat', stat)
-    .single();
-
-  // Fallback para métricas calculadas
-  let metrics = null;
-  if (cache) {
-    metrics = {
-      player_id: cache.player_id,
-      stat: cache.stat,
-      avg_l5: cache.avg_l5,
-      avg_l10: cache.avg_l10,
-      avg_l20: cache.avg_l20,
-      avg_l30: cache.avg_l20, // fallback até ter L30
-      avg_home: cache.avg_home,
-      avg_away: cache.avg_away,
-      hit_rate_l10: cache.hit_rate_l10,
-      confidence_score: cache.confidence_score,
-    };
-  } else {
-    const { data: m } = await supabase
-      .from('player_metrics')
+  const parsedPlayerId = parseInt(playerId, 10);
+  const payload = await getCachedValue(`metrics:${session.plan}:${parsedPlayerId}:${stat}`, 2 * 60_000, async () => {
+    const { data: cache } = await supabase
+      .from('player_props_cache')
       .select('*')
-      .eq('player_id', parseInt(playerId))
+      .eq('player_id', parsedPlayerId)
       .eq('stat', stat)
       .single();
-    if (m) metrics = sanitizeMetrics(m);
-  }
 
-  // Buscar últimos jogos para o gráfico
-  const statDbMap: Record<string, string> = {
-    'PTS': 'points', 'REB': 'rebounds', 'AST': 'assists',
-    '3PM': 'three_pointers', 'P+A': 'points', 'P+R': 'points',
-    'A+R': 'assists', 'FG2A': 'fgm', 'FG3A': 'fga'
-  };
+    let metrics = null;
+    if (cache) {
+      metrics = {
+        player_id: cache.player_id,
+        stat: cache.stat,
+        avg_l5: cache.avg_l5,
+        avg_l10: cache.avg_l10,
+        avg_l20: cache.avg_l20,
+        avg_l30: cache.avg_l20,
+        avg_home: cache.avg_home,
+        avg_away: cache.avg_away,
+        hit_rate_l10: cache.hit_rate_l10,
+        confidence_score: cache.confidence_score,
+      };
+    } else {
+      const { data: m } = await supabase.from('player_metrics').select('*').eq('player_id', parsedPlayerId).eq('stat', stat).single();
+      if (m) metrics = sanitizeMetrics(m);
+    }
 
-  const { data: recentStats } = await supabase
-    .from('player_stats')
-    .select('game_date, points, rebounds, assists, three_pointers, fgm, fga, minutes')
-    .eq('player_id', parseInt(playerId))
-    .order('game_date', { ascending: false })
-    .limit(session.plan === 'free' ? 5 : 20);
+    const { data: recentStats } = await supabase
+      .from('player_stats')
+      .select('game_date, points, rebounds, assists, three_pointers, fgm, fga, minutes')
+      .eq('player_id', parsedPlayerId)
+      .order('game_date', { ascending: false })
+      .limit(session.plan === 'free' ? 5 : 20);
 
-  // Sanitizar — nunca retornar IDs internos ou dados desnecessários
-  const games = (recentStats || []).map(s => ({
-    date: s.game_date,
-    value: getStatValue(s, stat),
-    minutes: s.minutes,
-  }));
+    const games = (recentStats || []).map((row) => ({
+      date: row.game_date,
+      value: getStatValue(row, stat),
+      minutes: row.minutes,
+    }));
 
-  return okResponse({ metrics, games, stat, availableStats: session.plan === 'pro' ? ALL_STATS : FREE_STATS });
+    return { metrics, games };
+  });
+
+  return okResponse({ metrics: payload.metrics, games: payload.games, stat, availableStats: session.plan === 'pro' ? ALL_STATS : FREE_STATS });
 }
 
-function getStatValue(s: any, stat: string): number {
+type PlayerStatRow = {
+  points: number | null;
+  rebounds: number | null;
+  assists: number | null;
+  three_pointers: number | null;
+  fgm: number | null;
+  fga: number | null;
+};
+
+function getStatValue(s: PlayerStatRow, stat: string): number {
   switch (stat) {
     case 'PTS': return s.points || 0;
     case 'REB': return s.rebounds || 0;

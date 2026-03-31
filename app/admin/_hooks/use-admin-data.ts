@@ -15,12 +15,12 @@ export function useAdminData() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, referralsData, usesData, logsData] = await adminApi.loadAll();
-      setStats(statsData);
-      setUsers(usersData);
-      setReferrals(referralsData);
-      setReferralUses(usesData);
-      setSyncHistory(Array.isArray(logsData) ? logsData : []);
+      const data = await adminApi.loadAll();
+      setStats(data.stats);
+      setUsers(data.users);
+      setReferrals(data.referrals);
+      setReferralUses(data.referralUses);
+      setSyncHistory(Array.isArray(data.syncHistory) ? data.syncHistory : []);
     } catch {
       setFeedback({ type: 'error', message: 'Não foi possível carregar o painel.' });
     } finally {
