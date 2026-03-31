@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { AuthenticationError } from '@/lib/http/errors';
 
 const COOKIE_NAME = 'lc_admin_session';
@@ -26,6 +26,12 @@ function requestUa(req: Request) {
   return req.headers.get('user-agent') || 'unknown';
 }
 
+
+function readCookie(req: Request, cookieName: string): string | null {
+  const raw = req.headers.get('cookie') || '';
+  const found = raw.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${cookieName}=`));
+  return found ? decodeURIComponent(found.split('=').slice(1).join('=')) : null;
+}
 async function persistSession(sessionId: string, email: string, ip: string, ua: string) {
   const expiresAt = now() + SESSION_TTL_SECONDS * 1000;
   const payload = { expiresAt, email, ipHash: hash(ip), uaHash: hash(ua) };
@@ -91,7 +97,7 @@ export async function createAdminSession(response: NextResponse, req: Request, e
 }
 
 export async function requireAdminSession(req: Request) {
-  const sessionId = (req as NextRequest).cookies.get(COOKIE_NAME)?.value;
+  const sessionId = readCookie(req, COOKIE_NAME);
   if (!sessionId) throw new AuthenticationError();
 
   const session = await readSession(sessionId);
@@ -108,7 +114,7 @@ export async function requireAdminSession(req: Request) {
 }
 
 export async function destroyAdminSession(req: Request, response: NextResponse) {
-  const sessionId = (req as NextRequest).cookies.get(COOKIE_NAME)?.value;
+  const sessionId = readCookie(req, COOKIE_NAME);
   if (sessionId) await deleteSession(sessionId);
   response.cookies.set({ name: COOKIE_NAME, value: '', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/', maxAge: 0 });
 }

@@ -5,7 +5,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function deleteOwnAccount(userId: string, email: string) {
   await supabase.from('referral_uses').delete().eq('user_id', userId);
-  await supabase.from('favorites').delete().eq('user_id', userId);
+  await supabase.from('favorites').delete().eq('user_id', userId).catch(() => undefined);
   await supabase.from('profiles').delete().eq('id', userId);
 
   const { error } = await supabase.auth.admin.deleteUser(userId);

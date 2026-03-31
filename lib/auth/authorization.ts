@@ -43,9 +43,6 @@ export async function requireCronRequest(req: Request) {
   const headerSecret = req.headers.get('x-cron-secret');
   if (headerSecret && headerSecret === process.env.CRON_SECRET) return { origin: 'cron' as const };
 
-  const querySecret = new URL(req.url).searchParams.get('secret');
-  if (querySecret && querySecret === process.env.CRON_SECRET) return { origin: 'cron' as const };
-
   await requireAdminUser(req);
   return { origin: 'admin' as const };
 }

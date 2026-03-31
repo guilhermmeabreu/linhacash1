@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { auditLog } from '@/lib/services/audit-log-service';
+import { acquireIdempotencyKey } from '@/lib/services/idempotency-service';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -23,11 +24,6 @@ function validateSignature(req: Request, paymentId: string): boolean {
   return secureCompare(expected, v1);
 }
 
-async function wasProcessed(paymentId: string) {
-  const { data } = await supabase.from('referral_uses').select('id').eq('payment_id', paymentId).limit(1);
-  return !!data?.length;
-}
-
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const paymentId = String(body?.data?.id || '');
@@ -43,7 +39,8 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    if (await wasProcessed(paymentId)) {
+    const lockAcquired = await acquireIdempotencyKey(`mp:webhook:${paymentId}`);
+    if (!lockAcquired) {
       await auditLog('webhook_event', { status: 'ignored', reason: 'idempotent_replay', paymentId });
       return Response.json({ ok: true });
     }
