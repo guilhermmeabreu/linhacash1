@@ -87,7 +87,7 @@ export default function AdminPage() {
   return (
     <main className="adm-page">
       <style>{`
-        .adm-page{min-height:100vh;background:#080909;color:#ecf1ee;padding:24px;font-family:Inter,sans-serif}
+        .adm-page{min-height:100vh;background:#080909;color:#ecf1ee;padding:24px;font-family:Inter,sans-serif;overflow-x:hidden}
         .adm-shell{max-width:1240px;margin:0 auto;display:grid;gap:18px}
         .adm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid #1e2422}
         .adm-title{font-size:24px;font-weight:800}
@@ -103,12 +103,12 @@ export default function AdminPage() {
         .adm-kpi-main{font-size:36px;font-weight:900;line-height:1.1;margin-top:10px}
         .adm-muted{color:#8ea097;font-size:13px}
         .adm-input{background:#151b19;border:1px solid #2a3531;color:#eff5f2;padding:10px 12px;min-width:220px}
-        .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 12px;font-weight:700;cursor:pointer}
+        .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 12px;font-weight:700;cursor:pointer;min-height:40px}
         .adm-btn.alt{background:transparent;border:1px solid #32413c;color:#9cb0a7}
         .adm-btn.danger{background:transparent;border:1px solid #9b3131;color:#ff7676}
         .adm-btn.info{background:transparent;border:1px solid #2f6cd9;color:#8cb7ff}
         .adm-table{display:grid;gap:8px}
-        .adm-user{display:grid;grid-template-columns:1.4fr auto auto auto auto;gap:8px;align-items:center;background:#121715;border:1px solid #1d2824;padding:10px}
+        .adm-user{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto auto auto;gap:8px;align-items:center;background:#121715;border:1px solid #1d2824;padding:10px}
         .adm-badge{font-size:11px;font-weight:700;padding:4px 8px}
         .adm-badge.free{background:#1a1f1d;color:#a7b6af;border:1px solid #2b3531}
         .adm-badge.paid{background:rgba(0,230,118,.12);color:#00e676;border:1px solid rgba(0,230,118,.35)}
@@ -128,10 +128,31 @@ export default function AdminPage() {
         .adm-main-kpi{background:#101715;border:1px solid #274036;padding:14px}
         .adm-main-kpi .adm-muted{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
         .adm-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-        .adm-pill{display:flex;justify-content:space-between;background:#111614;border:1px solid #1e2a25;padding:10px 12px;font-size:13px}
+        .adm-pill{display:flex;justify-content:space-between;gap:12px;background:#111614;border:1px solid #1e2a25;padding:10px 12px;font-size:13px}
         .adm-two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
         .adm-three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
         @media (max-width: 980px){.adm-two-col,.adm-three-col,.adm-main-kpis,.adm-secondary{grid-template-columns:1fr}}
+        @media (max-width: 860px){
+          .adm-page{padding:16px}
+          .adm-shell{gap:14px}
+          .adm-head{flex-direction:column;align-items:flex-start}
+          .adm-row{width:100%}
+          .adm-row .adm-btn,.adm-row .adm-input{flex:1 1 180px}
+          .adm-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+          .adm-tab{white-space:nowrap}
+          .adm-user{grid-template-columns:1fr}
+          .adm-user > *{min-width:0}
+          .adm-log{flex-direction:column;align-items:flex-start}
+        }
+        @media (max-width: 640px){
+          .adm-title{font-size:20px}
+          .adm-card,.adm-section-block,.adm-main-kpi{padding:12px}
+          .adm-kpi-main{font-size:30px}
+          .adm-input{min-width:0;width:100%}
+          .adm-row .adm-btn{width:100%}
+          .adm-pill{flex-direction:column;align-items:flex-start}
+          .adm-badge{width:max-content}
+        }
         @keyframes adm-loading{0%{background-position:-220px 0}100%{background-position:220px 0}}
       `}</style>
       <div className="adm-shell">
