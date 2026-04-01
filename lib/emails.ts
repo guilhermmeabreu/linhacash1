@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'LinhaCash <onboarding@resend.dev>';
-const LOGO_URL = `${process.env.NEXT_PUBLIC_URL || 'https://linhacash1.vercel.app'}/logo.png`;
+const LOGO_URL = `${process.env.NEXT_PUBLIC_URL || 'https://linhacash.com.br'}/logo.png`;
 
 function base(content: string) {
   return `

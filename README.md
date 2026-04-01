@@ -1,67 +1,38 @@
 # LinhaCash
 
-Veja onde a linha está errada antes de apostar.
+LinhaCash ajuda você a identificar rapidamente quando uma linha de NBA está fora do padrão, com análise objetiva baseada em dados recentes.
 
-LinhaCash é uma ferramenta focada em análise rápida de props da NBA, ajudando o usuário a tomar decisões com base em dados reais, histórico recente e leitura objetiva.
+## Principais recursos
 
-## O que você encontra
-
-- Análise de jogadores por mercado (PTS, AST, REB, 3PM e outros)
-- Histórico recente com visualização clara
-- Comparação direta com a linha atual
+- Análise por mercado (PTS, AST, REB, 3PM e outros)
+- Histórico recente com leitura clara
+- Comparação direta entre desempenho e linha atual
 - Hit rate por janelas (L5, L10, L20, L30)
-- Ajuste de linha com recalculo em tempo real
-- Interface rápida e direta, sem excesso de informação
+- Ajuste de linha com recálculo em tempo real
 
-## Como funciona
+## Como usar
 
-1. Escolha um jogo  
-2. Clique no jogador  
-3. Veja a análise completa em segundos  
+1. Selecione um jogo
+2. Escolha um jogador
+3. Veja a análise completa em segundos
 
-Sem achismo. Sem perder tempo.
+## Planos
 
-## Plano gratuito e Pro
+- **Free:** acesso essencial
+- **Pro:** análises avançadas e mercados extras
 
-O LinhaCash possui uma versão gratuita e uma versão Pro.
+## Segurança e confiabilidade
 
-- Free: acesso básico aos dados
-- Pro: acesso a análises mais completas e mercados avançados
-
-## Tecnologias utilizadas
-
-- Next.js
-- Supabase
-- Vercel
-- Mercado Pago
-- Resend
-- Upstash Redis
-
-## Segurança
-
-O projeto inclui medidas como:
-
-- autenticação e sessão seguras
-- validação de entradas
-- proteção contra abuso (rate limiting)
-- verificação de webhooks
-- headers de segurança
+- Autenticação e sessão seguras
+- Validação de entrada em rotas críticas
+- Proteção contra abuso (rate limiting)
+- Verificação de assinatura de webhook
+- Headers de segurança para produção
 
 ## Aviso
 
-LinhaCash não é casa de apostas.
-
-A ferramenta organiza dados para análise e não garante resultados. Toda decisão é de responsabilidade do usuário.
-
-## Status
-
-Projeto em evolução contínua, com melhorias frequentes em:
-
-- performance
-- cobertura de dados
-- experiência do usuário
-- análise de métricas
+LinhaCash não é casa de apostas e não garante resultados. A plataforma organiza dados para apoiar sua análise.
 
 ## Contato
 
-Defina aqui seus canais oficiais (email, twitter, etc).
+Canal oficial de suporte: **suporte@linhacash.com.br**
