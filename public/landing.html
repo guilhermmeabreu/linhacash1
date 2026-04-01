@@ -19,6 +19,7 @@
 :root{--bg:#070908;--s1:#0f1512;--s2:#141d19;--bd:#24312b;--bd2:#30453c;--tx:#ecf5f1;--mt:#95a99f;--green:#00e676;--green-soft:rgba(0,230,118,.16);--space-1:8px;--space-2:12px;--space-3:16px;--space-4:24px;--space-5:34px;--space-6:52px}
 html.theme-light{--bg:#f3f8f5;--s1:#ffffff;--s2:#f7fbf8;--bd:#cfddd5;--bd2:#b8cbc1;--tx:#16241e;--mt:#5f746a;--green:#00b861;--green-soft:rgba(0,184,97,.14)}
 html,body{font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);scroll-behavior:smooth}
+body{overflow-x:hidden}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:1140px;margin:0 auto;padding:0 var(--space-4)}
 nav{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--bd);backdrop-filter:blur(10px);background:color-mix(in srgb,var(--bg) 90%, transparent)}
@@ -72,6 +73,32 @@ h1{font-size:clamp(32px,4.6vw,54px);line-height:1.1;max-width:680px;letter-spaci
 .delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 @media (max-width:950px){.steps,.plans,.footer-grid{grid-template-columns:1fr}}
+@media (max-width:768px){
+  .wrap{padding:0 var(--space-3)}
+  .ninner{height:auto;min-height:72px;padding:10px 0;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .nav-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .nav-actions .btn{flex:1 1 auto;text-align:center;min-width:0}
+  #theme{flex:0 0 44px}
+  main section{padding:62px 0}
+  .hero{padding:36px 0 34px}
+  h1{font-size:clamp(30px,8.2vw,40px);line-height:1.15}
+  h1 br{display:none}
+  .subtitle{margin-top:14px;font-size:16px;line-height:1.5}
+  .hero-cta{margin-top:var(--space-4)}
+  .hero-cta .btn{width:100%;text-align:center}
+  .plan{padding:22px}
+  .price{font-size:38px}
+}
+@media (max-width:520px){
+  .logo{font-size:18px}
+  .btn{padding:10px 14px;font-size:11px}
+  .h2{font-size:clamp(26px,8vw,34px)}
+  .p{font-size:15px;line-height:1.58}
+  .step{padding:18px}
+  .step h3{font-size:18px}
+  .list li,.small,.footer-link,.disclaimer{overflow-wrap:anywhere}
+  .footer{padding:28px 0 34px}
+}
 </style>
 </head>
 <body>
