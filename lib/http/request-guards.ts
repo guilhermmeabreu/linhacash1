@@ -57,7 +57,13 @@ function allowedOrigins(): string[] {
   return [...new Set([...getConfiguredOrigins(), ...getLocalDevOrigins()])];
 }
 
+function hasSafeMethod(req: Request) {
+  return ['GET', 'HEAD', 'OPTIONS'].includes(req.method.toUpperCase());
+}
+
 export function assertAllowedOrigin(req: Request) {
+  if (hasSafeMethod(req)) return;
+
   const requestOrigin = req.headers.get('origin');
   if (!requestOrigin) {
     throw new AuthenticationError('Missing request origin');
