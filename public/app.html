@@ -1050,30 +1050,47 @@ const dataServices = {
     }));
   },
   async fetchPlayersByGame(gameId, gameContext) {
-    const payload = await api(`/api/players?gameId=${gameId}`);
-    const list = Array.isArray(payload?.players) ? payload.players : [];
-    const homeTeamId = Number(gameContext?.home_team_id || 0);
-    const awayTeamId = Number(gameContext?.away_team_id || 0);
-    return list.map((player) => ({
-      id: player.id,
-      name: player.name || 'Jogador',
-      team_id: Number(player.team_id || 0),
-      team: Number(player.team_id) === homeTeamId
-        ? (gameContext?.home_team || 'Time da casa')
-        : (Number(player.team_id) === awayTeamId
-          ? (gameContext?.away_team || 'Time visitante')
-          : 'Time não informado'),
-      position: player.position || 'N/A',
-      line: Number(player.line || 0),
-    }));
+    if (PLAYER_FETCH_PROMISES[gameId]) return PLAYER_FETCH_PROMISES[gameId];
+    PLAYER_FETCH_PROMISES[gameId] = (async () => {
+      const payload = await api(`/api/players?gameId=${gameId}`);
+      const list = Array.isArray(payload?.players) ? payload.players : [];
+      const homeTeamId = Number(gameContext?.home_team_id || 0);
+      const awayTeamId = Number(gameContext?.away_team_id || 0);
+      return list.map((player) => ({
+        id: player.id,
+        name: player.name || 'Jogador',
+        team_id: Number(player.team_id || 0),
+        team: Number(player.team_id) === homeTeamId
+          ? (gameContext?.home_team || 'Time da casa')
+          : (Number(player.team_id) === awayTeamId
+            ? (gameContext?.away_team || 'Time visitante')
+            : 'Time não informado'),
+        position: player.position || 'N/A',
+        line: Number(player.line || 0),
+      }));
+    })();
+    try{
+      return await PLAYER_FETCH_PROMISES[gameId];
+    } finally {
+      delete PLAYER_FETCH_PROMISES[gameId];
+    }
   },
   async fetchPlayerStats(playerId, stat) {
-    const payload = await api(`/api/metrics?playerId=${playerId}&stat=${stat}`);
-    return {
-      metrics: payload?.metrics || null,
-      games: Array.isArray(payload?.games) ? payload.games : [],
-      availableStats: Array.isArray(payload?.availableStats) ? payload.availableStats : [],
-    };
+    const key=`${playerId}:${stat}`;
+    if(METRICS_FETCH_PROMISES[key]) return METRICS_FETCH_PROMISES[key];
+    METRICS_FETCH_PROMISES[key]=(async()=>{
+      const payload = await api(`/api/metrics?playerId=${playerId}&stat=${stat}`);
+      return {
+        metrics: payload?.metrics || null,
+        games: Array.isArray(payload?.games) ? payload.games : [],
+        availableStats: Array.isArray(payload?.availableStats) ? payload.availableStats : [],
+      };
+    })();
+    try{
+      return await METRICS_FETCH_PROMISES[key];
+    } finally{
+      delete METRICS_FETCH_PROMISES[key];
+    }
   }
 };
 
@@ -1099,6 +1116,16 @@ function renderGamesSkeleton(){
 
 function renderPlayersSkeleton(){
   return new Array(6).fill(0).map(()=>'<div class="skeleton sk-list"></div>').join('');
+}
+
+function renderPropModalSkeleton(){
+  return `
+  <div style="padding:16px">
+    <div class="skeleton sk-list" style="height:72px;margin-bottom:12px"></div>
+    <div class="skeleton sk-list" style="height:44px;margin-bottom:12px"></div>
+    <div class="skeleton sk-list" style="height:180px;margin-bottom:12px"></div>
+    <div class="skeleton sk-list" style="height:120px"></div>
+  </div>`;
 }
 
 function renderEmptyState(title, message){
@@ -1146,6 +1173,7 @@ function setAuthLoading(buttonId, loadingText, active) {
 
 // STATE 
 let GAMES=[],PBG={},METRICS={},PLAYER_GAMES={},PLAYER_MODAL_CACHE={};
+let PLAYER_FETCH_PROMISES={},METRICS_FETCH_PROMISES={};
 let cGame=null,cPlayer=null,cStat='PTS',cLine=null,cModalPlayerId=null;
 let stack=['sAuth'];
 let plan='free',dark=true,billingState=null;
@@ -1170,6 +1198,29 @@ function defLine(p,s){
 function toast(msg){
  const t=document.createElement('div');t.className='toast';t.textContent=msg;
  document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
+}
+
+function getCurrentPlayers(){
+ if(!cGame) return [];
+ const current=PBG[cGame.id];
+ return Array.isArray(current)?current:[];
+}
+
+function idle(cb){
+ if(typeof window!=='undefined'&&typeof window.requestIdleCallback==='function'){
+   window.requestIdleCallback(cb,{timeout:800});
+   return;
+ }
+ setTimeout(cb,16);
+}
+
+function prefetchGamePlayers(gameId){
+ if(PBG[gameId]?.length||PLAYER_FETCH_PROMISES[gameId]) return;
+ const game=GAMES.find((g)=>g.id===gameId);
+ if(!game) return;
+ dataServices.fetchPlayersByGame(gameId, game).then((players)=>{
+   if(Array.isArray(players)&&players.length) PBG[gameId]=players;
+ }).catch(()=>{});
 }
 
 // NAV 
@@ -1323,7 +1374,7 @@ async function renderGames(){
 
 const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
  const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
- return `<div class="gcard" onclick="openGame(${g.id})">
+ return `<div class="gcard" onclick="openGame(${g.id})" onpointerdown="prefetchGamePlayers(${g.id})">
  <div class="gctop"><span class="gtime">${time}</span></div>
  <div class="gteams">
  <div class="tside">
@@ -1357,6 +1408,8 @@ const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:64px;height:64
 // S2: JOGADORES 
 async function openGame(id){
  cGame=GAMES.find(g=>g.id===id);cStat='PTS';
+ if(!cGame) return;
+ const openedGameId=id;
  track('game_opened',{game_id:id,away_team:cGame?.away_team||null,home_team:cGame?.home_team||null});
  document.getElementById('s2ttl').textContent='';
  const hc=getClr(cGame.home_team),ac=getClr(cGame.away_team);
@@ -1388,12 +1441,17 @@ async function openGame(id){
  el.classList.add('on');cStat=el.dataset.stat;track('market_changed',{context:'game_players',market:cStat,game_id:cGame?.id||null});renderPRows();
  });
  });
- // Buscar jogadores dos dois times no Supabase
- document.getElementById('plist').innerHTML=renderPlayersSkeleton();
+ nav(2);
+ if(Array.isArray(PBG[id])&&PBG[id].length){
+   renderPRows();
+ }else{
+   document.getElementById('plist').innerHTML=renderPlayersSkeleton();
+ }
+ // Buscar jogadores dos dois times
  const data = await dataServices.fetchPlayersByGame(cGame.id, cGame);
+ if(!cGame||cGame.id!==openedGameId) return;
  PBG[id]=Array.isArray(data)?data:[];
  renderPRows();
- nav(2);
 }
 
 function setS2Stat(s,el){
@@ -1401,7 +1459,7 @@ function setS2Stat(s,el){
 }
 
 async function renderPRows(){
- let ps=PBG[cGame.id]||[];
+ let ps=getCurrentPlayers();
  if(!Array.isArray(ps)) ps=[];
  if(!pro()){
    const seen={};
@@ -1428,18 +1486,25 @@ async function renderPRows(){
 
 // S3: DETALHE 
 async function openPlayer(id){
- const allPlayers=Object.values(PBG).flat();
- cPlayer=allPlayers.find(p=>p.id===id);if(!cPlayer)return;
+ cPlayer=getCurrentPlayers().find(p=>p.id===id);if(!cPlayer)return;
  cStat='PTS';cLine=null;cModalPlayerId=id;
  track('player_modal_opened',{player_id:id,player_name:cPlayer?.name||null,game_id:cGame?.id||null});
- await ensurePlayerModalData(id);
  openPropModal();
+ const container=document.getElementById('propModalContent');
+ if(container) container.innerHTML=renderPropModalSkeleton();
+ await ensureMarketData(id,cStat);
  renderPropModal();
+ ensurePlayerModalData(id);
 }
-function changeTab(s,el){
+async function changeTab(s,el){
  if(!pro()&&!SFREE.includes(s)){track('locked_pro_feature_clicked',{context:'player_modal_tab',market:s,player_id:cModalPlayerId||null});openPro();return;}
  cStat=s;cLine=null;
  track('market_changed',{context:'player_modal',market:s,player_id:cModalPlayerId||null});
+ if(!METRICS[cModalPlayerId]?.[s]&&!(PLAYER_GAMES[cModalPlayerId]?.[s]||[]).length){
+   const container=document.getElementById('propModalContent');
+   if(container) container.innerHTML=renderPropModalSkeleton();
+   await ensureMarketData(cModalPlayerId,s);
+ }
  renderPropModal();
 }
 function adjLine(d){
@@ -1454,15 +1519,26 @@ function closePropModal(){const el=document.getElementById('mProp');if(el)el.sty
 async function ensurePlayerModalData(playerId){
  if(PLAYER_MODAL_CACHE[playerId]) return PLAYER_MODAL_CACHE[playerId];
  const availableMarkets=pro()?STATS:SFREE;
+ PLAYER_MODAL_CACHE[playerId]=true;
+ idle(function(){
+   availableMarkets.forEach(function(market){
+     if(market===cStat) return;
+     ensureMarketData(playerId,market);
+   });
+ });
+ return true;
+}
+
+async function ensureMarketData(playerId,market){
  METRICS[playerId]=METRICS[playerId]||{};
  PLAYER_GAMES[playerId]=PLAYER_GAMES[playerId]||{};
- for(const market of availableMarkets){
-   const response=await useStatsData(playerId,market);
-   if(response.metrics) METRICS[playerId][market]=response.metrics;
-   if(response.games?.length) PLAYER_GAMES[playerId][market]=response.games;
+ if(METRICS[playerId][market]||(PLAYER_GAMES[playerId][market]||[]).length){
+   return {metrics:METRICS[playerId][market]||null,games:PLAYER_GAMES[playerId][market]||[]};
  }
- PLAYER_MODAL_CACHE[playerId]=true;
- return true;
+ const response=await useStatsData(playerId,market);
+ if(response.metrics) METRICS[playerId][market]=response.metrics;
+ if(response.games?.length) PLAYER_GAMES[playerId][market]=response.games;
+ return response;
 }
 
 function getPlayerPropModalData(player, market){
@@ -1479,8 +1555,7 @@ function getPlayerPropModalData(player, market){
 function getDefaultLine(playerId, market){
  const metricLine=METRICS[playerId]?.[market]?.line;
  if(metricLine) return half(metricLine);
- const allPlayers=Object.values(PBG).flat();
- const p=allPlayers.find(x=>x.id===playerId);
+ const p=getCurrentPlayers().find(x=>x.id===playerId);
  return defLine(p||{line:8},market);
 }
 
