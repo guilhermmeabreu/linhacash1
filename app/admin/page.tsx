@@ -7,7 +7,7 @@ import { adminApi, Profile } from './_lib/admin-api';
 
 type AdminTab = 'dashboard' | 'users' | 'referrals' | 'sync';
 const TABS: Array<{ key: AdminTab; label: string }> = [
-  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'dashboard', label: 'Painel' },
   { key: 'users', label: 'Usuários' },
   { key: 'referrals', label: 'Indicações' },
   { key: 'sync', label: 'Sincronização' },
@@ -15,8 +15,8 @@ const TABS: Array<{ key: AdminTab; label: string }> = [
 
 const PlanBadge = memo(function PlanBadge({ user }: { user: Profile }) {
   if (user.billing?.isManualPro) return <span className="adm-badge admin">PRO ADMIN</span>;
-  if (user.billing?.isPaidPro) return <span className="adm-badge paid">PRO PAID</span>;
-  return <span className="adm-badge free">FREE</span>;
+  if (user.billing?.isPaidPro) return <span className="adm-badge paid">PRO PAGO</span>;
+  return <span className="adm-badge free">GRÁTIS</span>;
 });
 
 function AdminSkeleton() {
@@ -100,6 +100,7 @@ export default function AdminPage() {
         .adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
         .adm-kpi{font-size:28px;font-weight:800;margin-top:8px}
         .adm-kpi-sm{font-size:22px;font-weight:800;margin-top:8px}
+        .adm-kpi-main{font-size:36px;font-weight:900;line-height:1.1;margin-top:10px}
         .adm-muted{color:#8ea097;font-size:13px}
         .adm-input{background:#151b19;border:1px solid #2a3531;color:#eff5f2;padding:10px 12px;min-width:220px}
         .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 12px;font-weight:700;cursor:pointer}
@@ -122,9 +123,15 @@ export default function AdminPage() {
         .adm-skeleton-value{height:34px;width:75%}
         .adm-section{display:grid;gap:10px}
         .adm-section-title{font-weight:800;font-size:16px;letter-spacing:.02em}
+        .adm-section-block{background:#0f1312;border:1px solid #1f2825;padding:16px;display:grid;gap:12px}
+        .adm-main-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+        .adm-main-kpi{background:#101715;border:1px solid #274036;padding:14px}
+        .adm-main-kpi .adm-muted{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+        .adm-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+        .adm-pill{display:flex;justify-content:space-between;background:#111614;border:1px solid #1e2a25;padding:10px 12px;font-size:13px}
         .adm-two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
         .adm-three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-        @media (max-width: 980px){.adm-two-col,.adm-three-col{grid-template-columns:1fr}}
+        @media (max-width: 980px){.adm-two-col,.adm-three-col,.adm-main-kpis,.adm-secondary{grid-template-columns:1fr}}
         @keyframes adm-loading{0%{background-position:-220px 0}100%{background-position:220px 0}}
       `}</style>
       <div className="adm-shell">
@@ -148,53 +155,40 @@ export default function AdminPage() {
 
         {!loading && tab === 'dashboard' && stats && (
           <section className="adm-section">
-            <div className="adm-section-title">Business</div>
-            <div className="adm-grid">
-              <div className="adm-card"><div className="adm-muted">Total de usuários</div><div className="adm-kpi">{stats.total_users}</div></div>
-              <div className="adm-card"><div className="adm-muted">Novos usuários hoje</div><div className="adm-kpi">{stats.new_users_today}</div></div>
-              <div className="adm-card"><div className="adm-muted">Novos usuários 7d</div><div className="adm-kpi">{stats.new_users_7d}</div></div>
-              <div className="adm-card"><div className="adm-muted">Novos usuários 30d</div><div className="adm-kpi">{stats.new_users_30d}</div></div>
-              <div className="adm-card"><div className="adm-muted">FREE</div><div className="adm-kpi">{stats.free_users}</div></div>
-              <div className="adm-card"><div className="adm-muted">PRO PAID</div><div className="adm-kpi">{stats.pro_paid_users}</div></div>
-              <div className="adm-card"><div className="adm-muted">PRO ADMIN</div><div className="adm-kpi">{stats.pro_admin_users}</div></div>
-              <div className="adm-card"><div className="adm-muted">Receita mensal estimada</div><div className="adm-kpi-sm">R$ {stats.estimated_monthly_revenue_brl.toLocaleString('pt-BR')}</div></div>
+            <div className="adm-section-title">Visão geral</div>
+            <div className="adm-main-kpis">
+              <div className="adm-main-kpi"><div className="adm-muted">Total de usuários</div><div className="adm-kpi-main">{stats.total_users}</div></div>
+              <div className="adm-main-kpi"><div className="adm-muted">Usuários Pro pagos</div><div className="adm-kpi-main">{stats.pro_paid_users}</div></div>
+              <div className="adm-main-kpi"><div className="adm-muted">Receita mensal estimada</div><div className="adm-kpi-main">R$ {stats.estimated_monthly_revenue_brl.toLocaleString('pt-BR')}</div></div>
+            </div>
+            <div className="adm-secondary">
+              <div className="adm-pill"><span>Usuários grátis</span><strong>{stats.free_users}</strong></div>
+              <div className="adm-pill"><span>Usuários Pro admin</span><strong>{stats.pro_admin_users}</strong></div>
             </div>
 
-            <div className="adm-two-col">
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Cancelamentos recentes</div>
-                {stats.recent_cancellations.length === 0 && <p className="adm-muted">Ainda não há cancelamentos recentes.</p>}
-                {stats.recent_cancellations.map((item) => (
-                  <div className="adm-log" key={item.id}>
-                    <span>{item.email || item.id}</span>
-                    <span className="adm-muted">{item.cancelled_at ? new Date(item.cancelled_at).toLocaleString('pt-BR') : 'sem data'}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Últimos cadastros</div>
-                {stats.recent_signups.slice(0, 6).map((user) => (
-                  <div className="adm-log" key={user.id}>
-                    <span>{user.email || user.id}</span>
-                    <span className="adm-muted">{new Date(user.created_at).toLocaleString('pt-BR')}</span>
-                  </div>
-                ))}
+            <div className="adm-section-title">Crescimento</div>
+            <div className="adm-section-block">
+              <div className="adm-secondary">
+                <div className="adm-pill"><span>Novos usuários hoje</span><strong>{stats.new_users_today}</strong></div>
+                <div className="adm-pill"><span>Novos usuários em 7 dias</span><strong>{stats.new_users_7d}</strong></div>
+                <div className="adm-pill"><span>Novos usuários em 30 dias</span><strong>{stats.new_users_30d}</strong></div>
+                <div className="adm-pill"><span>Base total ativa no painel</span><strong>{stats.total_users}</strong></div>
               </div>
             </div>
 
-            <div className="adm-section-title">Product usage</div>
-            <div className="adm-three-col">
-              <div className="adm-card"><div className="adm-muted">Game opens</div><div className="adm-kpi">{productInsights?.gameOpens ?? 0}</div></div>
-              <div className="adm-card"><div className="adm-muted">Player modal opens</div><div className="adm-kpi">{productInsights?.playerModalOpens ?? 0}</div></div>
-              <div className="adm-card"><div className="adm-muted">Upgrade clicks</div><div className="adm-kpi">{productInsights?.upgradeClicks ?? 0}</div></div>
-              <div className="adm-card"><div className="adm-muted">Locked Pro feature clicks</div><div className="adm-kpi">{productInsights?.lockedProFeatureClicks ?? 0}</div></div>
-              <div className="adm-card"><div className="adm-muted">Total de eventos ({productInsights?.periodDays ?? 30}d)</div><div className="adm-kpi">{productInsights?.totalEvents ?? 0}</div></div>
-              <div className="adm-card"><div className="adm-muted">Tabela events</div><div className="adm-kpi-sm">{productInsights?.eventsAvailable ? 'Disponível' : 'Sem dados suficientes'}</div></div>
-            </div>
-
-            <div className="adm-two-col">
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Mercados mais usados</div>
+            <div className="adm-section-title">Uso do produto</div>
+            <div className="adm-section-block">
+              <div className="adm-secondary">
+                <div className="adm-pill"><span>Aberturas de jogos</span><strong>{productInsights?.gameOpens ?? 0}</strong></div>
+                <div className="adm-pill"><span>Aberturas do modal de jogador</span><strong>{productInsights?.playerModalOpens ?? 0}</strong></div>
+                <div className="adm-pill"><span>Cliques de upgrade</span><strong>{productInsights?.upgradeClicks ?? 0}</strong></div>
+                <div className="adm-pill"><span>Cliques em recurso Pro bloqueado</span><strong>{productInsights?.lockedProFeatureClicks ?? 0}</strong></div>
+                <div className="adm-pill"><span>Total de eventos ({productInsights?.periodDays ?? 30} dias)</span><strong>{productInsights?.totalEvents ?? 0}</strong></div>
+                <div className="adm-pill"><span>Tabela de eventos</span><strong>{productInsights?.eventsAvailable ? 'Disponível' : 'Dados insuficientes'}</strong></div>
+              </div>
+              <div className="adm-two-col">
+                <div>
+                  <div className="adm-section-title" style={{ fontSize: 14 }}>Mercados mais usados</div>
                 {(productInsights?.mostUsedMarkets?.length || 0) === 0 && <p className="adm-muted">Não há dados de mercado suficientes ainda.</p>}
                 {(productInsights?.mostUsedMarkets || []).map((item) => (
                   <div className="adm-log" key={item.market}>
@@ -202,9 +196,9 @@ export default function AdminPage() {
                     <span>{item.count}</span>
                   </div>
                 ))}
-              </div>
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Resumo recente de eventos</div>
+                </div>
+                <div>
+                  <div className="adm-section-title" style={{ fontSize: 14 }}>Resumo recente de eventos</div>
                 {(productInsights?.recentEventSummaries?.length || 0) === 0 && <p className="adm-muted">Não há eventos recentes para resumir.</p>}
                 {(productInsights?.recentEventSummaries || []).map((item) => (
                   <div className="adm-log" key={item.event_name}>
@@ -212,28 +206,31 @@ export default function AdminPage() {
                     <span>{item.count}</span>
                   </div>
                 ))}
+                </div>
               </div>
             </div>
 
-            <div className="adm-section-title">Operations & admin actions</div>
-            <div className="adm-three-col">
-              <div className="adm-card">
-                <div className="adm-muted">Status da última sync</div>
+            <div className="adm-section-title">Operação</div>
+            <div className="adm-section-block">
+              <div className="adm-two-col">
+                <div>
+                <div className="adm-muted">Status da última sincronização</div>
                 <div className="adm-kpi-sm">{operationsInsights?.latestSyncStatus || 'N/A'}</div>
-                <p className="adm-muted">{operationsInsights?.latestSyncTimestamp ? new Date(operationsInsights.latestSyncTimestamp).toLocaleString('pt-BR') : 'Sem timestamp'}</p>
+                <p className="adm-muted">{operationsInsights?.latestSyncTimestamp ? new Date(operationsInsights.latestSyncTimestamp).toLocaleString('pt-BR') : 'Sem horário registrado'}</p>
                 <p className="adm-muted">{operationsInsights?.syncFreshnessLabel || 'Sem dados de sincronização'}</p>
-              </div>
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Últimos 5 syncs</div>
+                </div>
+                <div>
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Últimas 5 sincronizações</div>
                 {(syncHistory || []).slice(0, 5).map((entry, index) => (
                   <div className="adm-log" key={`${entry.created_at}-${index}`}>
                     <span>{entry.status} · {entry.games_synced} jogos</span>
                     <span className="adm-muted">{new Date(entry.created_at).toLocaleString('pt-BR')}</span>
                   </div>
                 ))}
+                </div>
               </div>
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Eventos importantes (auth/billing/system)</div>
+              <div>
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Eventos importantes (autenticação, cobrança e sistema)</div>
                 {(operationsInsights?.recentImportantEvents?.length || 0) === 0 && <p className="adm-muted">Não há eventos importantes registrados.</p>}
                 {(operationsInsights?.recentImportantEvents || []).slice(0, 6).map((event, idx) => (
                   <div className="adm-log" key={`${event.event}-${idx}`}>
@@ -244,19 +241,35 @@ export default function AdminPage() {
               </div>
             </div>
 
+            <div className="adm-section-title">Atividade recente</div>
             <div className="adm-two-col">
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Ações recentes de usuários</div>
+              <div className="adm-section-block">
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Cadastros recentes</div>
+                {stats.recent_signups.slice(0, 6).map((user) => (
+                  <div className="adm-log" key={user.id}>
+                    <span>{user.email || user.id}</span>
+                    <span className="adm-muted">{new Date(user.created_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                ))}
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Ações recentes dos usuários</div>
                 {(adminActionInsights?.recentUserActions?.length || 0) === 0 && <p className="adm-muted">Ainda não há ações recentes.</p>}
-                {(adminActionInsights?.recentUserActions || []).map((event, idx) => (
+                {(adminActionInsights?.recentUserActions || []).slice(0, 5).map((event, idx) => (
                   <div className="adm-log" key={`${event.action}-${idx}`}>
                     <span>{event.action} · {event.context}</span>
                     <span className="adm-muted">{new Date(event.created_at).toLocaleString('pt-BR')}</span>
                   </div>
                 ))}
               </div>
-              <div className="adm-card">
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Mudanças de billing/admin + resets/deleções</div>
+              <div className="adm-section-block">
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Cancelamentos recentes</div>
+                {stats.recent_cancellations.length === 0 && <p className="adm-muted">Ainda não há cancelamentos recentes.</p>}
+                {stats.recent_cancellations.slice(0, 6).map((item) => (
+                  <div className="adm-log" key={item.id}>
+                    <span>{item.email || item.id}</span>
+                    <span className="adm-muted">{item.cancelled_at ? new Date(item.cancelled_at).toLocaleString('pt-BR') : 'sem data'}</span>
+                  </div>
+                ))}
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Mudanças administrativas e de cobrança</div>
                 {(adminActionInsights?.recentBillingAdminChanges || []).slice(0, 5).map((event, idx) => (
                   <div className="adm-log" key={`bill-${event.event}-${idx}`}>
                     <span>{event.event}</span>
@@ -270,7 +283,7 @@ export default function AdminPage() {
                   </div>
                 ))}
                 {(adminActionInsights?.recentBillingAdminChanges?.length || 0) + (adminActionInsights?.recentResetsDeletions?.length || 0) === 0 && (
-                  <p className="adm-muted">Não há logs de billing/admin/reset/deleção disponíveis.</p>
+                  <p className="adm-muted">Não há registros de alterações administrativas, redefinições ou deleções.</p>
                 )}
               </div>
             </div>
@@ -281,9 +294,10 @@ export default function AdminPage() {
           <section className="adm-card">
             <div className="adm-row" style={{ marginBottom: 12 }}>
               <input className="adm-input" placeholder="Buscar por nome ou email" value={search} onChange={(e) => setSearch(e.target.value)} />
-              {(['all', 'pro_paid', 'pro_admin', 'free'] as const).map((item) => (
-                <button key={item} className="adm-btn alt" onClick={() => setPlanFilter(item)}>{item.toUpperCase()}</button>
-              ))}
+              <button className="adm-btn alt" onClick={() => setPlanFilter('all')}>TODOS</button>
+              <button className="adm-btn alt" onClick={() => setPlanFilter('pro_paid')}>PRO PAGO</button>
+              <button className="adm-btn alt" onClick={() => setPlanFilter('pro_admin')}>PRO ADMIN</button>
+              <button className="adm-btn alt" onClick={() => setPlanFilter('free')}>GRÁTIS</button>
             </div>
             <div className="adm-table">
               {filteredUsers.map((user) => (
