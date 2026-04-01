@@ -23,8 +23,9 @@ a{text-decoration:none;color:inherit}
 .wrap{max-width:1140px;margin:0 auto;padding:0 var(--space-4)}
 nav{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--bd);backdrop-filter:blur(10px);background:color-mix(in srgb,var(--bg) 90%, transparent)}
 .ninner{height:74px;display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;line-height:1}
 .logo img{width:28px;height:28px}
+.brand-accent{color:var(--green)}
 .nav-actions{display:flex;gap:10px;align-items:center}
 .btn{padding:11px 18px;border:1px solid var(--bd2);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:border-color .25s,color .25s,transform .25s,background .25s; background:transparent;color:var(--tx);cursor:pointer}
 .btn:hover{border-color:var(--green);color:var(--green);transform:translateY(-1px)}
@@ -33,26 +34,14 @@ nav{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--bd);backdrop-
 #theme{width:40px;height:40px;display:grid;place-items:center;padding:0}
 #theme svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
 main section{padding:90px 0;border-top:1px solid var(--bd)}
-.hero{padding:92px 0 78px;position:relative;overflow:hidden}
+.hero{padding:78px 0 66px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;inset:-20% -10% auto;background:radial-gradient(circle at top,rgba(0,230,118,.14),transparent 56%);height:72%;pointer-events:none}
 .badge{display:inline-flex;border:1px solid var(--green-soft);padding:7px 12px;color:var(--green);font-size:11px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;margin-bottom:var(--space-4)}
-h1{font-size:clamp(38px,6vw,66px);line-height:1.02;max-width:780px;letter-spacing:-.035em}
-.subtitle{margin-top:var(--space-4);max-width:630px;color:var(--mt);font-size:20px;line-height:1.5}
+h1{font-size:clamp(32px,4.6vw,54px);line-height:1.08;max-width:720px;letter-spacing:-.03em}
+.subtitle{margin-top:18px;max-width:610px;color:var(--mt);font-size:18px;line-height:1.58}
 .hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:var(--space-5)}
 .h2{font-size:clamp(30px,4vw,48px);letter-spacing:-.03em}
 .p{margin-top:12px;color:var(--mt);font-size:17px;line-height:1.65;max-width:700px}
-.preview-shell{margin-top:34px;border:1px solid var(--bd2);background:linear-gradient(180deg,var(--s2),var(--s1));padding:22px;display:grid;grid-template-columns:1.1fr .9fr;gap:20px;box-shadow:0 18px 44px rgba(0,0,0,.22)}
-.board{background:var(--bg);border:1px solid var(--bd);padding:16px}
-.board-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:12px;color:var(--mt);text-transform:uppercase;letter-spacing:.06em}
-.game{display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid var(--bd);margin-bottom:10px;transition:.25s;background:var(--s1)}
-.game:hover{border-color:var(--green);transform:translateX(3px)}
-.team{font-size:14px;font-weight:600}
-.time{font-size:12px;color:var(--mt)}
-.modal{background:var(--s1);border:1px solid var(--bd2);padding:18px;display:grid;gap:12px;animation:fadeUp .7s ease both}
-.modal-title{font-weight:700;font-size:18px;letter-spacing:-.01em}
-.prop{border:1px solid var(--bd);padding:11px 12px;display:flex;justify-content:space-between;align-items:center;transition:.25s}
-.prop:hover{border-color:var(--green);background:var(--green-soft)}
-.prop small{color:var(--mt);display:block;font-size:12px;margin-top:2px}
 .tag{font-size:11px;padding:4px 8px;border:1px solid var(--bd2);text-transform:uppercase;letter-spacing:.05em}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:30px}
 .step{padding:24px;border:1px solid var(--bd);background:var(--s1);transition:.25s}
@@ -82,13 +71,13 @@ h1{font-size:clamp(38px,6vw,66px);line-height:1.02;max-width:780px;letter-spacin
 .fade{opacity:0;transform:translateY(12px);animation:fadeUp .7s ease forwards}
 .delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
-@media (max-width:950px){.preview-shell{grid-template-columns:1fr}.steps,.plans,.footer-grid{grid-template-columns:1fr}}
+@media (max-width:950px){.steps,.plans,.footer-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <nav>
   <div class="wrap ninner">
-    <a class="logo" href="/landing.html"><img src="/logo.png" alt="LinhaCash"/>LinhaCash</a>
+    <a class="logo" href="/landing.html"><img src="/logo.png" alt="LinhaCash"/><span>Linha<span class="brand-accent">Cash</span></span></a>
     <div class="nav-actions">
       <button class="btn" id="theme" aria-label="Alternar tema"></button>
       <a class="btn" href="#planos">Planos</a>
@@ -98,38 +87,17 @@ h1{font-size:clamp(38px,6vw,66px);line-height:1.02;max-width:780px;letter-spacin
 </nav>
 
 <header class="hero wrap">
-  <span class="badge fade">LinhaCash para NBA</span>
+  <span class="badge fade">Linha<span class="brand-accent">Cash</span> para NBA</span>
   <h1 class="fade delay-1">Leia os melhores props do dia em minutos e entre no jogo com mais confiança.</h1>
   <p class="subtitle fade delay-2">Tudo em português, com visão direta do confronto e do jogador. Sem ruído e sem perder tempo pulando entre telas.</p>
   <div class="hero-cta fade delay-2">
     <a class="btn primary" href="/app.html">Começar no Free</a>
-    <a class="btn" href="#preview">Ver prévia real</a>
+    <a class="btn" href="#como-funciona">Ver como funciona</a>
   </div>
 </header>
 
 <main>
-  <section id="preview">
-    <div class="wrap">
-      <h2 class="h2">A prévia que você usa na prática</h2>
-      <p class="p">Escolha o jogo, abra o jogador e veja os props com linha, média recente e contexto no mesmo fluxo.</p>
-      <div class="preview-shell">
-        <div class="board">
-          <div class="board-head"><span>Jogos de hoje</span><span>Atualizado</span></div>
-          <div class="game"><div><div class="team">BOS vs MIA</div><div class="time">20:30 (BRT)</div></div><div class="tag">Abrir</div></div>
-          <div class="game"><div><div class="team">LAL vs PHX</div><div class="time">23:00 (BRT)</div></div><div class="tag">Abrir</div></div>
-          <div class="game"><div><div class="team">DEN vs DAL</div><div class="time">23:30 (BRT)</div></div><div class="tag">Abrir</div></div>
-        </div>
-        <div class="modal">
-          <div class="modal-title">Player Props · Jayson Tatum</div>
-          <div class="prop"><div><strong>Pontos 28.5</strong><small>L10: 30.2 · Casa: 31.1</small></div><span class="tag">+ tendência</span></div>
-          <div class="prop"><div><strong>Rebotes 8.5</strong><small>L10: 8.9 · vs MIA: 9.2</small></div><span class="tag">estável</span></div>
-          <div class="prop"><div><strong>Assistências 5.5</strong><small>L10: 5.8 · Sem Brown: 6.4</small></div><span class="tag">contexto</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section>
+  <section id="como-funciona">
     <div class="wrap">
       <h2 class="h2">Como funciona</h2>
       <p class="p">Sem curva longa: três passos e você já está analisando.</p>
