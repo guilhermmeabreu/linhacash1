@@ -53,16 +53,16 @@ html, body { font-family: var(--font-body); letter-spacing: 0.01em; }
  font-size: 14px;
 }
 
-/* Cards de jogo — borda esquerda verde em vez de cantos */
+/* Cards de jogo — acento verde sutil */
 .gcard {
- border-left: 3px solid var(--green) !important;
- border-top: none !important;
- border-right: none !important;
+ border-left: 1px solid rgba(0,230,118,.2) !important;
+ border-top: 1px solid var(--bd) !important;
+ border-right: 1px solid var(--bd) !important;
  border-bottom: 1px solid var(--bd) !important;
  margin-bottom: 1px !important;
  margin-left: 0 !important;
  margin-right: 0 !important;
- background: var(--s1) !important;
+ background: linear-gradient(180deg,color-mix(in srgb,var(--s2) 92%, #fff 8%),var(--s2)) !important;
 }
 
 /* Tabs de stats — underline em vez de pill */
@@ -371,9 +371,9 @@ body{min-height:100dvh}
 
 /* S1 GAMES */
 .datebar{padding:14px 16px 8px;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.1em}
-.gcard{margin:0 12px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:0;overflow:hidden;cursor:pointer}
+.gcard{margin:0 12px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:0;overflow:hidden;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.14)}
 .gcard:active{opacity:.8}
-.gcard.lk{opacity:.4;pointer-events:none}
+.gcard.lk{opacity:.62;pointer-events:none;box-shadow:none}
 .gctop{display:flex;justify-content:flex-end;padding:8px 12px 2px;min-height:24px}
 .gtime{font-size:12px;font-weight:800;color:#042313;background:color-mix(in srgb,var(--green) 88%, #fff 12%);border:1px solid rgba(0,230,118,.4);border-radius:0;padding:4px 10px}
 .gtime.muted{background:var(--s4);border-color:var(--bd);color:var(--mt)}
@@ -381,15 +381,24 @@ body{min-height:100dvh}
 .gteams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:4px 12px 10px}
 .tside{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
 .tcirc{width:62px;height:62px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx);background:transparent;border:none}
-.tcity{font-size:12px;color:var(--tx);line-height:1.3;text-align:center;max-width:118px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
-.gvs-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:74px;flex-shrink:0}
+.tcity{font-size:12px;color:var(--tx);line-height:1.32;text-align:center;max-width:128px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700}
+.gvs-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:74px;flex-shrink:0}
 .gvs-x{font-size:11px;font-weight:700;color:var(--mt);letter-spacing:0.05em;text-transform:uppercase}
 .auth-foot{margin-top:18px;padding-top:12px;border-top:1px solid var(--bd);text-align:center;display:grid;gap:6px}
 .auth-foot a{font-size:11px;color:var(--mt);text-decoration:none}
 .auth-foot a:hover{color:var(--green)}
 .auth-foot p{font-size:10px;color:var(--mt);line-height:1.45}
 
-.gfoot{display:flex;align-items:center;padding:7px 12px;background:var(--s3);border-top:1px solid var(--bd);font-size:11px;color:var(--mt);font-weight:500}
+.gfoot{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;background:color-mix(in srgb,var(--s2) 78%, #fff 22%);border-top:1px solid color-mix(in srgb,var(--bd) 70%, var(--green) 30%);font-size:11px;color:color-mix(in srgb,var(--tx) 86%, var(--green) 14%);font-weight:700;letter-spacing:.02em}
+.gcard:hover .gfoot{background:color-mix(in srgb,var(--s2) 68%, #fff 32%);color:var(--tx)}
+.gcard:active .gfoot{transform:translateY(1px)}
+@media(max-width:420px){
+  .gcard{margin:0 10px 10px}
+  .tcirc{width:56px;height:56px}
+  .tcity{max-width:108px;font-size:11px}
+  .gvs-wrap{width:62px;gap:7px}
+  .gtime{font-size:11px;padding:3px 8px}
+}
 
 /* S2 PLAYERS */
 .gbanner{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd)}
