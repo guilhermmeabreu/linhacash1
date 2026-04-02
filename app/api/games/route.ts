@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   const nowBR = new Date(Date.now() + brOffset);
   const today = nowBR.toISOString().split('T')[0];
 
-  const result = await getCachedValue(`games:${today}:${session.plan}`, 30_000, async () => {
+  const result = await getCachedValue(`games:${today}`, 30_000, async () => {
     const { data: games, error } = await supabase
       .from('games')
       .select('id, game_date, home_team, away_team, home_team_id, away_team_id, home_logo, away_logo, game_time, status')
@@ -38,11 +38,7 @@ export async function GET(req: Request) {
       throw new Error('Erro ao buscar jogos');
     }
 
-    let output = (games || []).map(sanitizeGame);
-    if (session.plan === 'free') {
-      output = output.slice(0, 1);
-    }
-    return output;
+    return (games || []).map(sanitizeGame);
   }).catch(() => null);
 
   if (!result) return errorResponse('Erro ao buscar jogos', 500);

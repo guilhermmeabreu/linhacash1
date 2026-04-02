@@ -10,7 +10,7 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const FREE_STATS = ['PTS'];
+const FREE_STATS = ['PTS', 'FG2A'];
 const ALL_STATS = ['PTS', 'REB', 'AST', '3PM', 'P+A', 'P+R', 'A+R', 'FG2A', 'FG3A'];
 
 // GET /api/metrics?playerId=xxx&stat=PTS — métricas de um jogador
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
   if (!playerId || !/^\d+$/.test(playerId)) return errorResponse('playerId inválido');
 
-  // Plano Free: só PTS
+  // Plano Free: PTS + FG2A
   if (session.plan === 'free' && !FREE_STATS.includes(stat)) {
     return errorResponse('Estatística disponível apenas no plano Pro', 403);
   }
