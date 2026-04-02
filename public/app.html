@@ -55,7 +55,7 @@ html, body { font-family: var(--font-body); letter-spacing: 0.01em; }
 
 /* Cards de jogo — acento verde sutil */
 .gcard {
- border-left: 2px solid rgba(0,230,118,.14) !important;
+ border-left: 1px solid var(--bd) !important;
  border-top: 1px solid var(--bd) !important;
  border-right: 1px solid var(--bd) !important;
  border-bottom: 1px solid var(--bd) !important;
@@ -63,7 +63,7 @@ html, body { font-family: var(--font-body); letter-spacing: 0.01em; }
  margin-bottom: 10px !important;
  margin-left: 0 !important;
  margin-right: 0 !important;
- background: linear-gradient(180deg,color-mix(in srgb,var(--s2) 80%, #fff 20%),color-mix(in srgb,var(--s2) 92%, #fff 8%)) !important;
+ background: var(--s2) !important;
 }
 
 /* Tabs de stats — underline em vez de pill */
@@ -192,8 +192,8 @@ h1, h2, h3, .henm, .aname {
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
- --bg:#000;--s1:#0a0a0a;--s2:#111;--s3:#1a1a1a;--s4:#222;
- --bd:#2a2a2a;--bd2:#333;--tx:#fff;--mt:#888;--mt2:#555;
+ --bg:#0b0f0c;--s1:#0f141b;--s2:#111827;--s3:#161f2c;--s4:#1f2937;
+ --bd:#1f2937;--bd2:#263244;--tx:#f9fafb;--mt:#9ca3af;--mt2:#6b7280;
  --green:#00e676;--gdim:rgba(0,230,118,.12);
  --red:#d32f2f;--rdim:rgba(211,47,47,.1);
  --amber:#f57f17;
@@ -372,31 +372,31 @@ body{min-height:100dvh}
 
 /* S1 GAMES */
 .datebar{padding:14px 16px 8px;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.1em}
-.gcard{margin:0 12px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08);transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease}
+.gcard{margin:0 12px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease}
 .gcard:active{opacity:.8}
 .gcard.lk{opacity:.62;pointer-events:none;box-shadow:none}
-.gctop{display:flex;justify-content:flex-end;padding:8px 12px 2px;min-height:24px}
-.gtime{font-size:11px;font-weight:600;color:color-mix(in srgb,var(--green) 68%, var(--tx) 32%);background:color-mix(in srgb,var(--green) 12%, transparent);border:1px solid color-mix(in srgb,var(--green) 34%, var(--bd) 66%);border-radius:999px;padding:3px 9px}
-.gtime.muted{background:var(--s4);border-color:var(--bd);color:var(--mt)}
-.glock{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mt)}
+.gctop{position:relative;display:flex;justify-content:center;padding:8px 12px 2px;min-height:24px}
+.gtime{font-size:11px;font-weight:500;color:var(--mt);background:transparent;border:none;padding:0}
+.gtime.muted{color:var(--mt)}
+.glock{position:absolute;right:12px;top:8px;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mt)}
 .gteams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:4px 12px 10px}
 .tside{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
-.tcirc{width:62px;height:62px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx);background:transparent;border:none}
+.tcirc{width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx);background:transparent;border:none}
 .tcity{font-size:12px;color:var(--tx);line-height:1.32;text-align:center;max-width:128px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600}
 .gvs-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:74px;flex-shrink:0}
-.gvs-x{font-size:11px;font-weight:500;color:var(--mt);letter-spacing:0.04em;text-transform:lowercase}
+.gvs-x{font-size:11px;font-weight:400;color:color-mix(in srgb,var(--mt) 80%, transparent);letter-spacing:0.04em;text-transform:lowercase}
 .auth-foot{margin-top:18px;padding-top:12px;border-top:1px solid var(--bd);text-align:center;display:grid;gap:6px}
 .auth-foot a{font-size:11px;color:var(--mt);text-decoration:none}
 .auth-foot a:hover{color:var(--green)}
 .auth-foot p{font-size:10px;color:var(--mt);line-height:1.45}
 
-.gfoot{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;background:transparent;border-top:1px solid color-mix(in srgb,var(--bd) 82%, var(--green) 18%);font-size:12px;color:color-mix(in srgb,var(--tx) 74%, var(--mt) 26%);font-weight:600;letter-spacing:.01em}
-.gcard:hover{box-shadow:0 6px 14px rgba(0,0,0,.14);transform:translateY(-1px);border-color:color-mix(in srgb,var(--bd) 78%, var(--green) 22%)}
-.gcard:hover .gfoot{background:color-mix(in srgb,var(--s2) 94%, #fff 6%);color:var(--tx)}
+.gfoot{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;background:transparent;border-top:1px solid var(--bd);font-size:12px;color:var(--mt);font-weight:600;letter-spacing:.01em}
+.gcard:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);transform:translateY(-1px);border-color:color-mix(in srgb,var(--bd) 84%, var(--green) 16%)}
+.gcard:hover .gfoot{background:rgba(255,255,255,.05);color:color-mix(in srgb,var(--tx) 84%, var(--mt) 16%)}
 .gcard:active .gfoot{transform:translateY(1px)}
 @media(max-width:420px){
   .gcard{margin:0 10px 10px}
-  .tcirc{width:56px;height:56px}
+  .tcirc{width:46px;height:46px}
   .tcity{max-width:108px;font-size:11px}
   .gvs-wrap{width:62px;gap:7px}
   .gtime{font-size:11px;padding:3px 8px}
@@ -1390,16 +1390,16 @@ async function renderGames(){
  const awayIni=ini(g.away_team),homeIni=ini(g.home_team);
  
 
-const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
- const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:52px;height:52px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
+ const homeImg=g.home_logo?`<img src="${g.home_logo}" style="width:52px;height:52px;object-fit:contain" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:'';
  return `<div class="gcard" onclick="openGame(${g.id})" onpointerdown="prefetchGamePlayers(${g.id})">
- <div class="gctop"></div>
+ <div class="gctop"><span class="gtime">${time}</span></div>
  <div class="gteams">
  <div class="tside">
  <div class="tcirc">${awayImg}<span style="display:${g.away_logo?'none':'flex'}">${awayIni}</span></div>
  <div class="tcity">${g.away_team}</div>
  </div>
- <div class="gvs-wrap"><span class="gtime">${time}</span><span class="gvs-x">X</span></div>
+ <div class="gvs-wrap"><span class="gvs-x">x</span></div>
  <div class="tside">
  <div class="tcirc">${homeImg}<span style="display:${g.home_logo?'none':'flex'}">${homeIni}</span></div>
  <div class="tcity">${g.home_team}</div>
@@ -1413,10 +1413,10 @@ const awayImg=g.away_logo?`<img src="${g.away_logo}" style="width:64px;height:64
  const time=new Date(g.game_time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  const awayIni=ini(g.away_team),homeIni=ini(g.home_team);
  return `<div class="gcard lk">
- <div class="gctop"><span class="glock"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pro</span></div>
+ <div class="gctop"><span class="gtime muted">${time}</span><span class="glock"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pro</span></div>
  <div class="gteams">
  <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${ac}44,${ac}22)">${awayIni}</div><div class="tcity">${g.away_team}</div></div>
- <div class="gvs-wrap"><span class="gtime muted">${time}</span><span class="gvs-x">X</span></div>
+ <div class="gvs-wrap"><span class="gvs-x">x</span></div>
  <div class="tside"><div class="tcirc" style="background:linear-gradient(135deg,${hc}44,${hc}22)">${homeIni}</div><div class="tcity">${g.home_team}</div></div>
  </div>
  </div>`;
@@ -1845,9 +1845,9 @@ function toggleTheme(){
  if(ico)ico.innerHTML=dark
  ?'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
  :'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
- const v=dark
- ?{bg:'#000',s1:'#0a0a0a',s2:'#111',s3:'#1a1a1a',s4:'#222',bd:'#2a2a2a',bd2:'#333',tx:'#fff',mt:'#888',mt2:'#555'}
- :{bg:'#f5f3ef',s1:'#edeae4',s2:'#fdfcfa',s3:'#f0ede7',s4:'#e2dfd9',bd:'#cac7c0',bd2:'#b2afa8',tx:'#0a0a0a',mt:'#444',mt2:'#777'};
+const v=dark
+ ?{bg:'#0b0f0c',s1:'#0f141b',s2:'#111827',s3:'#161f2c',s4:'#1f2937',bd:'#1f2937',bd2:'#263244',tx:'#f9fafb',mt:'#9ca3af',mt2:'#6b7280'}
+ :{bg:'#f8fafc',s1:'#f1f5f9',s2:'#ffffff',s3:'#f8fafc',s4:'#e2e8f0',bd:'#e5e7eb',bd2:'#d1d5db',tx:'#111827',mt:'#6b7280',mt2:'#94a3b8'};
  const r=document.documentElement.style;
  r.setProperty('--bg',v.bg);r.setProperty('--s1',v.s1);r.setProperty('--s2',v.s2);
  r.setProperty('--s3',v.s3);r.setProperty('--s4',v.s4);r.setProperty('--bd',v.bd);
