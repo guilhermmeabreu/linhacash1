@@ -84,3 +84,12 @@ export function assertJsonRequest(req: Request) {
     throw new AppError('VALIDATION_ERROR', 415, 'Content-Type application/json is required');
   }
 }
+
+export async function readJsonObject(req: Request): Promise<Record<string, unknown>> {
+  assertJsonRequest(req);
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new AppError('VALIDATION_ERROR', 400, 'Invalid JSON body');
+  }
+  return body as Record<string, unknown>;
+}

@@ -6,6 +6,7 @@ import { activatePaidPro } from '@/lib/services/billing-service';
 import { validateCheckoutPlan } from '@/lib/validators/billing-validator';
 import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
 import { getIP, rateLimit } from '@/lib/rate-limit';
+import { requireEnv } from '@/lib/env';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -51,12 +52,26 @@ function resolveAndValidateUserId(payment: any): string | null {
 
 export async function POST(req: Request) {
   const ip = getIP(req);
+  const contentType = req.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('application/json')) {
+    return Response.json({ error: 'Unsupported content type' }, { status: 415 });
+  }
   const body = await req.json().catch(() => null);
   const paymentId = String(body?.data?.id || '');
+  const requestId = req.headers.get('x-request-id') || 'no-request-id';
 
   try {
+    if (!process.env.MP_WEBHOOK_SECRET) {
+      await auditLog('webhook_event', { status: 'denied', reason: 'missing_webhook_secret' });
+      return Response.json({ error: 'Webhook not configured' }, { status: 503 });
+    }
+
     if (!(await rateLimit(`webhook:mp:${ip}`, 120, 60_000))) {
       await auditLog('webhook_event', { status: 'denied', reason: 'rate_limited' });
+      return Response.json({ error: 'Rate limited' }, { status: 429 });
+    }
+    if (!(await rateLimit(`webhook:mp:req:${requestId}`, 20, 60_000))) {
+      await auditLog('webhook_event', { status: 'denied', reason: 'request_id_rate_limited', requestId });
       return Response.json({ error: 'Rate limited' }, { status: 429 });
     }
 
@@ -77,7 +92,7 @@ export async function POST(req: Request) {
     }
 
     const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${requireEnv('MP_ACCESS_TOKEN')}` },
       cache: 'no-store',
     });
     if (!response.ok) {
@@ -98,7 +113,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    const referralCode = typeof payment.metadata?.referral_code === 'string' ? payment.metadata.referral_code : null;
+    const referralCode = typeof payment.metadata?.referral_code === 'string' ? payment.metadata.referral_code.trim().toUpperCase() : null;
     const plan = validateCheckoutPlan(payment.metadata?.plan || 'mensal');
     const externalReference = typeof payment.external_reference === 'string' ? payment.external_reference : null;
 
@@ -119,7 +134,12 @@ export async function POST(req: Request) {
       }
     }
 
-    await supabase.from('referral_uses').insert({ code: referralCode, user_id: userId, payment_id: paymentId, created_at: new Date().toISOString() });
+    if (referralCode) {
+      const { data: existingReferralUse } = await supabase.from('referral_uses').select('id').eq('payment_id', paymentId).maybeSingle();
+      if (!existingReferralUse) {
+        await supabase.from('referral_uses').insert({ code: referralCode, user_id: userId, payment_id: paymentId, created_at: new Date().toISOString() });
+      }
+    }
     invalidateCacheByPrefix('admin:');
 
     await auditLog('webhook_event', { status: 'processed', paymentId, userId, plan });

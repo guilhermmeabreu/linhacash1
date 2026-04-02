@@ -1921,23 +1921,19 @@ async function enviarContato(){
  if(!msg){ toast('Descreva sua dúvida.'); return; }
  toast('Enviando...');
  try{
- const res = await fetch('/api/support',{
+ const data = await api('/api/support',{
  method:'POST',
- headers:{'Content-Type':'application/json'},
  body:JSON.stringify({
- name: uName,
- email: uEmail,
  subject: 'Dúvida/Suporte',
  message: msg
  })
  });
- const data = await res.json();
- if(data.ok){
+ if(data?._ok && data?.ok){
  closeContato();
  document.getElementById('contatoMsg').value='';
  toast('Mensagem enviada! Retornaremos em até 24h ');
  } else {
- toast(data.error||'Erro ao enviar. Tente novamente.');
+ toast(data?.error?.message||data?.error||'Erro ao enviar. Tente novamente.');
  }
  }catch(e){
  toast('Erro ao enviar. Verifique sua conexão.');
@@ -1951,23 +1947,19 @@ async function enviarBug(){
  if(!desc){ toast('Descreva o problema.'); return; }
  toast('Enviando...');
  try{
- const res = await fetch('/api/support',{
+ const data = await api('/api/support',{
  method:'POST',
- headers:{'Content-Type':'application/json'},
  body:JSON.stringify({
- name: uName,
- email: uEmail,
- subject: ' Reporte de Problema',
+ subject: 'Reporte de Problema',
  message: desc
  })
  });
- const data = await res.json();
- if(data.ok){
+ if(data?._ok && data?.ok){
  closeBug();
  document.getElementById('bugDesc').value='';
  toast('Problema reportado! Obrigado ');
  } else {
- toast(data.error||'Erro ao enviar. Tente novamente.');
+ toast(data?.error?.message||data?.error||'Erro ao enviar. Tente novamente.');
  }
  }catch(e){
  toast('Erro ao enviar. Verifique sua conexão.');
@@ -2009,13 +2001,11 @@ async function confirmarDeleteAccount(){
  if(!supabaseUser){ toast('Erro: usuário não identificado.'); return; }
  toast('Excluindo sua conta...');
  try{
- const res = await fetch('/api/account/delete', {
+ const data = await api('/api/account/delete', {
  method: 'DELETE',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ userId: supabaseUser.id, email: uEmail })
+ body: JSON.stringify({ confirmation: 'EXCLUIR' })
  });
- const data = await res.json();
- if(data.ok){
+ if(data?._ok && data?.ok){
  closeDeleteAccount();
  await api('/api/auth',{method:'POST',body:JSON.stringify({action:'logout'})}).catch(()=>{});
  authToken=null;

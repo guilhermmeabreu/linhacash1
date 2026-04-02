@@ -4,25 +4,29 @@ import { getIP, rateLimit } from '@/lib/rate-limit';
 import { requireAuthenticatedUser } from '@/lib/auth/authorization';
 import { validateCheckoutPayload } from '@/lib/validators/auth-validator';
 import { requireEnv } from '@/lib/env';
+import { assertAllowedOrigin, readJsonObject } from '@/lib/http/request-guards';
+import { auditLog } from '@/lib/services/audit-log-service';
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const requestUrl = new URL(req.url);
   const publicBaseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
   try {
+    assertAllowedOrigin(req);
     const ip = getIP(req);
     if (!(await rateLimit(`checkout:${ip}`, 5, 60_000))) {
       return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many checkout attempts'), origin);
     }
 
     const user = await requireAuthenticatedUser(req);
-    const { plan, referralCode } = validateCheckoutPayload(await req.json());
+    const { plan, referralCode } = validateCheckoutPayload(await readJsonObject(req));
     const mpAccessToken = requireEnv('MP_ACCESS_TOKEN');
     const price = Number((plan === 'anual' ? 197.0 : 24.9).toFixed(2));
     const title = plan === 'anual' ? 'LinhaCash Pro Anual' : 'LinhaCash Pro Mensal';
     const useSandboxCheckout = process.env.MP_USE_SANDBOX_CHECKOUT === 'true';
 
-    const externalReference = `${user.id}:${Date.now()}:${plan}`;
+    const externalReference = `${user.id}:${Date.now()}:${plan}:${crypto.randomBytes(6).toString('hex')}`;
 
     const body: Record<string, unknown> = {
       items: [{ title, quantity: 1, currency_id: 'BRL', unit_price: price }],
@@ -59,6 +63,7 @@ export async function POST(req: Request) {
       throw new ExternalIntegrationError('Não foi possível iniciar o checkout no momento.');
     }
 
+    await auditLog('plan_change', { userId: user.id, status: 'checkout_created', plan, referralCode: referralCode || null });
     return ok({ url: checkoutUrl });
   } catch (error) {
     if (error instanceof AppError) return fail(error, origin);

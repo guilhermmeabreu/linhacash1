@@ -22,10 +22,10 @@ CREATE TABLE IF NOT EXISTS sync_logs (
 ALTER TABLE sync_logs ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='sync_logs' AND policyname='sync_logs_read')
-  THEN CREATE POLICY "sync_logs_read" ON sync_logs FOR SELECT USING (true); END IF;
-  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='sync_logs' AND policyname='sync_logs_insert')
-  THEN CREATE POLICY "sync_logs_insert" ON sync_logs FOR INSERT WITH CHECK (true); END IF;
+  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='sync_logs' AND policyname='sync_logs_service_read')
+  THEN CREATE POLICY "sync_logs_service_read" ON sync_logs FOR SELECT TO service_role USING (true); END IF;
+  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='sync_logs' AND policyname='sync_logs_service_insert')
+  THEN CREATE POLICY "sync_logs_service_insert" ON sync_logs FOR INSERT TO service_role WITH CHECK (true); END IF;
 END $$;
 
 -- ── REFERRAL_USES ────────────────────────────────────────────────────────────
@@ -39,10 +39,10 @@ CREATE TABLE IF NOT EXISTS referral_uses (
 ALTER TABLE referral_uses ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='referral_uses' AND policyname='referral_uses_read')
-  THEN CREATE POLICY "referral_uses_read" ON referral_uses FOR SELECT USING (true); END IF;
-  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='referral_uses' AND policyname='referral_uses_insert')
-  THEN CREATE POLICY "referral_uses_insert" ON referral_uses FOR INSERT WITH CHECK (true); END IF;
+  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='referral_uses' AND policyname='referral_uses_service_read')
+  THEN CREATE POLICY "referral_uses_service_read" ON referral_uses FOR SELECT TO service_role USING (true); END IF;
+  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='referral_uses' AND policyname='referral_uses_service_insert')
+  THEN CREATE POLICY "referral_uses_service_insert" ON referral_uses FOR INSERT TO service_role WITH CHECK (true); END IF;
 END $$;
 
 -- ── INJURIES (lesões) ────────────────────────────────────────────────────────
@@ -62,10 +62,10 @@ CREATE TABLE IF NOT EXISTS injuries (
 ALTER TABLE injuries ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='injuries' AND policyname='injuries_read')
-  THEN CREATE POLICY "injuries_read" ON injuries FOR SELECT USING (true); END IF;
-  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='injuries' AND policyname='injuries_all')
-  THEN CREATE POLICY "injuries_all" ON injuries FOR ALL USING (true); END IF;
+  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='injuries' AND policyname='injuries_authenticated_read')
+  THEN CREATE POLICY "injuries_authenticated_read" ON injuries FOR SELECT TO authenticated USING (true); END IF;
+  IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename='injuries' AND policyname='injuries_service_write')
+  THEN CREATE POLICY "injuries_service_write" ON injuries FOR ALL TO service_role USING (true) WITH CHECK (true); END IF;
 END $$;
 
 -- ── LGPD: log de exclusões de conta ─────────────────────────────────────────
@@ -88,6 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_player_props_cache_player ON player_props_cache(p
 CREATE INDEX IF NOT EXISTS idx_games_date ON games(game_date DESC);
 CREATE INDEX IF NOT EXISTS idx_profiles_plan ON profiles(plan);
 CREATE INDEX IF NOT EXISTS idx_injuries_active ON injuries(active, updated_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_referral_uses_payment_id_unique ON referral_uses(payment_id) WHERE payment_id IS NOT NULL;
 
 -- ── ON DELETE CASCADE para LGPD ──────────────────────────────────────────────
 -- Garante que quando profile for deletado, dados relacionados também somem

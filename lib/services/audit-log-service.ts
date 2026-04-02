@@ -16,7 +16,8 @@ type AuditEvent =
   | 'billing_admin_revoke'
   | 'billing_cancellation_requested'
   | 'billing_cancellation_applied'
-  | 'billing_status_changed';
+  | 'billing_status_changed'
+  | 'support_message_sent';
 
 export async function auditLog(event: AuditEvent, details: Record<string, unknown>) {
   const entry = {

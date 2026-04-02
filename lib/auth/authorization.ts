@@ -9,6 +9,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 });
 
 export async function requireAuthenticatedUser(req: Request) {
+  assertAllowedOrigin(req);
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) throw new AuthenticationError();
 

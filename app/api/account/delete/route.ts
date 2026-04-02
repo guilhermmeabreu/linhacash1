@@ -3,6 +3,8 @@ import { fail, internalError, ok, options } from '@/lib/http/responses';
 import { requireAuthenticatedUser } from '@/lib/auth/authorization';
 import { deleteOwnAccount } from '@/lib/services/account-service';
 import { getIP, rateLimit } from '@/lib/rate-limit';
+import { readJsonObject } from '@/lib/http/request-guards';
+import { ValidationError } from '@/lib/http/errors';
 
 export async function DELETE(req: Request) {
   const origin = req.headers.get('origin') || undefined;
@@ -13,6 +15,11 @@ export async function DELETE(req: Request) {
     }
 
     const user = await requireAuthenticatedUser(req);
+    const body = await readJsonObject(req);
+    const confirmation = typeof body.confirmation === 'string' ? body.confirmation.trim().toUpperCase() : '';
+    if (confirmation !== 'EXCLUIR') {
+      throw new ValidationError('Confirmation text is required');
+    }
     await deleteOwnAccount(user.id, user.email);
     return ok({ deleted: true });
   } catch (error) {

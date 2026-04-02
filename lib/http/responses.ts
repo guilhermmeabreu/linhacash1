@@ -25,6 +25,9 @@ export function buildSecurityHeaders(origin?: string): Record<string, string> {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Cross-Origin-Resource-Policy': 'same-site',
+    'X-DNS-Prefetch-Control': 'off',
+    'X-Permitted-Cross-Domain-Policies': 'none',
+    'X-Robots-Tag': 'noindex, nofollow',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   };
