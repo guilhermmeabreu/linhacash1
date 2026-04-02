@@ -271,7 +271,31 @@ body{min-height:100dvh}
  .shhandle{display:none}
 
  /* Perfil desktop */
- #profcont{max-width:600px;margin:0 auto}
+ #profcont{
+  width:min(100%,1160px);
+  margin:0 auto;
+  padding:28px 24px 40px;
+  display:grid;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+  gap:18px;
+  align-content:start;
+ }
+ #profcont > .ptop{
+  grid-column:1/-1;
+  padding:22px 22px 20px;
+  border:1px solid var(--bd);
+  background:var(--s2);
+ }
+ #profcont > .psec{padding:0}
+ #profcont > .psec:nth-child(2){grid-column:1}
+ #profcont > .psec:nth-child(3){grid-column:2}
+ #profcont > .psec:nth-child(4){grid-column:1/-1}
+ #profcont > .plogout{
+  grid-column:1/-1;
+  margin:8px 0 0;
+  text-align:left;
+ }
+ #profcont > .plogout button{padding-inline:24px}
  .datebar{padding:16px 24px 10px}
  .sectitle{padding:12px 24px 6px}
  .schips{padding:10px 24px}
@@ -281,6 +305,7 @@ body{min-height:100dvh}
 @media(min-width:1100px){
  .sidebar-desk{width:260px}
  #glist{grid-template-columns:repeat(3,1fr)}
+ #profcont{gap:22px}
 }
 
 
