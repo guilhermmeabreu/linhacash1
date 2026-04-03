@@ -11,8 +11,8 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const FREE_STATS = ['PTS', 'FG2A'];
-const ALL_STATS = ['PTS', 'REB', 'AST', '3PM', 'P+A', 'P+R', 'A+R', 'FG2A', 'FG3A'];
+const FREE_STATS = ['PTS', '3PM'];
+const ALL_STATS = ['PTS', 'REB', 'AST', '3PM', 'P+A', 'P+R', 'A+R', 'FG3A'];
 
 // GET /api/metrics?playerId=xxx&stat=PTS — métricas de um jogador
 export async function GET(req: Request) {
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
   if (!playerId || !/^\d+$/.test(playerId)) return errorResponse('playerId inválido');
 
-  // Plano Free: PTS + FG2A
+  // Plano Free: PTS + 3PM
   if (session.plan === 'free' && !FREE_STATS.includes(stat)) {
     return errorResponse('Estatística disponível apenas no plano Pro', 403);
   }
@@ -110,7 +110,6 @@ function getStatValue(s: PlayerStatRow, stat: string): number {
     case 'P+A': return (s.points || 0) + (s.assists || 0);
     case 'P+R': return (s.points || 0) + (s.rebounds || 0);
     case 'A+R': return (s.assists || 0) + (s.rebounds || 0);
-    case 'FG2A': return s.fgm || 0;
     case 'FG3A': return s.fga || 0;
     default: return 0;
   }

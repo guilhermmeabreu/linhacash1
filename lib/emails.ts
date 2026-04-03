@@ -28,7 +28,7 @@ function base(content: string) {
             <tr><td style="padding:20px 32px;border-top:1px solid #1a1a1a">
               <p style="margin:0;font-size:12px;color:#444">
                 LinhaCash — Análise de props da NBA<br/>
-                <a href="${PUBLIC_SITE_URL}/privacidade" style="color:#555;text-decoration:none">Política de Privacidade</a> · 
+                <a href="${PUBLIC_SITE_URL}/termos" style="color:#555;text-decoration:none">Termos de Uso e Privacidade</a> · 
                 <a href="mailto:suporte@linhacash.com.br" style="color:#555;text-decoration:none">suporte@linhacash.com.br</a>
               </p>
             </td></tr>
@@ -72,7 +72,7 @@ export function emailProAtivado(name: string, plan: string) {
           <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#555;letter-spacing:0.08em;text-transform:uppercase">Agora você tem</p>
           <p style="margin:4px 0;color:#ccc">✓ Todos os jogos do dia</p>
           <p style="margin:4px 0;color:#ccc">✓ Todos os jogadores</p>
-          <p style="margin:4px 0;color:#ccc">✓ PTS, REB, AST, 3PM, P+A, P+R, A+R, FG2A, FG3A</p>
+          <p style="margin:4px 0;color:#ccc">✓ PTS, REB, AST, 3PM, P+A, P+R, A+R, FG3A</p>
           <p style="margin:4px 0;color:#ccc">✓ Splits Casa/Fora</p>
           <p style="margin:4px 0;color:#ccc">✓ Médias L5/L10/L20</p>
           <p style="margin:4px 0;color:#ccc">✓ H2H vs adversário</p>

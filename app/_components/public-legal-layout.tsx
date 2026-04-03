@@ -31,7 +31,7 @@ export function PublicLegalLayout({
       <footer style={{ borderTop: '1px solid #24312b', padding: '22px 20px 30px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gap: 8, textAlign: 'center' }}>
           <p style={{ fontSize: 13, color: '#95a99f' }}>
-            <Link href="/termos" style={linkStyle}>Termos de uso</Link> · <Link href="/privacidade" style={linkStyle}>Política de privacidade</Link>
+            <Link href="/termos" style={linkStyle}>Termos de uso e privacidade</Link>
           </p>
           <p style={{ fontSize: 13 }}><a href="mailto:contato@linhacash.com" style={linkStyle}>contato@linhacash.com</a></p>
           <p style={{ fontSize: 12, color: '#95a99f' }}>Uso responsável: o LinhaCash não é casa de apostas, não intermedia apostas e não garante resultados.</p>
