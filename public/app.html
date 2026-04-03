@@ -662,7 +662,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <p style="font-size:11px;color:var(--mt);text-align:center;line-height:1.6">Ao criar conta você concorda com os <a href="/termos" target="_blank" rel="noopener" style="color:var(--green)">Termos de Uso</a></p>
  </div>
  <div class="auth-foot">
-  <div><a href="/termos" target="_blank" rel="noopener">Termos de uso</a></div>
+  <div><a href="/termos" target="_blank" rel="noopener">Termos de uso</a> · <a href="/privacidade" target="_blank" rel="noopener">Política de privacidade</a></div>
   <p>Uso responsável: o LinhaCash é uma plataforma informativa e não intermedia apostas.</p>
  </div>
  </div>
@@ -2051,8 +2051,8 @@ function updateSidebar(){
  if(!sb) return;
  // Só mostra sidebar se estiver logado E em desktop
  const currentScr = stack[stack.length-1];
- const isLoggedIn = currentScr !== 'sAuth' && currentScr !== 'sOtp';
- sb.style.display = (isDesktop() && isLoggedIn) ? 'flex' : 'none';
+ const isAuthenticatedScreen = ['s1','s2','s3','s4'].includes(currentScr);
+ sb.style.display = (isDesktop() && isAuthenticatedScreen && !!supabaseUser) ? 'flex' : 'none';
  const avEl = document.getElementById('sdAvLetter');
  const nmEl = document.getElementById('sdUserName');
  const plEl = document.getElementById('sdUserPlan');
