@@ -7,30 +7,47 @@ export const metadata: Metadata = {
 
 export default function TermosPage() {
   return (
-    <PublicLegalLayout title="Termos de Uso" updatedAt="1 de abril de 2026">
-      <LegalSection title="1. Aceitação">
-        <p>Ao acessar o LinhaCash, você concorda com estes termos e com a Política de Privacidade.</p>
+    <PublicLegalLayout title="Termos de Uso" updatedAt="3 de abril de 2026">
+      <LegalSection title="1. Descrição do serviço">
+        <p>O LinhaCash é uma plataforma informativa de análise de dados esportivos. Não somos casa de apostas, não intermediamos apostas e não executamos ordens de aposta.</p>
       </LegalSection>
 
-      <LegalSection title="2. Natureza do serviço">
-        <p>O LinhaCash oferece conteúdo informativo e analítico sobre estatísticas e props da NBA. Não operamos apostas e não garantimos resultados financeiros.</p>
+      <LegalSection title="2. Finalidade da plataforma">
+        <p>O conteúdo disponibilizado tem foco em leitura de desempenho, tendências e contexto para apoiar decisões do usuário.</p>
       </LegalSection>
 
-      <LegalSection title="3. Conta e acesso">
+      <LegalSection title="3. Planos Free e Pro">
         <ul style={listStyle}>
-          <li>Você é responsável por manter suas credenciais em sigilo.</li>
-          <li>Não é permitido compartilhar acesso pago com terceiros sem autorização.</li>
-          <li>Podemos suspender contas que violem estes termos ou a legislação vigente.</li>
+          <li>Free: acesso essencial com limitações de jogos, jogadores e métricas.</li>
+          <li>Pro: acesso completo aos recursos e métricas disponíveis no produto.</li>
         </ul>
       </LegalSection>
 
-      <LegalSection title="4. Planos, cobrança e cancelamento">
+      <LegalSection title="4. Assinatura, cobrança e pagamentos">
         <ul style={listStyle}>
-          <li>O plano Free mostra todos os jogos da rodada, com 1 jogo liberado por dia, 1 jogador por time e estatísticas PTS + FG2A.</li>
-          <li>Assinaturas Pro são processadas por parceiro de pagamento (Mercado Pago).</li>
-          <li>O plano Pro libera todos os jogos, todos os jogadores e todas as estatísticas disponíveis no produto.</li>
-          <li>Cancelamentos podem ser solicitados pela área logada; o acesso permanece até o fim do período já pago.</li>
+          <li>A assinatura Pro segue o ciclo contratado até cancelamento.</li>
+          <li>O processamento de pagamento é realizado pelo Mercado Pago.</li>
         </ul>
+      </LegalSection>
+
+      <LegalSection title="5. Cancelamento">
+        <p>O cancelamento pode ser solicitado pela área logada. O acesso Pro permanece ativo até o fim do período já pago, quando aplicável.</p>
+      </LegalSection>
+
+      <LegalSection title="6. Uso aceitável e responsabilidades">
+        <ul style={listStyle}>
+          <li>Manter credenciais em sigilo e sob responsabilidade do titular da conta.</li>
+          <li>Não compartilhar acesso pago sem autorização.</li>
+          <li>Utilizar a plataforma de forma lícita e em conformidade com estes termos.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection title="7. Limitação de responsabilidade">
+        <p>As informações têm caráter analítico e educacional. O LinhaCash não garante resultados financeiros nem resultados em apostas.</p>
+      </LegalSection>
+
+      <LegalSection title="8. Contato">
+        <p>Para suporte e assuntos contratuais: contato@linhacash.com.</p>
       </LegalSection>
     </PublicLegalLayout>
   );

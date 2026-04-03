@@ -7,25 +7,45 @@ export const metadata: Metadata = {
 
 export default function PrivacidadePage() {
   return (
-    <PublicLegalLayout title="Política de Privacidade" updatedAt="1 de abril de 2026">
-      <LegalSection title="1. Escopo desta política">
-        <p>Esta política explica como o LinhaCash coleta, usa, compartilha e protege dados pessoais ao utilizar nosso site, landing page, aplicativo e canais de suporte.</p>
-      </LegalSection>
-
-      <LegalSection title="2. Dados coletados">
+    <PublicLegalLayout title="Política de Privacidade" updatedAt="3 de abril de 2026">
+      <LegalSection title="1. Dados coletados">
         <ul style={listStyle}>
-          <li><strong>Cadastro e autenticação:</strong> nome, email e credenciais para login.</li>
-          <li><strong>Assinatura e pagamentos:</strong> status do plano e eventos de pagamento processados pelo Mercado Pago.</li>
-          <li><strong>Eventos de uso:</strong> interações com páginas, botões e recursos para análises de produto e prevenção de abuso.</li>
+          <li>Dados de conta e autenticação, como nome, email e identificadores de sessão.</li>
+          <li>Dados de uso e navegação para segurança, estabilidade e evolução do produto.</li>
+          <li>Contexto de assinatura e status de pagamento associado ao plano.</li>
         </ul>
       </LegalSection>
 
-      <LegalSection title="3. Compartilhamento com terceiros">
-        <p>Podemos compartilhar dados com provedores necessários para operar o serviço, como Supabase, Vercel e Mercado Pago. Não vendemos dados pessoais.</p>
+      <LegalSection title="2. Finalidades do tratamento">
+        <ul style={listStyle}>
+          <li>Operação da conta, login e recuperação de acesso.</li>
+          <li>Prevenção de abuso, monitoramento técnico e suporte ao usuário.</li>
+          <li>Gestão de assinatura e atendimento financeiro.</li>
+        </ul>
       </LegalSection>
 
-      <LegalSection title="4. Direitos do titular">
-        <p>Você pode solicitar confirmação de tratamento, acesso, correção, portabilidade, oposição e exclusão de dados pelo email <a href="mailto:suporte@linhacash.com.br" style={{ color: '#00e676', textDecoration: 'none' }}>suporte@linhacash.com.br</a>.</p>
+      <LegalSection title="3. Pagamentos e contexto financeiro">
+        <p>Pagamentos são processados pelo Mercado Pago. O LinhaCash não armazena dados completos de cartão, recebendo apenas os dados necessários para confirmação e gestão da assinatura.</p>
+      </LegalSection>
+
+      <LegalSection title="4. Cookies e armazenamento local">
+        <p>Utilizamos armazenamento local e tecnologias equivalentes para manter sessão, preferências de interface (como tema) e funcionamento essencial da experiência.</p>
+      </LegalSection>
+
+      <LegalSection title="5. Compartilhamento com operadores">
+        <p>Podemos compartilhar dados com provedores necessários à operação do serviço, como Supabase, Vercel, Mercado Pago e ferramentas de monitoramento/analytics compatíveis com a operação do produto.</p>
+      </LegalSection>
+
+      <LegalSection title="6. Retenção e exclusão">
+        <p>Os dados são mantidos pelo período necessário para cumprir as finalidades descritas e obrigações legais. Solicitações de exclusão são analisadas conforme requisitos regulatórios e de segurança.</p>
+      </LegalSection>
+
+      <LegalSection title="7. Direitos do titular">
+        <p>Você pode solicitar acesso, correção, atualização, portabilidade, oposição e exclusão de dados, observadas as hipóteses legais aplicáveis.</p>
+      </LegalSection>
+
+      <LegalSection title="8. Contato para privacidade">
+        <p>Para solicitações relacionadas à privacidade: contato@linhacash.com.</p>
       </LegalSection>
     </PublicLegalLayout>
   );
