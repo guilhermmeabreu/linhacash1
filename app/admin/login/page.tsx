@@ -51,15 +51,13 @@ export default function AdminLogin() {
     }
   }
 
-  const isDark = dark;
-
   return (
     <div style={{ minHeight: '100vh', background: palette.bg, display: 'grid', placeItems: 'center', padding: 'clamp(16px,3vw,28px)', fontFamily: 'Inter, sans-serif' }}>
       <button onClick={toggleTheme} style={{ position: 'fixed', top: 20, right: 20, width: 40, height: 40, border: `1px solid ${palette.border}`, background: palette.card, color: palette.muted, cursor: 'pointer', fontSize: 16 }}>
         {dark ? '☾' : '☀'}
       </button>
 
-      <div style={{ width: '100%', maxWidth: 500, background: palette.card, border: `1px solid ${palette.border}`, padding: 'clamp(22px,3vw,34px)', boxShadow: isDark ? '0 26px 48px rgba(0,0,0,.36)' : '0 16px 30px rgba(18,32,26,.09)' }}>
+      <div style={{ width: '100%', maxWidth: 500, background: palette.card, border: `1px solid ${palette.border}`, padding: 'clamp(22px,3vw,34px)', boxShadow: dark ? '0 26px 48px rgba(0,0,0,.36)' : '0 16px 30px rgba(18,32,26,.09)' }}>
         <p style={{ fontSize: 11, color: '#00c768', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 12, fontWeight: 700 }}>Admin Access · LinhaCash</p>
         <h1 style={{ fontSize: 'clamp(30px,4vw,36px)', fontWeight: 800, marginBottom: 8, color: palette.text, letterSpacing: '-.03em', lineHeight: 1.08 }}>Painel de operação</h1>
         <p style={{ fontSize: 14, color: palette.muted, marginBottom: 22, lineHeight: 1.62, maxWidth: 460 }}>Acesse um ambiente seguro para gerenciar usuários, planos e sincronização de dados.</p>

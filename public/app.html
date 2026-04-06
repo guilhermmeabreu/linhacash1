@@ -220,8 +220,8 @@ html.light{
 html,body{font-family:Hele,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;height:100%}
 body{min-height:100dvh}
 
-/* MOBILE: app em coluna, max 430px */
-.app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+/* MOBILE: app em coluna, max 440px */
+.app{display:flex;flex-direction:column;height:100dvh;max-width:440px;margin:0 auto;position:relative;overflow:hidden}
 
 /* DESKTOP: expande layout */
 @media(min-width:768px){
@@ -266,7 +266,7 @@ body{min-height:100dvh}
  #sAuth .scrl{display:flex;align-items:center;justify-content:center}
  .auth-layout{width:min(100%,980px);margin:0 auto;padding:28px 24px 30px}
  .auth-panel{display:flex;justify-content:center}
- .auth-panel .awrap{max-width:540px;width:100%;margin:0 auto;padding:36px 36px;background:linear-gradient(180deg,color-mix(in srgb,var(--s2) 90%, #050505 10%),var(--s2));border:1px solid color-mix(in srgb,var(--bd2) 70%, var(--tx) 30%);box-shadow:0 20px 36px rgba(0,0,0,.28)}
+ .auth-panel .awrap{max-width:520px;width:100%;margin:0 auto;padding:34px 34px;background:linear-gradient(180deg,color-mix(in srgb,var(--s2) 90%, #050505 10%),var(--s2));border:1px solid color-mix(in srgb,var(--bd2) 70%, var(--tx) 30%);box-shadow:0 20px 36px rgba(0,0,0,.28)}
 
  /* Games grid no desktop */
  #glist{width:min(100%,1240px);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:12px 18px 16px}
@@ -317,7 +317,7 @@ body{min-height:100dvh}
   text-align:left;
  }
  #profcont > .plogout button{padding-inline:24px}
- .datebar{padding:16px 26px 10px}
+ .datebar{width:min(100%,1240px);margin:0 auto;padding:16px 26px 10px}
  .sectitle{padding:12px 26px 6px}
  .schips{padding:10px 26px}
  .gbanner{padding:14px 26px}
@@ -383,18 +383,18 @@ body{min-height:100dvh}
 .aname{font-size:26px;font-weight:800;letter-spacing:0}
 .aname em{color:var(--green);font-style:normal}
 .asub{font-size:13px;color:var(--mt);margin-top:5px}
-.atabs{display:flex;background:color-mix(in srgb,var(--s1) 50%, var(--s2) 50%);border:1px solid color-mix(in srgb,var(--bd2) 74%, var(--tx) 26%);padding:3px;margin-bottom:20px}
+.atabs{display:flex;background:color-mix(in srgb,var(--s1) 50%, var(--s2) 50%);border:1px solid color-mix(in srgb,var(--bd2) 74%, var(--tx) 26%);padding:3px;margin-bottom:18px}
 .atab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:600;color:var(--mt);cursor:pointer;transition:.18s}
-.atab.on{background:color-mix(in srgb,var(--s3) 75%, var(--green) 25%);color:var(--tx);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 55%, transparent 45%)}
+.atab.on{background:color-mix(in srgb,var(--s3) 86%, var(--green) 14%);color:var(--tx);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 48%, transparent 52%)}
 .afield{margin-bottom:14px}
 .afield label{display:block;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .afield input{width:100%;background:color-mix(in srgb,var(--s2) 88%, #050505 12%);border:1px solid color-mix(in srgb,var(--bd2) 72%, var(--tx) 28%);border-radius:0;padding:14px 14px;font-size:15px;color:var(--tx);font-family:Hele,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;outline:none;transition:.15s;min-height:52px}
 .afield input:focus{border-color:var(--green)}
-.abtn{width:100%;padding:14px;background:var(--green);border:none;border-radius:0;font-size:15px;font-weight:800;color:#000;cursor:pointer;font-family:Hele,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;margin-top:10px;min-height:50px;box-shadow:0 10px 24px rgba(34,197,94,.24)}
+.abtn{width:100%;padding:14px;background:var(--green);border:none;border-radius:0;font-size:15px;font-weight:800;color:#000;cursor:pointer;font-family:Hele,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;margin-top:10px;min-height:50px;box-shadow:0 8px 18px rgba(34,197,94,.22)}
 .abtn:active{opacity:.85}
 .abtn.sec{background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-weight:600;font-size:14px;margin-top:8px}
 .abtn.oauth{background:color-mix(in srgb,var(--s3) 78%, #121212 22%);color:var(--tx);border:1px solid color-mix(in srgb,var(--bd2) 74%, var(--tx) 26%);display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;box-shadow:none}
-.abtn.oauth:hover{border-color:color-mix(in srgb,var(--green) 36%, var(--bd2) 64%);background:color-mix(in srgb,var(--s3) 68%, var(--green) 32%)}
+.abtn.oauth:hover{border-color:color-mix(in srgb,var(--green) 36%, var(--bd2) 64%);background:color-mix(in srgb,var(--s3) 74%, var(--green) 26%)}
 .abtn[disabled]{opacity:.55;cursor:not-allowed}
 .auth-msg{display:none;margin-bottom:10px;padding:10px 12px;font-size:12px;border:1px solid rgba(255,61,61,.45);background:rgba(255,61,61,.12);color:#ff8f8f}
 .aforgot{text-align:center;margin-top:12px;font-size:13px;color:var(--mt);cursor:pointer}

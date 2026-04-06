@@ -91,14 +91,14 @@ export default function AdminPage() {
       <style>{`
         .adm-page{min-height:100vh;background:#080909;color:#ecf1ee;padding:20px;font-family:Inter,sans-serif;overflow-x:hidden}
         .adm-shell{max-width:1240px;margin:0 auto;display:grid;gap:16px}
-        .adm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid #1e2422}
+        .adm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid #1e2422}
         .adm-title{font-size:24px;font-weight:800}
         .adm-title em{color:#00e676;font-style:normal}
         .adm-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
         .adm-tabs{display:flex;gap:8px;flex-wrap:wrap}
         .adm-tab{background:#121716;border:1px solid #252e2b;color:#8ea097;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px}
         .adm-tab.on{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.1)}
-        .adm-card{background:#0f1312;border:1px solid #1f2825;padding:16px}
+        .adm-card{background:#0f1312;border:1px solid #1f2825;padding:16px;display:grid;gap:10px}
         .adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
         .adm-kpi{font-size:28px;font-weight:800;margin-top:8px}
         .adm-kpi-sm{font-size:22px;font-weight:800;margin-top:8px}
@@ -109,6 +109,7 @@ export default function AdminPage() {
         .adm-btn.alt{background:transparent;border:1px solid #32413c;color:#9cb0a7}
         .adm-btn.danger{background:transparent;border:1px solid #9b3131;color:#ff7676}
         .adm-btn.info{background:transparent;border:1px solid #2f6cd9;color:#8cb7ff}
+        .adm-btn:hover{filter:brightness(1.03)}
         .adm-table{display:grid;gap:8px}
         .adm-user{display:grid;grid-template-columns:minmax(0,1.45fr) repeat(4,minmax(120px,auto));gap:8px;align-items:center;background:#121715;border:1px solid #1d2824;padding:10px}
         .adm-badge{font-size:11px;font-weight:700;padding:4px 8px}
@@ -124,7 +125,7 @@ export default function AdminPage() {
         .adm-skeleton-label{height:14px;width:52%;margin-bottom:10px}
         .adm-skeleton-value{height:34px;width:75%}
         .adm-section{display:grid;gap:10px}
-        .adm-section-title{font-weight:800;font-size:16px;letter-spacing:.02em}
+        .adm-section-title{font-weight:800;font-size:16px;letter-spacing:.02em;line-height:1.25}
         .adm-section-block{background:#0f1312;border:1px solid #1f2825;padding:16px;display:grid;gap:12px}
         .adm-main-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
         .adm-main-kpi{background:#101715;border:1px solid #274036;padding:14px}
@@ -148,7 +149,7 @@ export default function AdminPage() {
           .adm-head{flex-direction:column;align-items:flex-start}
           .adm-row{width:100%}
           .adm-row .adm-btn,.adm-row .adm-input{flex:1 1 180px}
-          .adm-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+        .adm-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
           .adm-tab{white-space:nowrap}
           .adm-user{grid-template-columns:1fr}
           .adm-user > *{min-width:0}
