@@ -5,6 +5,7 @@ import { acquireIdempotencyKey } from '@/lib/services/idempotency-service';
 import { activatePaidPro } from '@/lib/services/billing-service';
 import { validateCheckoutPlan } from '@/lib/validators/billing-validator';
 import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
+import { createCommissionForApprovedPayment } from '@/lib/services/affiliate-commission-service';
 import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
 import { requireEnv } from '@/lib/env';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
@@ -137,6 +138,25 @@ export async function POST(req: Request) {
     });
 
     if (referralCode) {
+      const grossAmount = typeof payment.transaction_amount === 'number' ? payment.transaction_amount : Number(payment.transaction_amount || 0);
+      const commissionResult = await createCommissionForApprovedPayment({
+        referralCode,
+        userId,
+        paymentId,
+        plan,
+        grossAmount,
+        approvedAt: typeof payment.date_approved === 'string' ? payment.date_approved : undefined,
+      });
+
+      await auditLog('affiliate_commission_upserted', {
+        paymentId,
+        userId,
+        referralCode,
+        result: commissionResult.reason,
+        commissionAmount: commissionResult.commissionAmount,
+        commissionPct: commissionResult.commissionPct,
+      });
+
       const { error: incrementError } = await supabase.rpc('increment_referral_use', { referral_code: referralCode });
       if (incrementError) {
         const { data: refData } = await supabase.from('referral_codes').select('uses').eq('code', referralCode).single();

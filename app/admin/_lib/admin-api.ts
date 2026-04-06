@@ -35,6 +35,49 @@ export interface ReferralUse {
   profiles?: { name: string; email: string };
 }
 
+
+export interface AffiliateCommission {
+  id: number;
+  referral_code: string;
+  influencer_name: string;
+  user_id: string;
+  payment_id: string;
+  plan: string;
+  gross_amount: number;
+  commission_pct: number;
+  commission_amount: number;
+  status: 'pending' | 'paid' | 'cancelled';
+  approved_at: string | null;
+  paid_at: string | null;
+  payout_reference: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AffiliateCommissionGroup {
+  groupBy: 'referral_code' | 'influencer_name';
+  groupValue: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  totalGrossAmount: number;
+  totalCommissionAmount: number;
+  averageCommissionPct: number;
+  commissionCount: number;
+  latestApprovedAt: string | null;
+  latestCreatedAt: string;
+}
+
+export interface AffiliateCommissionQueryPayload {
+  status: 'pending' | 'paid' | 'cancelled';
+  groupBy: 'none' | 'referral_code' | 'influencer_name';
+  totalRecords: number;
+  totals: {
+    grossAmount: number;
+    commissionAmount: number;
+  };
+  data: Array<AffiliateCommission | AffiliateCommissionGroup>;
+}
+
 export interface Stats {
   total_users: number;
   pro_users: number;
@@ -136,6 +179,26 @@ export const adminApi = {
   },
   deleteReferral(id: number) {
     return json('/api/admin/referrals', { method: 'DELETE', body: JSON.stringify({ id }) });
+  },
+
+  listAffiliateCommissions(params?: { status?: 'pending' | 'paid' | 'cancelled'; groupBy?: 'none' | 'referral_code' | 'influencer_name' }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.groupBy) query.set('groupBy', params.groupBy);
+    const suffix = query.toString();
+    return json<AffiliateCommissionQueryPayload>(`/api/admin/affiliate-commissions${suffix ? `?${suffix}` : ''}`);
+  },
+  markAffiliateCommissionsPaid(input: { ids: number[]; payout_reference: string; notes?: string }) {
+    return json('/api/admin/affiliate-commissions', {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'mark_paid', ...input }),
+    });
+  },
+  cancelAffiliateCommissions(input: { ids: number[]; notes?: string }) {
+    return json('/api/admin/affiliate-commissions', {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'cancel', ...input }),
+    });
   },
   logout() {
     return fetch('/api/admin/auth', { method: 'DELETE' });
