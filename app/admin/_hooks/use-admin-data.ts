@@ -1,7 +1,17 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { AdminActionInsights, adminApi, OperationsInsights, ProductInsights, Profile, ReferralCode, ReferralUse, Stats } from '../_lib/admin-api';
+import {
+  AdminActionInsights,
+  adminApi,
+  AffiliateCommission,
+  OperationsInsights,
+  ProductInsights,
+  Profile,
+  ReferralCode,
+  ReferralUse,
+  Stats,
+} from '../_lib/admin-api';
 
 export function useAdminData() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -12,6 +22,7 @@ export function useAdminData() {
   const [productInsights, setProductInsights] = useState<ProductInsights | null>(null);
   const [operationsInsights, setOperationsInsights] = useState<OperationsInsights | null>(null);
   const [adminActionInsights, setAdminActionInsights] = useState<AdminActionInsights | null>(null);
+  const [affiliateCommissions, setAffiliateCommissions] = useState<AffiliateCommission[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -27,6 +38,12 @@ export function useAdminData() {
       setProductInsights(data.productInsights || null);
       setOperationsInsights(data.operationsInsights || null);
       setAdminActionInsights(data.adminActionInsights || null);
+      const [pending, paid, cancelled] = await Promise.all([
+        adminApi.listAffiliateCommissions({ status: 'pending', groupBy: 'none' }),
+        adminApi.listAffiliateCommissions({ status: 'paid', groupBy: 'none' }),
+        adminApi.listAffiliateCommissions({ status: 'cancelled', groupBy: 'none' }),
+      ]);
+      setAffiliateCommissions([...(pending.data as AffiliateCommission[]), ...(paid.data as AffiliateCommission[]), ...(cancelled.data as AffiliateCommission[])]);
     } catch {
       setFeedback({ type: 'error', message: 'Não foi possível carregar o painel.' });
     } finally {
@@ -71,6 +88,16 @@ export function useAdminData() {
         setFeedback({ type: data.error ? 'error' : 'success', message: data.error || data.message || 'Sync concluído.' });
         await loadAll();
       },
+      async markAffiliateCommissionsPaid(input: { ids: number[]; payout_reference: string; notes?: string }) {
+        await adminApi.markAffiliateCommissionsPaid(input);
+        setFeedback({ type: 'success', message: 'Comissões marcadas como pagas com sucesso.' });
+        await loadAll();
+      },
+      async cancelAffiliateCommissions(input: { ids: number[]; notes?: string }) {
+        await adminApi.cancelAffiliateCommissions(input);
+        setFeedback({ type: 'success', message: 'Comissões pendentes canceladas com sucesso.' });
+        await loadAll();
+      },
       clearFeedback() {
         setFeedback(null);
       },
@@ -87,6 +114,7 @@ export function useAdminData() {
     productInsights,
     operationsInsights,
     adminActionInsights,
+    affiliateCommissions,
     loading,
     feedback,
     loadAll,
