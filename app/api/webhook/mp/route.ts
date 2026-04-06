@@ -8,6 +8,7 @@ import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
 import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
 import { requireEnv } from '@/lib/env';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { findExistingReferralCode } from '@/lib/services/referral-service';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -38,7 +39,14 @@ function validateSignature(req: Request, paymentId: string): boolean {
   return secureCompare(expected, v1);
 }
 
-function resolveAndValidateUserId(payment: any): string | null {
+type MercadoPagoPaymentPayload = {
+  external_reference?: unknown;
+  metadata?: { user_id?: unknown; referral_code?: unknown; plan?: unknown } | null;
+  status?: unknown;
+  date_approved?: unknown;
+};
+
+function resolveAndValidateUserId(payment: MercadoPagoPaymentPayload): string | null {
   const externalRef = typeof payment.external_reference === 'string' ? payment.external_reference : '';
   const metadataUserId = typeof payment.metadata?.user_id === 'string' ? payment.metadata.user_id : '';
   const fromExternalRef = externalRef.split(':')[0];
@@ -110,7 +118,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    const payment = await response.json();
+    const payment = (await response.json()) as MercadoPagoPaymentPayload;
 
     if (payment.status !== 'approved') {
       await auditLog('webhook_event', { status: 'ignored', reason: 'payment_not_approved', paymentId, paymentStatus: payment.status });
@@ -123,9 +131,14 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    const referralCode = typeof payment.metadata?.referral_code === 'string' ? payment.metadata.referral_code.trim().toUpperCase() : null;
-    const plan = validateCheckoutPlan(payment.metadata?.plan || 'mensal');
+    const metadataReferralCode = typeof payment.metadata?.referral_code === 'string' ? payment.metadata.referral_code.trim().toUpperCase() : null;
+    const plan = validateCheckoutPlan(typeof payment.metadata?.plan === 'string' ? payment.metadata.plan : 'mensal');
     const externalReference = typeof payment.external_reference === 'string' ? payment.external_reference : null;
+    const { data: profile } = await supabase.from('profiles').select('referral_code_used').eq('id', userId).maybeSingle();
+    const profileReferralCode = typeof profile?.referral_code_used === 'string' ? profile.referral_code_used.trim().toUpperCase() : null;
+    const validProfileReferral = await findExistingReferralCode(profileReferralCode);
+    const validMetadataReferral = await findExistingReferralCode(metadataReferralCode);
+    const referralCode = validProfileReferral?.code || validMetadataReferral?.code || null;
 
     await activatePaidPro({
       userId,
@@ -137,17 +150,14 @@ export async function POST(req: Request) {
     });
 
     if (referralCode) {
-      const { error: incrementError } = await supabase.rpc('increment_referral_use', { referral_code: referralCode });
-      if (incrementError) {
-        const { data: refData } = await supabase.from('referral_codes').select('uses').eq('code', referralCode).single();
-        await supabase.from('referral_codes').update({ uses: (refData?.uses || 0) + 1 }).eq('code', referralCode);
-      }
-    }
-
-    if (referralCode) {
       const { data: existingReferralUse } = await supabase.from('referral_uses').select('id').eq('payment_id', paymentId).maybeSingle();
       if (!existingReferralUse) {
         await supabase.from('referral_uses').insert({ code: referralCode, user_id: userId, payment_id: paymentId, created_at: new Date().toISOString() });
+        const { error: incrementError } = await supabase.rpc('increment_referral_use', { referral_code: referralCode });
+        if (incrementError) {
+          const { data: refData } = await supabase.from('referral_codes').select('uses').eq('code', referralCode).single();
+          await supabase.from('referral_codes').update({ uses: (refData?.uses || 0) + 1 }).eq('code', referralCode);
+        }
       }
     }
     invalidateCacheByPrefix('admin:');

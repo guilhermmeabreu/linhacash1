@@ -12,7 +12,10 @@ export async function GET(req: Request) {
   try {
     await requireAdminUser(req);
     const data = await getCachedValue('admin:referral-uses', 30_000, async () => {
-      const { data: rows } = await supabase.from('referral_uses').select('*, profiles(name, email)').order('created_at', { ascending: false });
+      const { data: rows } = await supabase
+        .from('referral_uses')
+        .select('id,code,user_id,payment_id,created_at,profiles(name,email,plan_source,plan_status,billing_status,payment_reference,granted_by_admin)')
+        .order('created_at', { ascending: false });
       return rows || [];
     });
     return NextResponse.json(data || []);

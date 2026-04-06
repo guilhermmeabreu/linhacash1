@@ -129,6 +129,22 @@ export async function POST(req: Request) {
       confirmationNotice = 'Conta criada em modo de teste. A confirmação por email está temporariamente indisponível neste ambiente.';
     }
 
+    let normalizedReferralCode: string | null = null;
+    if (typeof referralCode === 'string' && referralCode.trim()) {
+      normalizedReferralCode = referralCode.trim().toUpperCase();
+      if (!/^[A-Z0-9]{2,20}$/.test(normalizedReferralCode)) {
+        return errorResponse('Código de indicação inválido', 400);
+      }
+      const { data: referral } = await supabase
+        .from('referral_codes')
+        .select('code,active')
+        .eq('code', normalizedReferralCode)
+        .maybeSingle();
+      if (!referral || !referral.active) {
+        return errorResponse('Código de indicação inválido ou inativo', 400);
+      }
+    }
+
     if (createdUser) {
       await supabase.from('profiles').upsert({
         id: createdUser.id,
@@ -138,7 +154,7 @@ export async function POST(req: Request) {
         plan_status: 'none',
         plan_source: 'free',
         billing_status: 'none',
-        referral_code_used: referralCode || null,
+        referral_code_used: normalizedReferralCode,
       });
 
       // Email de boas-vindas via API interna

@@ -7,7 +7,11 @@ import { requireEnv } from '@/lib/env';
 import { assertAllowedOrigin, readJsonObject } from '@/lib/http/request-guards';
 import { auditLog } from '@/lib/services/audit-log-service';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { findExistingReferralCode, requireActiveReferralCode } from '@/lib/services/referral-service';
+import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
@@ -26,6 +30,22 @@ export async function POST(req: Request) {
     const user = await requireAuthenticatedUser(req);
     logSecurityEvent('checkout_attempt', { ...context, userId: user.id });
     const { plan, referralCode } = validateCheckoutPayload(await readJsonObject(req));
+    let resolvedReferralCode: string | null = null;
+
+    if (referralCode) {
+      const referral = await requireActiveReferralCode(referralCode);
+      resolvedReferralCode = referral.code;
+      await supabase.from('profiles').update({ referral_code_used: referral.code }).eq('id', user.id);
+    } else {
+      const { data: profile } = await supabase.from('profiles').select('referral_code_used').eq('id', user.id).maybeSingle();
+      if (typeof profile?.referral_code_used === 'string' && profile.referral_code_used.trim()) {
+        const referral = await findExistingReferralCode(profile.referral_code_used);
+        if (referral?.active) {
+          resolvedReferralCode = referral.code;
+        }
+      }
+    }
+
     const mpAccessToken = requireEnv('MP_ACCESS_TOKEN');
     const price = Number((plan === 'anual' ? 197.0 : 24.9).toFixed(2));
     const title = plan === 'anual' ? 'LinhaCash Pro Anual' : 'LinhaCash Pro Mensal';
@@ -42,7 +62,7 @@ export async function POST(req: Request) {
       },
       auto_return: 'approved',
       notification_url: `${publicBaseUrl}/api/webhook/mp`,
-      metadata: { referral_code: referralCode, plan, user_id: user.id, external_reference: externalReference },
+      metadata: { referral_code: resolvedReferralCode, plan, user_id: user.id, external_reference: externalReference },
       external_reference: externalReference,
       payer: { email: user.email },
     };
@@ -69,7 +89,7 @@ export async function POST(req: Request) {
     }
 
     logSecurityEvent('checkout_created', { ...context, userId: user.id, plan });
-    await auditLog('plan_change', { userId: user.id, status: 'checkout_created', plan, referralCode: referralCode || null });
+    await auditLog('plan_change', { userId: user.id, status: 'checkout_created', plan, referralCode: resolvedReferralCode });
     return ok({ url: checkoutUrl });
   } catch (error) {
     if (error instanceof AppError) return fail(error, origin);

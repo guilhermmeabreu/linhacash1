@@ -31,8 +31,17 @@ export interface ReferralUse {
   id: number;
   code: string;
   user_id: string;
+  payment_id?: string | null;
   created_at: string;
-  profiles?: { name: string; email: string };
+  profiles?: {
+    name: string;
+    email: string;
+    plan_source?: string | null;
+    plan_status?: string | null;
+    billing_status?: string | null;
+    payment_reference?: string | null;
+    granted_by_admin?: string | null;
+  };
 }
 
 export interface Stats {

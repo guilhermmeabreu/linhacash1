@@ -70,7 +70,10 @@ export async function GET(req: Request) {
         supabase.from('games').select('id', { count: 'exact' }),
         supabase.from('players').select('id', { count: 'exact' }),
         supabase.from('referral_codes').select('*').order('uses', { ascending: false }),
-        supabase.from('referral_uses').select('*, profiles(name, email)').order('created_at', { ascending: false }),
+        supabase
+          .from('referral_uses')
+          .select('id,code,user_id,payment_id,created_at,profiles(name,email,plan_source,plan_status,billing_status,payment_reference,granted_by_admin)')
+          .order('created_at', { ascending: false }),
         supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(5),
         supabase.from('events').select('event_name,created_at,metadata').order('created_at', { ascending: false }).limit(300),
         supabase.from('audit_logs').select('event,created_at,details').order('created_at', { ascending: false }).limit(50),

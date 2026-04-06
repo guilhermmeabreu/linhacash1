@@ -72,6 +72,56 @@ export default function AdminPage() {
     return grouped;
   }, [referralUses]);
 
+  const usersById = useMemo(() => {
+    const map = new Map<string, Profile>();
+    users.forEach((user) => map.set(user.id, user));
+    return map;
+  }, [users]);
+
+  const referralUsageRows = useMemo(() => {
+    return referralUses.map((use) => {
+      const user = usersById.get(use.user_id);
+      const billing = user?.billing;
+      const isPaidPro = Boolean(billing?.isPaidPro);
+      const isManualPro = Boolean(billing?.isManualPro);
+      const proTypeLabel = isPaidPro ? 'Pro pago' : isManualPro ? 'Pro admin' : 'Sem Pro pago';
+      const paymentStatusLabel = isPaidPro ? 'Pagamento aprovado' : use.payment_id ? 'Pagamento não confirmado' : 'Sem pagamento';
+
+      return {
+        ...use,
+        userEmail: use.profiles?.email || user?.email || use.user_id,
+        userName: use.profiles?.name || user?.name || 'Usuário',
+        isPaidPro,
+        isManualPro,
+        proTypeLabel,
+        paymentStatusLabel,
+      };
+    });
+  }, [referralUses, usersById]);
+
+  const paidConversionsByCode = useMemo(() => {
+    const map = new Map<string, number>();
+    referralUsageRows.forEach((use) => {
+      if (!use.isPaidPro) return;
+      map.set(use.code, (map.get(use.code) || 0) + 1);
+    });
+    return map;
+  }, [referralUsageRows]);
+
+  const commissionByCode = useMemo(() => {
+    return referrals.map((ref) => {
+      const paidConversions = paidConversionsByCode.get(ref.code) || 0;
+      return {
+        id: ref.id,
+        code: ref.code,
+        influencerName: ref.influencer_name,
+        commissionPct: ref.commission_pct || 0,
+        paidConversions,
+        status: paidConversions > 0 ? 'Pronto para repasse' : 'Sem conversões pagas',
+      };
+    });
+  }, [paidConversionsByCode, referrals]);
+
   const destroy = useCallback(async (message: string, action: () => Promise<void>) => {
     if (!window.confirm(message)) return;
     await action();
@@ -138,10 +188,17 @@ export default function AdminPage() {
         .adm-summary{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
         .adm-two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
         .adm-three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+        .adm-list{display:grid;gap:10px}
+        .adm-list-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding:12px;background:#121715;border:1px solid #1d2824}
+        .adm-list-label{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:#7f958b;margin-bottom:4px}
+        .adm-list-value{font-size:13px;word-break:break-word}
+        .adm-scroll{overflow-x:auto}
+        .adm-ref-grid{display:grid;grid-template-columns:1.4fr auto auto auto;gap:8px;align-items:center}
         @media (max-width: 980px){.adm-two-col,.adm-three-col,.adm-main-kpis,.adm-secondary{grid-template-columns:1fr}}
         @media (max-width: 1024px){
           .adm-user{grid-template-columns:minmax(0,1fr) repeat(2,minmax(130px,1fr))}
           .adm-user .adm-badge{justify-self:start}
+          .adm-ref-grid{grid-template-columns:minmax(0,1fr) repeat(2,minmax(130px,1fr))}
         }
         @media (max-width: 860px){
           .adm-page{padding:16px}
@@ -154,6 +211,9 @@ export default function AdminPage() {
           .adm-user{grid-template-columns:1fr}
           .adm-user > *{min-width:0}
           .adm-user .adm-btn{width:100%}
+          .adm-ref-grid{grid-template-columns:1fr}
+          .adm-ref-grid .adm-btn{width:100%}
+          .adm-list-row{grid-template-columns:repeat(2,minmax(0,1fr))}
           .adm-log{flex-direction:column;align-items:flex-start}
         }
         @media (max-width: 640px){
@@ -164,6 +224,7 @@ export default function AdminPage() {
           .adm-row .adm-btn{width:100%}
           .adm-pill{flex-direction:column;align-items:flex-start}
           .adm-badge{width:max-content}
+          .adm-list-row{grid-template-columns:1fr}
         }
         @keyframes adm-loading{0%{background-position:-220px 0}100%{background-position:220px 0}}
       `}</style>
@@ -385,21 +446,57 @@ export default function AdminPage() {
               <input className="adm-input" placeholder="Influenciador" value={influencer} onChange={(e) => setInfluencer(e.target.value)} />
               <button className="adm-btn" onClick={async () => { if (!code || !influencer) return; await actions.createReferral(code, influencer); setCode(''); setInfluencer(''); }}>Criar</button>
             </div>
-            {referrals.map((ref) => {
-              const uses = referralUsesByCode.get(ref.code) || [];
-              return (
-                <div key={ref.id} className="adm-user" style={{ gridTemplateColumns: '1.3fr auto auto auto' }}>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{ref.code}</div>
-                    <div className="adm-muted">{ref.influencer_name} · {ref.uses} usos</div>
-                    <div className="adm-muted">Últimos usos: {uses.join(' · ') || 'nenhum'}</div>
+            <div className="adm-section-title">Códigos de indicação</div>
+            <div className="adm-list">
+              {referrals.map((ref) => {
+                const uses = referralUsesByCode.get(ref.code) || [];
+                const paidConversions = paidConversionsByCode.get(ref.code) || 0;
+                return (
+                  <div key={ref.id} className="adm-ref-grid">
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{ref.code}</div>
+                      <div className="adm-muted">{ref.influencer_name} · {ref.uses} usos · {paidConversions} conversões pagas</div>
+                      <div className="adm-muted">Últimos usos: {uses.join(' · ') || 'nenhum'}</div>
+                    </div>
+                    <button className="adm-btn alt" onClick={() => actions.toggleReferral(ref.id, ref.active)}>{ref.active ? 'Pausar' : 'Ativar'}</button>
+                    <span className={`adm-badge ${ref.active ? 'paid' : 'free'}`}>{ref.active ? 'ATIVO' : 'INATIVO'}</span>
+                    <button className="adm-btn danger" onClick={() => destroy('Deseja apagar este código?', () => actions.deleteReferral(ref.id))}>Excluir</button>
                   </div>
-                  <button className="adm-btn alt" onClick={() => actions.toggleReferral(ref.id, ref.active)}>{ref.active ? 'Pausar' : 'Ativar'}</button>
-                  <span className={`adm-badge ${ref.active ? 'paid' : 'free'}`}>{ref.active ? 'ATIVO' : 'INATIVO'}</span>
-                  <button className="adm-btn danger" onClick={() => destroy('Deseja apagar este código?', () => actions.deleteReferral(ref.id))}>Excluir</button>
+                );
+              })}
+              {referrals.length === 0 && <p className="adm-muted">Nenhum código cadastrado.</p>}
+            </div>
+
+            <div className="adm-section-title" style={{ marginTop: 8 }}>Histórico de uso de códigos</div>
+            <div className="adm-scroll">
+              <div className="adm-list">
+                {referralUsageRows.map((use) => (
+                  <div className="adm-list-row" key={use.id}>
+                    <div><div className="adm-list-label">Usuário</div><div className="adm-list-value">{use.userName}<br /><span className="adm-muted">{use.userEmail}</span></div></div>
+                    <div><div className="adm-list-label">Código</div><div className="adm-list-value">{use.code}</div></div>
+                    <div><div className="adm-list-label">Data</div><div className="adm-list-value">{new Date(use.created_at).toLocaleString('pt-BR')}</div></div>
+                    <div><div className="adm-list-label">Pagamento</div><div className="adm-list-value">{use.paymentStatusLabel}</div></div>
+                    <div><div className="adm-list-label">Tipo de Pro</div><div className="adm-list-value">{use.proTypeLabel}</div></div>
+                    <div><div className="adm-list-label">Comissão</div><div className="adm-list-value">{use.isPaidPro ? 'Elegível' : 'Não elegível'}</div></div>
+                  </div>
+                ))}
+                {referralUsageRows.length === 0 && <p className="adm-muted">Nenhum uso registrado.</p>}
+              </div>
+            </div>
+
+            <div className="adm-section-title" style={{ marginTop: 8 }}>Visão para repasse de comissão</div>
+            <div className="adm-list">
+              {commissionByCode.map((item) => (
+                <div className="adm-list-row" key={item.id}>
+                  <div><div className="adm-list-label">Influenciador</div><div className="adm-list-value">{item.influencerName}</div></div>
+                  <div><div className="adm-list-label">Código</div><div className="adm-list-value">{item.code}</div></div>
+                  <div><div className="adm-list-label">Conversões pagas</div><div className="adm-list-value">{item.paidConversions}</div></div>
+                  <div><div className="adm-list-label">% Comissão</div><div className="adm-list-value">{item.commissionPct}%</div></div>
+                  <div style={{ gridColumn: 'span 2' }}><div className="adm-list-label">Status</div><div className="adm-list-value">{item.status}</div></div>
                 </div>
-              );
-            })}
+              ))}
+              {commissionByCode.length === 0 && <p className="adm-muted">Nenhuma informação de comissão disponível.</p>}
+            </div>
           </section>
         )}
 
