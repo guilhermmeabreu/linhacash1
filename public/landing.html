@@ -39,7 +39,7 @@ nav{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--bd);backdrop-
 #theme{width:40px;height:40px;display:grid;place-items:center;padding:0}
 #theme svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
 main section{padding:78px 0;border-top:1px solid var(--bd)}
-.hero{padding:62px 0 50px;position:relative;overflow:hidden;min-height:calc(82vh - 70px);display:grid;place-items:center}
+.hero{padding:62px 0 58px;position:relative;overflow:hidden;min-height:calc(100vh - 70px);min-height:calc(100svh - 70px);display:grid;place-items:center}
 .hero::before{content:'';position:absolute;inset:-20% -10% auto;background:radial-gradient(circle at top,rgba(0,230,118,.14),transparent 56%);height:72%;pointer-events:none}
 .hero-inner{position:relative;width:min(100%,780px);margin:0 auto;text-align:center}
 h1{font-size:clamp(36px,4.6vw,56px);font-weight:800;line-height:1.08;letter-spacing:-.03em;text-wrap:balance}
@@ -48,6 +48,10 @@ h1{font-size:clamp(36px,4.6vw,56px);font-weight:800;line-height:1.08;letter-spac
 .hero-cta .btn.primary{min-width:216px;box-shadow:0 8px 20px rgba(0,230,118,.2)}
 .hero-cta .btn.secondary{background:color-mix(in srgb,var(--s1) 82%, transparent 18%);border-color:color-mix(in srgb,var(--bd2) 68%, var(--tx) 32%);min-width:196px;color:color-mix(in srgb,var(--tx) 92%, var(--mt) 8%)}
 .hero-microcopy{margin-top:12px;font-size:12px;color:var(--mt);line-height:1.5}
+.hero-scroll{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:grid;place-items:center;width:34px;height:34px;color:var(--mt);opacity:.72;transition:opacity .25s ease,transform .25s ease}
+.hero-scroll:hover{opacity:1;transform:translateX(-50%) translateY(1px)}
+.hero-scroll svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;animation:scrollHint 1.8s ease-in-out infinite}
+@keyframes scrollHint{0%,100%{transform:translateY(-2px)}50%{transform:translateY(2px)}}
 .h2{font-size:clamp(32px,4.2vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.14;text-align:center;text-wrap:balance;max-width:22ch;margin:0 auto}
 .p{margin:12px auto 0;color:var(--mt);font-size:17px;line-height:1.65;max-width:700px;text-align:center}
 .tag{font-size:11px;padding:4px 8px;border:1px solid var(--bd2);text-transform:uppercase;letter-spacing:.05em}
@@ -98,7 +102,7 @@ h1{font-size:clamp(36px,4.6vw,56px);font-weight:800;line-height:1.08;letter-spac
   #theme{width:32px;height:32px;opacity:.72;border-color:transparent}
   #theme svg{width:14px;height:14px}
   main section{padding:72px 0}
-  .hero{padding:28px 0 26px;min-height:calc(100vh - 66px);min-height:calc(100svh - 66px);min-height:calc(100dvh - 66px)}
+  .hero{padding:28px 0 34px;min-height:calc(100vh - 66px);min-height:calc(100svh - 66px);min-height:calc(100dvh - 66px)}
   .hero-inner{max-width:430px;min-height:100%;display:flex;flex-direction:column;justify-content:center}
   h1{font-size:clamp(30px,7.4vw,36px);line-height:1.16;letter-spacing:-.022em}
   .subtitle{margin-top:18px;font-size:15px;line-height:1.7;max-width:unset}
@@ -106,6 +110,7 @@ h1{font-size:clamp(36px,4.6vw,56px);font-weight:800;line-height:1.08;letter-spac
   .hero-cta .btn.primary,.hero-cta .btn.secondary{width:100%;min-width:0}
   .hero-cta .btn.secondary{font-size:11px;letter-spacing:.05em;background:var(--s2)}
   .hero-microcopy{margin-top:14px;padding:0 8px}
+  .hero-scroll{bottom:10px}
   .steps{margin-top:24px;gap:10px}
   .step{padding:18px 16px}
   .step h3{font-size:18px}
@@ -157,6 +162,9 @@ h1{font-size:clamp(36px,4.6vw,56px);font-weight:800;line-height:1.08;letter-spac
     </div>
     <p class="hero-microcopy fade delay-2">Sem cartão de crédito · Plano gratuito disponível</p>
   </div>
+  <a class="hero-scroll fade delay-2" href="#como-funciona" aria-label="Rolar para seção Como funciona">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+  </a>
 </header>
 
 <main>
