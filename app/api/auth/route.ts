@@ -4,7 +4,15 @@ import { hashEmail, loginRateLimit, errorResponse, okResponse, sanitizeProfile }
 import { getBillingState } from '@/lib/services/billing-service';
 import { assertAllowedOrigin, assertJsonRequest } from '@/lib/http/request-guards';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
-import { bootstrapSessionFromToken, createReplacementSession, invalidateAllUserSessions } from '@/lib/auth/session-control';
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null) {
+    const maybeMessage = (error as { message?: unknown }).message;
+    if (typeof maybeMessage === 'string' && maybeMessage.trim()) return maybeMessage;
+  }
+  return 'unknown_error';
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,11 +82,9 @@ export async function POST(req: Request) {
       .single();
 
     const billing = await getBillingState(data.user.id);
-      const session = await createReplacementSession({ supabase, userId: data.user.id, req });
       logSecurityEvent('auth_success', { ...context, action, userId: data.user.id });
       return okResponse({
       token: data.session?.access_token,
-      sessionId: session.sessionId,
       expiresAt: data.session?.expires_at,
       user: sanitizeProfile({ ...(profile || { id: data.user.id, email }), plan: billing.hasProAccess ? 'pro' : 'free' }),
       billing,
@@ -195,10 +201,6 @@ export async function POST(req: Request) {
     const authHeader = req.headers.get('authorization');
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (user) {
-        await invalidateAllUserSessions({ supabase, userId: user.id, reason: 'logout' }).catch(() => {});
-      }
       await supabase.auth.admin.signOut(token).catch(() => {});
     }
       return okResponse({ ok: true });
@@ -214,14 +216,15 @@ export async function POST(req: Request) {
       if (error || !user) {
         return errorResponse('Sessão expirada', 401);
       }
-      const invalidated = await invalidateAllUserSessions({ supabase, userId: user.id, reason: 'logout_all_devices' });
       await supabase.auth.admin.signOut(token).catch(() => {});
-      return okResponse({ ok: true, invalidatedSessions: invalidated.count });
+      return okResponse({ ok: true });
     }
 
     return errorResponse('Ação inválida');
   } catch (error) {
-    logRouteError('/api/auth', context.requestId, error);
+    const errorMessage = extractErrorMessage(error);
+    logRouteError('/api/auth', context.requestId, error, { errorMessage });
+    logSecurityEvent('auth_failed', { ...context, action: 'exception', reason: errorMessage });
     return errorResponse('Falha na autenticação', 500);
   }
 }
@@ -238,10 +241,6 @@ export async function GET(req: Request) {
   if (error || !user) {
     return errorResponse('Sessão expirada', 401);
   }
-  const sessionValidation = await bootstrapSessionFromToken({ supabase, userId: user.id, req });
-  if (!sessionValidation.valid) {
-    return errorResponse('Sessão inválida', 401);
-  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -251,7 +250,6 @@ export async function GET(req: Request) {
 
   const billing = await getBillingState(user.id);
   return okResponse({
-    sessionId: sessionValidation.sessionId,
     user: sanitizeProfile({ ...(profile || { id: user.id, email: user.email }), plan: billing.hasProAccess ? 'pro' : 'free' }),
     billing,
   });
