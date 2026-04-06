@@ -89,14 +89,14 @@ export default function AdminPage() {
   return (
     <main className="adm-page">
       <style>{`
-        .adm-page{min-height:100vh;background:#080909;color:#ecf1ee;padding:24px;font-family:Inter,sans-serif;overflow-x:hidden}
-        .adm-shell{max-width:1240px;margin:0 auto;display:grid;gap:18px}
+        .adm-page{min-height:100vh;background:#080909;color:#ecf1ee;padding:20px;font-family:Inter,sans-serif;overflow-x:hidden}
+        .adm-shell{max-width:1240px;margin:0 auto;display:grid;gap:16px}
         .adm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid #1e2422}
         .adm-title{font-size:24px;font-weight:800}
         .adm-title em{color:#00e676;font-style:normal}
         .adm-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
         .adm-tabs{display:flex;gap:8px;flex-wrap:wrap}
-        .adm-tab{background:#121716;border:1px solid #252e2b;color:#8ea097;padding:10px 14px;cursor:pointer;font-weight:600}
+        .adm-tab{background:#121716;border:1px solid #252e2b;color:#8ea097;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px}
         .adm-tab.on{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.1)}
         .adm-card{background:#0f1312;border:1px solid #1f2825;padding:16px}
         .adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -104,13 +104,13 @@ export default function AdminPage() {
         .adm-kpi-sm{font-size:22px;font-weight:800;margin-top:8px}
         .adm-kpi-main{font-size:36px;font-weight:900;line-height:1.1;margin-top:10px}
         .adm-muted{color:#8ea097;font-size:13px}
-        .adm-input{background:#151b19;border:1px solid #2a3531;color:#eff5f2;padding:10px 12px;min-width:220px}
-        .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 12px;font-weight:700;cursor:pointer;min-height:40px}
+        .adm-input{background:#151b19;border:1px solid #2a3531;color:#eff5f2;padding:10px 12px;min-width:220px;min-height:42px}
+        .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 12px;font-weight:700;cursor:pointer;min-height:42px;font-size:13px;line-height:1.25}
         .adm-btn.alt{background:transparent;border:1px solid #32413c;color:#9cb0a7}
         .adm-btn.danger{background:transparent;border:1px solid #9b3131;color:#ff7676}
         .adm-btn.info{background:transparent;border:1px solid #2f6cd9;color:#8cb7ff}
         .adm-table{display:grid;gap:8px}
-        .adm-user{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto auto auto;gap:8px;align-items:center;background:#121715;border:1px solid #1d2824;padding:10px}
+        .adm-user{display:grid;grid-template-columns:minmax(0,1.45fr) repeat(4,minmax(120px,auto));gap:8px;align-items:center;background:#121715;border:1px solid #1d2824;padding:10px}
         .adm-badge{font-size:11px;font-weight:700;padding:4px 8px}
         .adm-badge.free{background:#1a1f1d;color:#a7b6af;border:1px solid #2b3531}
         .adm-badge.paid{background:rgba(0,230,118,.12);color:#00e676;border:1px solid rgba(0,230,118,.35)}
@@ -134,10 +134,14 @@ export default function AdminPage() {
         .adm-toolbar{display:flex;gap:8px;flex-wrap:wrap}
         .adm-chip{background:#121716;border:1px solid #2a3531;color:#8ea097;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
         .adm-chip.on{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.12)}
-        .adm-summary{display:flex;justify-content:space-between;gap:12px;align-items:center}
+        .adm-summary{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
         .adm-two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
         .adm-three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
         @media (max-width: 980px){.adm-two-col,.adm-three-col,.adm-main-kpis,.adm-secondary{grid-template-columns:1fr}}
+        @media (max-width: 1024px){
+          .adm-user{grid-template-columns:minmax(0,1fr) repeat(2,minmax(130px,1fr))}
+          .adm-user .adm-badge{justify-self:start}
+        }
         @media (max-width: 860px){
           .adm-page{padding:16px}
           .adm-shell{gap:14px}
@@ -148,6 +152,7 @@ export default function AdminPage() {
           .adm-tab{white-space:nowrap}
           .adm-user{grid-template-columns:1fr}
           .adm-user > *{min-width:0}
+          .adm-user .adm-btn{width:100%}
           .adm-log{flex-direction:column;align-items:flex-start}
         }
         @media (max-width: 640px){

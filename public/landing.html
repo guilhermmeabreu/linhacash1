@@ -48,10 +48,6 @@ h1{font-size:clamp(38px,4.8vw,60px);font-weight:800;line-height:1.04;letter-spac
 .hero-cta .btn.primary{min-width:224px;box-shadow:0 10px 24px rgba(0,230,118,.22)}
 .hero-cta .btn.secondary{background:color-mix(in srgb,var(--s1) 80%, transparent 20%);border-color:color-mix(in srgb,var(--bd2) 65%, var(--tx) 35%);min-width:194px;color:color-mix(in srgb,var(--tx) 92%, var(--mt) 8%)}
 .hero-microcopy{margin-top:11px;font-size:12px;color:var(--mt);line-height:1.5}
-.hero-proof{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:26px;text-align:left}
-.hero-proof-item{padding:12px 14px;border:1px solid color-mix(in srgb,var(--bd) 74%, var(--tx) 26%);background:linear-gradient(180deg,color-mix(in srgb,var(--s1) 78%, transparent 22%),color-mix(in srgb,var(--s2) 82%, transparent 18%));box-shadow:0 8px 20px rgba(0,0,0,.16)}
-.hero-proof-label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mt)}
-.hero-proof-value{margin-top:5px;font-size:15px;font-weight:700;line-height:1.35}
 .h2{font-size:clamp(32px,4.2vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.14;text-align:center;text-wrap:balance;max-width:22ch;margin:0 auto}
 .p{margin:12px auto 0;color:var(--mt);font-size:17px;line-height:1.65;max-width:700px;text-align:center}
 .tag{font-size:11px;padding:4px 8px;border:1px solid var(--bd2);text-transform:uppercase;letter-spacing:.05em}
@@ -90,7 +86,7 @@ h1{font-size:clamp(38px,4.8vw,60px);font-weight:800;line-height:1.04;letter-spac
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
 .reveal.is-visible{opacity:1;transform:translateY(0)}
-@media (max-width:1024px){.hero-proof{grid-template-columns:1fr;max-width:500px;margin-inline:auto;margin-top:18px}.steps,.plans{grid-template-columns:1fr}}
+@media (max-width:1024px){.steps,.plans{grid-template-columns:1fr}}
 @media (max-width:768px){
   .wrap{padding:0 18px}
   .ninner{height:auto;min-height:66px;padding:9px 0;align-items:center;gap:10px}
@@ -110,8 +106,6 @@ h1{font-size:clamp(38px,4.8vw,60px);font-weight:800;line-height:1.04;letter-spac
   .hero-cta .btn.primary,.hero-cta .btn.secondary{width:100%;min-width:0}
   .hero-cta .btn.secondary{font-size:11px;letter-spacing:.05em;background:var(--s2)}
   .hero-microcopy{margin-top:14px;padding:0 8px}
-  .hero-proof{margin-top:18px;gap:8px}
-  .hero-proof-item{padding:11px 12px}
   .steps{margin-top:24px;gap:10px}
   .step{padding:18px 16px}
   .step h3{font-size:18px}
@@ -162,20 +156,6 @@ h1{font-size:clamp(38px,4.8vw,60px);font-weight:800;line-height:1.04;letter-spac
       <a class="btn secondary" href="#planos">Ver planos</a>
     </div>
     <p class="hero-microcopy fade delay-2">Sem cartão de crédito · Plano gratuito disponível</p>
-    <div class="hero-proof fade delay-2" aria-label="Diferenciais da plataforma">
-      <div class="hero-proof-item">
-        <div class="hero-proof-label">Leitura rápida</div>
-        <div class="hero-proof-value">Contexto claro para decidir em minutos.</div>
-      </div>
-      <div class="hero-proof-item">
-        <div class="hero-proof-label">Rotina diária</div>
-        <div class="hero-proof-value">Jogos e jogadores organizados em fluxo objetivo.</div>
-      </div>
-      <div class="hero-proof-item">
-        <div class="hero-proof-label">Plano Pro</div>
-        <div class="hero-proof-value">Acesso completo para análise sem bloqueios.</div>
-      </div>
-    </div>
   </div>
 </header>
 
