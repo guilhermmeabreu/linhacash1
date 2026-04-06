@@ -26,7 +26,13 @@
   --space-4: 16px;
   --space-5: 24px;
   --shadow-sm: 0 4px 12px rgba(0,0,0,.18);
+  --text-xs: clamp(0.72rem, 0.69rem + 0.15vw, 0.8rem);
+  --text-sm: clamp(0.84rem, 0.8rem + 0.2vw, 0.95rem);
+  --text-md: clamp(0.96rem, 0.92rem + 0.25vw, 1.08rem);
+  --text-lg: clamp(1.08rem, 1.02rem + 0.35vw, 1.28rem);
+  --text-xl: clamp(1.42rem, 1.26rem + 0.8vw, 2.1rem);
 }
+
 
 html, body {
   font-family: 'Inter', sans-serif;
@@ -42,3 +48,11 @@ button, input, select, textarea { font: inherit; }
 
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }
+
+body { font-size: var(--text-md); line-height: 1.55; }
+
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: -0.015em; }
+h1 { font-size: var(--text-xl); font-weight: 800; }
+h2 { font-size: clamp(1.2rem, 1.08rem + 0.6vw, 1.7rem); font-weight: 750; }
+h3 { font-size: var(--text-lg); font-weight: 700; }
+small { font-size: var(--text-xs); color: var(--mt); }
