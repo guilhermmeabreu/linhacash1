@@ -16,7 +16,10 @@ export type SecurityEvent =
   | 'webhook_denied'
   | 'webhook_processed'
   | 'webhook_failed'
-  | 'route_rate_limited';
+  | 'route_rate_limited'
+  | 'session_created'
+  | 'session_replaced'
+  | 'suspicious_activity';
 
 function maskIp(ip: string): string {
   if (!ip || ip === 'unknown') return 'unknown';

@@ -4,6 +4,7 @@ import { hashEmail, loginRateLimit, errorResponse, okResponse, sanitizeProfile }
 import { getBillingState } from '@/lib/services/billing-service';
 import { assertAllowedOrigin, assertJsonRequest } from '@/lib/http/request-guards';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { bootstrapSessionFromToken, createReplacementSession, invalidateAllUserSessions } from '@/lib/auth/session-control';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,9 +74,11 @@ export async function POST(req: Request) {
       .single();
 
     const billing = await getBillingState(data.user.id);
+      const session = await createReplacementSession({ supabase, userId: data.user.id, req });
       logSecurityEvent('auth_success', { ...context, action, userId: data.user.id });
       return okResponse({
       token: data.session?.access_token,
+      sessionId: session.sessionId,
       expiresAt: data.session?.expires_at,
       user: sanitizeProfile({ ...(profile || { id: data.user.id, email }), plan: billing.hasProAccess ? 'pro' : 'free' }),
       billing,
@@ -192,9 +195,28 @@ export async function POST(req: Request) {
     const authHeader = req.headers.get('authorization');
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        await invalidateAllUserSessions({ supabase, userId: user.id, reason: 'logout' }).catch(() => {});
+      }
       await supabase.auth.admin.signOut(token).catch(() => {});
     }
       return okResponse({ ok: true });
+    }
+
+    if (action === 'logout_all') {
+      const authHeader = req.headers.get('authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return errorResponse('Token ausente', 401);
+      }
+      const token = authHeader.slice(7);
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (error || !user) {
+        return errorResponse('Sessão expirada', 401);
+      }
+      const invalidated = await invalidateAllUserSessions({ supabase, userId: user.id, reason: 'logout_all_devices' });
+      await supabase.auth.admin.signOut(token).catch(() => {});
+      return okResponse({ ok: true, invalidatedSessions: invalidated.count });
     }
 
     return errorResponse('Ação inválida');
@@ -216,6 +238,10 @@ export async function GET(req: Request) {
   if (error || !user) {
     return errorResponse('Sessão expirada', 401);
   }
+  const sessionValidation = await bootstrapSessionFromToken({ supabase, userId: user.id, req });
+  if (!sessionValidation.valid) {
+    return errorResponse('Sessão inválida', 401);
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -225,6 +251,7 @@ export async function GET(req: Request) {
 
   const billing = await getBillingState(user.id);
   return okResponse({
+    sessionId: sessionValidation.sessionId,
     user: sanitizeProfile({ ...(profile || { id: user.id, email: user.email }), plan: billing.hasProAccess ? 'pro' : 'free' }),
     billing,
   });

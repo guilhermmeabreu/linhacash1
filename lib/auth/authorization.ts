@@ -3,6 +3,7 @@ import { AuthenticationError, AuthorizationError } from '@/lib/http/errors';
 import { requireAdminSession } from '@/lib/auth/admin-session';
 import { getBillingState } from '@/lib/services/billing-service';
 import { assertAllowedOrigin } from '@/lib/http/request-guards';
+import { validateActiveSession } from '@/lib/auth/session-control';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -20,6 +21,8 @@ export async function requireAuthenticatedUser(req: Request) {
   } = await supabase.auth.getUser(token);
 
   if (error || !user) throw new AuthenticationError();
+  const activeSession = await validateActiveSession({ supabase, userId: user.id, req });
+  if (!activeSession.valid) throw new AuthenticationError('Sessão inválida');
 
   const { data: profile } = await supabase.from('profiles').select('id,email,name').eq('id', user.id).single();
   const billing = await getBillingState(user.id);
@@ -29,6 +32,7 @@ export async function requireAuthenticatedUser(req: Request) {
     email: user.email || profile?.email || '',
     name: profile?.name || '',
     plan: billing.hasProAccess ? 'pro' : 'free',
+    sessionId: activeSession.sessionId,
     billing,
   };
 }

@@ -9,6 +9,14 @@
     }
   }
 
+  function getSessionId() {
+    try {
+      return localStorage.getItem('lc_session_id');
+    } catch {
+      return null;
+    }
+  }
+
   function safeString(value, fallback) {
     if (typeof value !== 'string') return fallback;
     var trimmed = value.trim();
@@ -26,6 +34,7 @@
     try {
       var body = JSON.stringify(payload);
       var token = getUserToken();
+      var sessionId = getSessionId();
 
       if (navigator.sendBeacon && !token) {
         var blob = new Blob([body], { type: 'application/json' });
@@ -35,6 +44,7 @@
 
       var headers = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = 'Bearer ' + token;
+      if (sessionId) headers['X-Session-Id'] = sessionId;
 
       fetch(ENDPOINT, {
         method: 'POST',

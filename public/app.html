@@ -1047,10 +1047,14 @@ function getClr(t){return CLR[t]||'#2a2a2a';}
 
 // ═══ API CLIENT — Frontend nunca fala com banco diretamente ═════════════════
 let authToken = null;
+let authSessionId = null;
+const TOKEN_STORAGE_KEY = 'lc_token';
+const SESSION_STORAGE_KEY = 'lc_session_id';
 
 function getHeaders() {
   const h = { 'Content-Type': 'application/json' };
   if (authToken) h['Authorization'] = 'Bearer ' + authToken;
+  if (authSessionId) h['X-Session-Id'] = authSessionId;
   return h;
 }
 
@@ -1065,7 +1069,9 @@ async function api(path, opts) {
 
     if (res.status === 401) {
       authToken = null;
-      localStorage.removeItem('lc_token');
+      authSessionId = null;
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(SESSION_STORAGE_KEY);
       toast('Sessão expirada. Faça login novamente.');
       setTimeout(function(){ supabaseUser=null; show('sAuth',false); }, 1500);
       return null;
@@ -1316,13 +1322,15 @@ async function doLogin(){
  setAuthLoading('loginBtn','Entrando...',false);
  if(!loginRes||loginRes.error){showAuthError(loginRes?.error||'Email ou senha incorretos.');return;}
  authToken=loginRes.token;
+ authSessionId=loginRes.sessionId||null;
  supabaseUser={id:loginRes.user.id};
  plan=loginRes.user.plan||'free';
  billingState=loginRes.billing||null;
  uName=loginRes.user.name||e.split('@')[0];
  uEmail=loginRes.user.email||e;
  if(loginRes.user.theme){const sd=loginRes.user.theme==='dark';if(sd!==dark)toggleTheme();}
- localStorage.setItem('lc_token',authToken);
+ localStorage.setItem(TOKEN_STORAGE_KEY,authToken);
+ if(authSessionId) localStorage.setItem(SESSION_STORAGE_KEY,authSessionId);
  enterApp();
 }
 
@@ -1731,8 +1739,9 @@ function renderProf(){
  <div class="prow" id="rowDeleteAccount" style="border-bottom:none"><svg width="16" height="16" fill="none" stroke="#ff6b6b" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><span class="prowlbl" style="color:#ff6b6b;font-size:13px">Excluir minha conta e dados</span><svg class="pchev" width="14" height="14" fill="none" stroke="#ff6b6b" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
  </div>
  </div>
- <div class="plogout"><button id="logoutBtn">Sair da conta</button></div>`;
+ <div class="plogout"><button id="logoutAllBtn" style="margin-bottom:8px">Sair de todos os dispositivos</button><button id="logoutBtn">Sair da conta</button></div>`;
  document.getElementById('logoutBtn').addEventListener('click', logout);
+ document.getElementById('logoutAllBtn').addEventListener('click', logoutAllDevices);
  document.getElementById('rowFaq').addEventListener('click', openFaq);
  document.getElementById('rowContato').addEventListener('click', openContato);
  document.getElementById('rowBug').addEventListener('click', openBug);
@@ -1747,7 +1756,9 @@ function renderProf(){
 async function logout(){
  await api('/api/auth', { method: 'POST', body: JSON.stringify({ action: 'logout' }) });
  authToken = null;
- localStorage.removeItem('lc_token');
+ authSessionId = null;
+ localStorage.removeItem(TOKEN_STORAGE_KEY);
+ localStorage.removeItem(SESSION_STORAGE_KEY);
  supabaseUser=null;
  plan='free';uName='Usuário';uEmail='usuario@email.com';
  stack=['sAuth'];
@@ -1756,6 +1767,26 @@ async function logout(){
  const sideEl=document.getElementById('sidebarDesk');
  if(sideEl)sideEl.style.display='none';
  toast('Você saiu da conta.');
+}
+
+async function logoutAllDevices(){
+ const res = await api('/api/auth', { method: 'POST', body: JSON.stringify({ action: 'logout_all' }) });
+ if(!res || res.error){
+   toast(res?.error || 'Não foi possível encerrar em todos os dispositivos.');
+   return;
+ }
+ authToken = null;
+ authSessionId = null;
+ localStorage.removeItem(TOKEN_STORAGE_KEY);
+ localStorage.removeItem(SESSION_STORAGE_KEY);
+ supabaseUser=null;
+ plan='free';uName='Usuário';uEmail='usuario@email.com';
+ stack=['sAuth'];
+ document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on','bk'));
+ document.getElementById('sAuth').classList.add('on');
+ const sideEl=document.getElementById('sidebarDesk');
+ if(sideEl)sideEl.style.display='none';
+ toast('Sessão encerrada em todos os dispositivos.');
 }
 
 // PLANOS E CUPOM 
@@ -2037,7 +2068,9 @@ async function confirmarDeleteAccount(){
  closeDeleteAccount();
  await api('/api/auth',{method:'POST',body:JSON.stringify({action:'logout'})}).catch(()=>{});
  authToken=null;
- localStorage.removeItem('lc_token');
+ authSessionId=null;
+ localStorage.removeItem(TOKEN_STORAGE_KEY);
+ localStorage.removeItem(SESSION_STORAGE_KEY);
  toast('Conta excluída. Até logo!');
  setTimeout(()=>{ plan='free'; uName='Usuário'; uEmail=''; supabaseUser=null; showAuth(); }, 1500);
  } else {
@@ -2135,6 +2168,10 @@ async function fetchSessionWithToken(token,retries,delayMs){
 
 function applySessionProfile(sessData){
  const prof=sessData.user;
+ if(sessData.sessionId){
+   authSessionId = sessData.sessionId;
+   localStorage.setItem(SESSION_STORAGE_KEY, authSessionId);
+ }
  supabaseUser = { id: prof.id };
  uEmail = prof.email || '';
  uName = prof.name || uEmail.split('@')[0];
@@ -2159,7 +2196,7 @@ renderNavigation();
 
  if(oauthPayload.accessToken){
    setOauthInFlightFlag();
-   localStorage.setItem('lc_token', oauthPayload.accessToken);
+   localStorage.setItem(TOKEN_STORAGE_KEY, oauthPayload.accessToken);
    cleanOAuthUrl();
    const sessionAfterOAuth=await fetchSessionWithToken(oauthPayload.accessToken,4,450);
    if(sessionAfterOAuth){
@@ -2171,7 +2208,8 @@ renderNavigation();
    }
  }
 
- const savedToken = localStorage.getItem('lc_token');
+ const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+ authSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
  const shouldStabilizeOAuth = oauthPayload.isOAuthReturn;
  if(!savedToken){
    if(urlParams.get('status')==='success'){
@@ -2188,8 +2226,10 @@ renderNavigation();
  if(!sessData || sessData.error){
    // Token expirado ou inválido
    clearOauthInFlightFlag();
-   localStorage.removeItem('lc_token');
+   localStorage.removeItem(TOKEN_STORAGE_KEY);
+   localStorage.removeItem(SESSION_STORAGE_KEY);
    authToken = null;
+   authSessionId = null;
    show('sAuth',false);
    if(shouldStabilizeOAuth){
      showAuthError('Não foi possível restaurar sua sessão Google. Tente entrar novamente.');

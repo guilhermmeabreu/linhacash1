@@ -4,6 +4,7 @@ import { rateLimit, getIP } from './rate-limit';
 import * as crypto from 'crypto';
 import { requireEnv } from '@/lib/env';
 import { getBillingState } from '@/lib/services/billing-service';
+import { validateActiveSession } from '@/lib/auth/session-control';
 
 // ── Supabase server client — NUNCA exposto ao frontend ──────────────────────
 export function getSupabaseServer() {
@@ -20,6 +21,7 @@ export async function validateSession(req: Request): Promise<{
   userId?: string;
   email?: string;
   plan?: string;
+  sessionId?: string;
   error?: string;
 }> {
   const authHeader = req.headers.get('authorization');
@@ -34,6 +36,10 @@ export async function validateSession(req: Request): Promise<{
   if (error || !user) {
     return { valid: false, error: 'Token inválido ou expirado' };
   }
+  const activeSession = await validateActiveSession({ supabase, userId: user.id, req });
+  if (!activeSession.valid) {
+    return { valid: false, error: 'Sessão inválida ou substituída' };
+  }
 
   const billing = await getBillingState(user.id);
 
@@ -41,7 +47,8 @@ export async function validateSession(req: Request): Promise<{
     valid: true,
     userId: user.id,
     email: user.email,
-    plan: billing.hasProAccess ? 'pro' : 'free'
+    plan: billing.hasProAccess ? 'pro' : 'free',
+    sessionId: activeSession.sessionId,
   };
 }
 
