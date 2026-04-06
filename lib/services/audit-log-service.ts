@@ -17,6 +17,7 @@ type AuditEvent =
   | 'billing_cancellation_requested'
   | 'billing_cancellation_applied'
   | 'billing_status_changed'
+  | 'affiliate_commission_upserted'
   | 'support_message_sent'
   | 'security_rate_limited'
   | 'auth_security_event';
