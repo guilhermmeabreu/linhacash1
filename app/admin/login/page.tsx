@@ -52,29 +52,29 @@ export default function AdminLogin() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: palette.bg, display: 'grid', placeItems: 'center', padding: 20, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: palette.bg, display: 'grid', placeItems: 'center', padding: 'clamp(16px,3vw,28px)', fontFamily: 'Inter, sans-serif' }}>
       <button onClick={toggleTheme} style={{ position: 'fixed', top: 20, right: 20, width: 40, height: 40, border: `1px solid ${palette.border}`, background: palette.card, color: palette.muted, cursor: 'pointer', fontSize: 16 }}>
         {dark ? '☾' : '☀'}
       </button>
 
-      <div style={{ width: '100%', maxWidth: 440, background: palette.card, border: `1px solid ${palette.border}`, padding: 32, boxShadow: dark ? '0 22px 44px rgba(0,0,0,.35)' : '0 14px 28px rgba(18,32,26,.09)' }}>
+      <div style={{ width: '100%', maxWidth: 500, background: palette.card, border: `1px solid ${palette.border}`, padding: 'clamp(22px,3vw,34px)', boxShadow: dark ? '0 26px 48px rgba(0,0,0,.36)' : '0 16px 30px rgba(18,32,26,.09)' }}>
         <p style={{ fontSize: 11, color: '#00c768', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 12, fontWeight: 700 }}>Admin Access · LinhaCash</p>
-        <h1 style={{ fontSize: 34, fontWeight: 800, marginBottom: 8, color: palette.text, letterSpacing: '-.03em' }}>Painel de operação</h1>
-        <p style={{ fontSize: 14, color: palette.muted, marginBottom: 24, lineHeight: 1.6 }}>Acesse um ambiente seguro para gerenciar usuários, planos e sincronização de dados.</p>
+        <h1 style={{ fontSize: 'clamp(30px,4vw,36px)', fontWeight: 800, marginBottom: 8, color: palette.text, letterSpacing: '-.03em', lineHeight: 1.08 }}>Painel de operação</h1>
+        <p style={{ fontSize: 14, color: palette.muted, marginBottom: 22, lineHeight: 1.62, maxWidth: 460 }}>Acesse um ambiente seguro para gerenciar usuários, planos e sincronização de dados.</p>
 
         <label style={{ fontSize: 12, color: palette.muted, fontWeight: 600 }}>Email</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="admin@linhacash.com" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="admin@linhacash.com" style={{ width: '100%', margin: '6px 0 12px', padding: 13, minHeight: 46, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
 
         <label style={{ fontSize: 12, color: palette.muted, fontWeight: 600 }}>Senha</label>
-        <input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="password" placeholder="••••••••" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
+        <input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="password" placeholder="••••••••" style={{ width: '100%', margin: '6px 0 12px', padding: 13, minHeight: 46, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
 
 
         <label style={{ fontSize: 12, color: palette.muted, fontWeight: 600 }}>Código 2FA (se habilitado)</label>
-        <input value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="text" inputMode="numeric" placeholder="000000" style={{ width: '100%', margin: '6px 0 14px', padding: 12, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
+        <input value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} type="text" inputMode="numeric" placeholder="000000" style={{ width: '100%', margin: '6px 0 14px', padding: 13, minHeight: 46, border: `1px solid ${palette.border}`, background: palette.input, color: palette.text, outline: 'none' }} />
 
         {error && <div style={{ fontSize: 13, marginBottom: 12, border: '1px solid rgba(240,82,82,.5)', background: 'rgba(240,82,82,.1)', color: '#f29b9b', padding: 10 }}>{error}</div>}
 
-        <button disabled={loading} onClick={handleLogin} style={{ width: '100%', padding: 12, background: loading ? '#6f8379' : '#00e676', border: 'none', color: '#06200f', fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.8 : 1 }}>
+        <button disabled={loading} onClick={handleLogin} style={{ width: '100%', minHeight: 48, padding: 12, background: loading ? '#6f8379' : '#00e676', border: 'none', color: '#06200f', fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.8 : 1 }}>
           {loading ? 'Validando acesso...' : 'Entrar no painel'}
         </button>
       </div>
