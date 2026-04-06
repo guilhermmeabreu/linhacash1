@@ -35,6 +35,13 @@ function isEmailDeliveryError(errorMessage: string): boolean {
   );
 }
 
+function summarizeError(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    return { name: error.name, message: error.message };
+  }
+  return { kind: typeof error };
+}
+
 // POST /api/auth — login, registro, google, forgot, session
 export async function POST(req: Request) {
   const context = buildRequestContext(req, { route: '/api/auth' });
@@ -228,31 +235,72 @@ export async function POST(req: Request) {
 
 // GET /api/auth — verificar sessão atual e retornar perfil atualizado
 export async function GET(req: Request) {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return errorResponse('Token ausente', 401);
-  }
+  const context = buildRequestContext(req, { route: '/api/auth', flow: 'session_get' });
+  let stage = 'start';
 
-  const token = authHeader.slice(7);
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) {
-    return errorResponse('Sessão expirada', 401);
-  }
-  const sessionValidation = await bootstrapSessionFromToken({ supabase, userId: user.id, req });
-  if (!sessionValidation.valid) {
-    return errorResponse('Sessão inválida', 401);
-  }
+  try {
+    stage = 'token_extract';
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      logSecurityEvent('auth_failed', { ...context, flow: 'session_get', stage, reason: 'missing_bearer_token' });
+      return errorResponse('Token ausente', 401);
+    }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, name, email, plan, theme')
-    .eq('id', user.id)
-    .single();
+    const token = authHeader.slice(7).trim();
+    if (!token) {
+      logSecurityEvent('auth_failed', { ...context, flow: 'session_get', stage, reason: 'empty_bearer_token' });
+      return errorResponse('Token ausente', 401);
+    }
+    console.info('[auth:get]', JSON.stringify({ ...context, stage, tokenPresent: true, tokenLength: token.length }));
 
-  const billing = await getBillingState(user.id);
-  return okResponse({
-    sessionId: sessionValidation.sessionId,
-    user: sanitizeProfile({ ...(profile || { id: user.id, email: user.email }), plan: billing.hasProAccess ? 'pro' : 'free' }),
-    billing,
-  });
+    stage = 'token_validate';
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      logSecurityEvent('auth_failed', { ...context, flow: 'session_get', stage, reason: 'invalid_or_expired_token' });
+      return errorResponse('Sessão expirada', 401);
+    }
+    console.info('[auth:get]', JSON.stringify({ ...context, stage, userId: user.id }));
+
+    stage = 'session_bootstrap';
+    const sessionValidation = await bootstrapSessionFromToken({ supabase, userId: user.id, req });
+    if (!sessionValidation.valid) {
+      logSecurityEvent('auth_failed', { ...context, flow: 'session_get', stage, userId: user.id, reason: 'session_invalid' });
+      return errorResponse('Sessão inválida', 401);
+    }
+    console.info('[auth:get]', JSON.stringify({ ...context, stage, userId: user.id, bootstrapped: Boolean((sessionValidation as { bootstrapped?: boolean }).bootstrapped) }));
+
+    stage = 'profile_lookup';
+    let profile: { id?: string; name?: string | null; email?: string | null; plan?: string | null; theme?: string | null } | null = null;
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, name, email, plan, theme')
+      .eq('id', user.id)
+      .single();
+    if (profileError) {
+      logRouteError('/api/auth', context.requestId, profileError, { stage, userId: user.id, scope: 'profile_lookup_non_fatal' });
+    } else {
+      profile = profileData;
+    }
+
+    stage = 'billing_lookup';
+    let billing = null;
+    try {
+      billing = await getBillingState(user.id);
+    } catch (billingError) {
+      logRouteError('/api/auth', context.requestId, billingError, { stage, userId: user.id, scope: 'billing_lookup_non_fatal' });
+    }
+
+    const normalizedPlan = billing?.hasProAccess ? 'pro' : profile?.plan === 'pro' ? 'pro' : 'free';
+    return okResponse({
+      sessionId: sessionValidation.sessionId,
+      user: sanitizeProfile({ ...(profile || { id: user.id, email: user.email }), plan: normalizedPlan }),
+      billing,
+    });
+  } catch (error) {
+    logRouteError('/api/auth', context.requestId, error, { stage, summary: summarizeError(error) });
+    return errorResponse('Falha interna ao validar sessão', 500);
+  }
 }

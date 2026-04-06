@@ -1082,6 +1082,22 @@ async function api(path, opts) {
   }
 }
 
+async function validateAuthSessionRequest() {
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (res.ok) {
+      return { ok: true, data: { ...payload, _status: res.status, _ok: true } };
+    }
+    return { ok: false, status: res.status, error: payload?.error || null };
+  } catch (e) {
+    return { ok: false, networkError: true };
+  }
+}
+
 // Suprimir logs em produção
 if (location.hostname !== 'localhost') {
   console.log = function(){};
@@ -2158,12 +2174,25 @@ function cleanOAuthUrl(){
 
 async function fetchSessionWithToken(token,retries,delayMs){
  authToken=token;
+ let lastFailure = { ok:false, kind:'unknown' };
  for(let attempt=0;attempt<retries;attempt++){
-   const sessData=await api('/api/auth');
-   if(sessData&&!sessData.error) return sessData;
+   const result=await validateAuthSessionRequest();
+   if(result?.ok){
+     return { ok:true, data: result.data };
+   }
+   if(result?.status===401){
+     return { ok:false, kind:'unauthorized', status:401, message:result.error||'Sessão inválida ou expirada.' };
+   }
+   if(result?.networkError){
+     lastFailure = { ok:false, kind:'network', message:'Falha de conexão ao validar sessão.' };
+   } else if((result?.status||0)>=500){
+     lastFailure = { ok:false, kind:'internal', status:result.status, message:result?.error||'Falha interna ao validar sessão.' };
+   } else {
+     lastFailure = { ok:false, kind:'unexpected', status:result?.status||0, message:result?.error||'Falha ao validar sessão.' };
+   }
    if(attempt<retries-1) await sleep(delayMs);
  }
- return null;
+ return lastFailure;
 }
 
 function applySessionProfile(sessData){
@@ -2184,6 +2213,7 @@ renderNavigation();
 
 // Verificar sessão existente
 (async function checkSession(){
+ try{
  const oauthPayload = extractOAuthPayload();
  if(oauthPayload.oauthError){
    cleanOAuthUrl();
@@ -2199,13 +2229,30 @@ renderNavigation();
    localStorage.setItem(TOKEN_STORAGE_KEY, oauthPayload.accessToken);
    cleanOAuthUrl();
    const sessionAfterOAuth=await fetchSessionWithToken(oauthPayload.accessToken,4,450);
-   if(sessionAfterOAuth){
-     applySessionProfile(sessionAfterOAuth);
+   if(sessionAfterOAuth?.ok){
+     applySessionProfile(sessionAfterOAuth.data);
      clearOauthInFlightFlag();
      enterApp();
      updateSidebar();
      return;
    }
+   clearOauthInFlightFlag();
+   localStorage.removeItem(TOKEN_STORAGE_KEY);
+   localStorage.removeItem(SESSION_STORAGE_KEY);
+   authToken = null;
+   authSessionId = null;
+   show('sAuth',false);
+   if(sessionAfterOAuth?.kind==='unauthorized'){
+     showAuthError('Sessão Google inválida ou expirada. Entre novamente.');
+   } else if(sessionAfterOAuth?.kind==='internal'){
+     showAuthError('Falha interna ao validar sessão. Tente novamente em instantes.');
+   } else if(sessionAfterOAuth?.kind==='network'){
+     showAuthError('Falha de conexão ao validar sessão. Verifique sua internet e tente novamente.');
+   } else {
+     showAuthError('Não foi possível restaurar sua sessão Google. Tente entrar novamente.');
+   }
+   updateSidebar();
+   return;
  }
 
  const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -2223,27 +2270,38 @@ renderNavigation();
  }
  // Verificar sessão via /api/auth
  const sessData = await fetchSessionWithToken(savedToken,shouldStabilizeOAuth?4:1,350);
- if(!sessData || sessData.error){
-   // Token expirado ou inválido
+ if(!sessData?.ok){
    clearOauthInFlightFlag();
    localStorage.removeItem(TOKEN_STORAGE_KEY);
    localStorage.removeItem(SESSION_STORAGE_KEY);
    authToken = null;
    authSessionId = null;
    show('sAuth',false);
-   if(shouldStabilizeOAuth){
+   if(sessData?.kind==='unauthorized'){
+     showAuthError('Sessão inválida ou expirada. Faça login novamente.');
+   } else if(sessData?.kind==='internal'){
+     showAuthError('Falha interna ao validar sessão. Tente novamente em instantes.');
+   } else if(sessData?.kind==='network'){
+     showAuthError('Falha de conexão ao validar sessão. Verifique sua internet e tente novamente.');
+   } else if(shouldStabilizeOAuth){
      showAuthError('Não foi possível restaurar sua sessão Google. Tente entrar novamente.');
    }
    updateSidebar();
    return;
  }
- applySessionProfile(sessData);
+ applySessionProfile(sessData.data);
  clearOauthInFlightFlag();
  if(urlParams.get('status')==='success'){
    setTimeout(()=>toast('Pagamento aprovado! A confirmação final ocorre via webhook. Atualize em alguns segundos.'),500);
  }
  enterApp();
  updateSidebar();
+ }catch(_){
+   clearOauthInFlightFlag();
+   show('sAuth',false);
+   showAuthError('Erro inesperado ao validar sessão. Tente novamente.');
+   updateSidebar();
+ }
 })();
 
 // PWA: Service Worker 
