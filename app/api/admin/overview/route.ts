@@ -30,6 +30,19 @@ type AuditRow = {
   details: Record<string, unknown> | null;
 };
 
+type CommissionRow = {
+  id: number;
+  code: string;
+  user_id: string;
+  payment_id: string | null;
+  commission_amount: number | null;
+  commission_status: string | null;
+  paid_at: string | null;
+  payout_note: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
 function countSince(users: Array<{ created_at: string }>, days: number) {
   const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
   return users.filter((user) => new Date(user.created_at).getTime() >= threshold).length;
@@ -62,7 +75,7 @@ export async function GET(req: Request) {
     await requireAdminUser(req);
 
     const payload = await getCachedValue('admin:overview', ADMIN_OVERVIEW_TTL_MS, async () => {
-      const [profilesResult, gamesResult, playersResult, referralsResult, referralUsesResult, syncLogsResult, eventsResult, auditResult] = await Promise.all([
+      const [profilesResult, gamesResult, playersResult, referralsResult, referralUsesResult, commissionsResult, syncLogsResult, eventsResult, auditResult] = await Promise.all([
         supabase
           .from('profiles')
           .select('id,name,email,plan,created_at,referral_code_used,plan_status,plan_source,billing_status,subscription_started_at,subscription_expires_at,cancelled_at,granted_by_admin,granted_reason,payment_provider,payment_reference,subscription_reference,external_reference')
@@ -74,6 +87,7 @@ export async function GET(req: Request) {
           .from('referral_uses')
           .select('id,code,user_id,payment_id,created_at,profiles(name,email,plan_source,plan_status,billing_status,payment_reference,granted_by_admin)')
           .order('created_at', { ascending: false }),
+        supabase.from('affiliate_commissions').select('*').order('created_at', { ascending: false }),
         supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(5),
         supabase.from('events').select('event_name,created_at,metadata').order('created_at', { ascending: false }).limit(300),
         supabase.from('audit_logs').select('event,created_at,details').order('created_at', { ascending: false }).limit(50),
@@ -118,6 +132,21 @@ export async function GET(req: Request) {
       const latestSync = syncHistory[0] || null;
       const freshness = getSyncFreshness(latestSync?.created_at || null);
       const audits = (auditResult.data || []) as AuditRow[];
+      const commissions = ((commissionsResult.data || []) as CommissionRow[]).map((item) => ({
+        ...item,
+        commission_status: item.commission_status || 'pending',
+        commission_amount: Number(item.commission_amount || 0),
+      }));
+      const commissionsPaid = commissions
+        .filter((item) => item.commission_status === 'paid')
+        .reduce((sum, item) => sum + Number(item.commission_amount || 0), 0);
+      const commissionsEarned = commissions
+        .filter((item) => item.commission_status === 'earned')
+        .reduce((sum, item) => sum + Number(item.commission_amount || 0), 0);
+      const commissionsPending = commissions
+        .filter((item) => item.commission_status === 'pending')
+        .reduce((sum, item) => sum + Number(item.commission_amount || 0), 0);
+      const affiliateDrivenPaidConversions = commissions.filter((item) => item.commission_status === 'earned' || item.commission_status === 'paid').length;
 
       return {
         stats: {
@@ -129,6 +158,10 @@ export async function GET(req: Request) {
           total_games: gamesResult.count || 0,
           total_players: playersResult.count || 0,
           estimated_monthly_revenue_brl: Number((pro_paid_users * MONTHLY_PRO_PRICE).toFixed(2)),
+          total_affiliate_commission_paid_brl: Number(commissionsPaid.toFixed(2)),
+          total_affiliate_commission_earned_brl: Number(commissionsEarned.toFixed(2)),
+          total_affiliate_commission_pending_brl: Number(commissionsPending.toFixed(2)),
+          affiliate_paid_conversions: affiliateDrivenPaidConversions,
           recent_signups: users.slice(0, 10),
           new_users_today: countSince(users, 1),
           new_users_7d: countSince(users, 7),
@@ -138,6 +171,7 @@ export async function GET(req: Request) {
         users,
         referrals: referralsResult.data || [],
         referralUses: referralUsesResult.data || [],
+        commissions,
         syncHistory,
         productInsights: {
           eventsAvailable,

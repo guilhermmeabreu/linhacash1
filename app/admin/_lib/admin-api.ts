@@ -53,11 +53,28 @@ export interface Stats {
   total_games: number;
   total_players: number;
   estimated_monthly_revenue_brl: number;
+  total_affiliate_commission_paid_brl: number;
+  total_affiliate_commission_earned_brl: number;
+  total_affiliate_commission_pending_brl: number;
+  affiliate_paid_conversions: number;
   recent_signups: Array<Profile & { billing?: Billing }>;
   new_users_today: number;
   new_users_7d: number;
   new_users_30d: number;
   recent_cancellations: Array<{ id: string; email: string | null; cancelled_at: string | null }>;
+}
+
+export interface AffiliateCommission {
+  id: number;
+  code: string;
+  user_id: string;
+  payment_id: string | null;
+  commission_amount: number;
+  commission_status: 'pending' | 'earned' | 'paid';
+  paid_at: string | null;
+  payout_note: string | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface ProductInsights {
@@ -106,6 +123,7 @@ export interface AdminOverviewPayload {
   users: Profile[];
   referrals: ReferralCode[];
   referralUses: ReferralUse[];
+  commissions: AffiliateCommission[];
   syncHistory: Array<{ created_at: string; status: string; games_synced: number }>;
   productInsights: ProductInsights;
   operationsInsights: OperationsInsights;
@@ -145,6 +163,12 @@ export const adminApi = {
   },
   deleteReferral(id: number) {
     return json('/api/admin/referrals', { method: 'DELETE', body: JSON.stringify({ id }) });
+  },
+  updateCommissionStatus(id: number, commission_status: 'pending' | 'earned' | 'paid', payout_note?: string) {
+    return json('/api/admin/commissions', {
+      method: 'PATCH',
+      body: JSON.stringify({ id, commission_status, payout_note: payout_note || null }),
+    });
   },
   logout() {
     return fetch('/api/admin/auth', { method: 'DELETE' });

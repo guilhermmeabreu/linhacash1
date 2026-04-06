@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { AdminActionInsights, adminApi, OperationsInsights, ProductInsights, Profile, ReferralCode, ReferralUse, Stats } from '../_lib/admin-api';
+import { AdminActionInsights, adminApi, AffiliateCommission, OperationsInsights, ProductInsights, Profile, ReferralCode, ReferralUse, Stats } from '../_lib/admin-api';
 
 export function useAdminData() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<Profile[]>([]);
   const [referrals, setReferrals] = useState<ReferralCode[]>([]);
   const [referralUses, setReferralUses] = useState<ReferralUse[]>([]);
+  const [commissions, setCommissions] = useState<AffiliateCommission[]>([]);
   const [syncHistory, setSyncHistory] = useState<Array<{ created_at: string; status: string; games_synced: number }>>([]);
   const [productInsights, setProductInsights] = useState<ProductInsights | null>(null);
   const [operationsInsights, setOperationsInsights] = useState<OperationsInsights | null>(null);
@@ -23,6 +24,7 @@ export function useAdminData() {
       setUsers(data.users);
       setReferrals(data.referrals);
       setReferralUses(data.referralUses);
+      setCommissions(data.commissions || []);
       setSyncHistory(Array.isArray(data.syncHistory) ? data.syncHistory : []);
       setProductInsights(data.productInsights || null);
       setOperationsInsights(data.operationsInsights || null);
@@ -71,6 +73,11 @@ export function useAdminData() {
         setFeedback({ type: data.error ? 'error' : 'success', message: data.error || data.message || 'Sync concluído.' });
         await loadAll();
       },
+      async updateCommissionStatus(id: number, commissionStatus: 'pending' | 'earned' | 'paid', payoutNote?: string) {
+        await adminApi.updateCommissionStatus(id, commissionStatus, payoutNote);
+        setFeedback({ type: 'success', message: commissionStatus === 'paid' ? 'Comissão marcada como paga.' : 'Status de comissão atualizado.' });
+        await loadAll();
+      },
       clearFeedback() {
         setFeedback(null);
       },
@@ -83,6 +90,7 @@ export function useAdminData() {
     users,
     referrals,
     referralUses,
+    commissions,
     syncHistory,
     productInsights,
     operationsInsights,

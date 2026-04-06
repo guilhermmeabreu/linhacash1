@@ -34,7 +34,7 @@ function AdminSkeleton() {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { stats, users, referrals, referralUses, syncHistory, productInsights, operationsInsights, adminActionInsights, loading, feedback, loadAll, actions } = useAdminData();
+  const { stats, users, referrals, referralUses, commissions, syncHistory, productInsights, operationsInsights, adminActionInsights, loading, feedback, loadAll, actions } = useAdminData();
   const [tab, setTab] = useState<AdminTab>('dashboard');
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState<'all' | 'pro_paid' | 'pro_admin' | 'free'>('all');
@@ -42,6 +42,8 @@ export default function AdminPage() {
   const [influencer, setInfluencer] = useState('');
   const [dashboardFocus, setDashboardFocus] = useState<'all' | 'growth' | 'product' | 'operations' | 'activity'>('all');
   const [showSecondary, setShowSecondary] = useState(false);
+  const [commissionFilter, setCommissionFilter] = useState<'all' | 'pending' | 'earned' | 'paid'>('all');
+  const [payoutNoteDraft, setPayoutNoteDraft] = useState<Record<number, string>>({});
 
   useEffect(() => {
     loadAll().catch(() => router.push('/admin/login'));
@@ -78,6 +80,16 @@ export default function AdminPage() {
     return map;
   }, [users]);
 
+  const commissionsByPaymentId = useMemo(() => {
+    const map = new Map<string, { status: string; amount: number; paidAt: string | null }>();
+    commissions.forEach((item) => {
+      if (item.payment_id) {
+        map.set(item.payment_id, { status: item.commission_status, amount: Number(item.commission_amount || 0), paidAt: item.paid_at });
+      }
+    });
+    return map;
+  }, [commissions]);
+
   const referralUsageRows = useMemo(() => {
     return referralUses.map((use) => {
       const user = usersById.get(use.user_id);
@@ -86,6 +98,8 @@ export default function AdminPage() {
       const isManualPro = Boolean(billing?.isManualPro);
       const proTypeLabel = isPaidPro ? 'Pro pago' : isManualPro ? 'Pro admin' : 'Sem Pro pago';
       const paymentStatusLabel = isPaidPro ? 'Pagamento aprovado' : use.payment_id ? 'Pagamento não confirmado' : 'Sem pagamento';
+      const linkedCommission = use.payment_id ? commissionsByPaymentId.get(use.payment_id) : null;
+      const commissionStatusLabel = linkedCommission ? linkedCommission.status : 'sem comissão';
 
       return {
         ...use,
@@ -95,9 +109,11 @@ export default function AdminPage() {
         isManualPro,
         proTypeLabel,
         paymentStatusLabel,
+        commissionStatusLabel,
+        commissionAmount: linkedCommission?.amount || 0,
       };
     });
-  }, [referralUses, usersById]);
+  }, [commissionsByPaymentId, referralUses, usersById]);
 
   const paidConversionsByCode = useMemo(() => {
     const map = new Map<string, number>();
@@ -122,6 +138,31 @@ export default function AdminPage() {
     });
   }, [paidConversionsByCode, referrals]);
 
+  const commissionSummaryByCode = useMemo(() => {
+    const grouped = new Map<string, { earned: number; paid: number; pending: number; latest: string | null }>();
+    commissions.forEach((item) => {
+      const current = grouped.get(item.code) || { earned: 0, paid: 0, pending: 0, latest: null };
+      const amount = Number(item.commission_amount || 0);
+      if (item.commission_status === 'paid') {
+        current.paid += amount;
+      } else if (item.commission_status === 'earned') {
+        current.earned += amount;
+      } else {
+        current.pending += amount;
+      }
+      if (!current.latest || new Date(item.created_at).getTime() > new Date(current.latest).getTime()) {
+        current.latest = item.created_at;
+      }
+      grouped.set(item.code, current);
+    });
+    return grouped;
+  }, [commissions]);
+
+  const filteredCommissions = useMemo(() => {
+    if (commissionFilter === 'all') return commissions;
+    return commissions.filter((item) => item.commission_status === commissionFilter);
+  }, [commissions, commissionFilter]);
+
   const destroy = useCallback(async (message: string, action: () => Promise<void>) => {
     if (!window.confirm(message)) return;
     await action();
@@ -139,23 +180,23 @@ export default function AdminPage() {
   return (
     <main className="adm-page">
       <style>{`
-        .adm-page{min-height:100vh;background:#080909;color:#ecf1ee;padding:20px;font-family:Inter,sans-serif;overflow-x:hidden}
-        .adm-shell{max-width:1240px;margin:0 auto;display:grid;gap:16px}
-        .adm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid #1e2422}
+        .adm-page{min-height:100vh;background:radial-gradient(circle at top right,#0f1e1a 0%,#070808 48%,#050606 100%);color:#ecf1ee;padding:24px 20px 36px;font-family:Inter,sans-serif;overflow-x:hidden}
+        .adm-shell{max-width:1260px;margin:0 auto;display:grid;gap:18px}
+        .adm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0 14px;border-bottom:1px solid #1e2422}
         .adm-title{font-size:24px;font-weight:800}
         .adm-title em{color:#00e676;font-style:normal}
         .adm-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
         .adm-tabs{display:flex;gap:8px;flex-wrap:wrap}
-        .adm-tab{background:#121716;border:1px solid #252e2b;color:#8ea097;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px}
-        .adm-tab.on{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.1)}
-        .adm-card{background:#0f1312;border:1px solid #1f2825;padding:16px;display:grid;gap:10px}
+        .adm-tab{background:#101413;border:1px solid #26322d;color:#8ea097;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;border-radius:10px;transition:.15s ease}
+        .adm-tab.on{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.1);box-shadow:0 0 0 1px rgba(0,230,118,.15) inset}
+        .adm-card{background:linear-gradient(180deg,#0f1412 0%,#0d1110 100%);border:1px solid #1f2825;padding:18px;border-radius:14px;display:grid;gap:12px;box-shadow:0 18px 36px rgba(0,0,0,.22)}
         .adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
         .adm-kpi{font-size:28px;font-weight:800;margin-top:8px}
         .adm-kpi-sm{font-size:22px;font-weight:800;margin-top:8px}
         .adm-kpi-main{font-size:36px;font-weight:900;line-height:1.1;margin-top:10px}
         .adm-muted{color:#8ea097;font-size:13px}
-        .adm-input{background:#151b19;border:1px solid #2a3531;color:#eff5f2;padding:10px 12px;min-width:220px;min-height:42px}
-        .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 12px;font-weight:700;cursor:pointer;min-height:42px;font-size:13px;line-height:1.25}
+        .adm-input{background:#151b19;border:1px solid #2a3531;color:#eff5f2;padding:10px 12px;min-width:220px;min-height:44px;border-radius:10px}
+        .adm-btn{background:#00e676;color:#001108;border:none;padding:10px 13px;font-weight:700;cursor:pointer;min-height:44px;font-size:13px;line-height:1.25;border-radius:10px;transition:.15s ease}
         .adm-btn.alt{background:transparent;border:1px solid #32413c;color:#9cb0a7}
         .adm-btn.danger{background:transparent;border:1px solid #9b3131;color:#ff7676}
         .adm-btn.info{background:transparent;border:1px solid #2f6cd9;color:#8cb7ff}
@@ -178,10 +219,10 @@ export default function AdminPage() {
         .adm-section-title{font-weight:800;font-size:16px;letter-spacing:.02em;line-height:1.25}
         .adm-section-block{background:#0f1312;border:1px solid #1f2825;padding:16px;display:grid;gap:12px}
         .adm-main-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-        .adm-main-kpi{background:#101715;border:1px solid #274036;padding:14px}
+        .adm-main-kpi{background:#101715;border:1px solid #274036;padding:16px;border-radius:12px}
         .adm-main-kpi .adm-muted{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
         .adm-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-        .adm-pill{display:flex;justify-content:space-between;gap:12px;background:#111614;border:1px solid #1e2a25;padding:10px 12px;font-size:13px}
+        .adm-pill{display:flex;justify-content:space-between;gap:12px;background:#111614;border:1px solid #1e2a25;padding:11px 13px;font-size:13px;border-radius:10px}
         .adm-toolbar{display:flex;gap:8px;flex-wrap:wrap}
         .adm-chip{background:#121716;border:1px solid #2a3531;color:#8ea097;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
         .adm-chip.on{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.12)}
@@ -189,7 +230,7 @@ export default function AdminPage() {
         .adm-two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
         .adm-three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
         .adm-list{display:grid;gap:10px}
-        .adm-list-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding:12px;background:#121715;border:1px solid #1d2824}
+        .adm-list-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;padding:13px;background:#121715;border:1px solid #1d2824;border-radius:12px}
         .adm-list-label{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:#7f958b;margin-bottom:4px}
         .adm-list-value{font-size:13px;word-break:break-word}
         .adm-scroll{overflow-x:auto}
@@ -201,7 +242,7 @@ export default function AdminPage() {
           .adm-ref-grid{grid-template-columns:minmax(0,1fr) repeat(2,minmax(130px,1fr))}
         }
         @media (max-width: 860px){
-          .adm-page{padding:16px}
+          .adm-page{padding:16px 14px 30px}
           .adm-shell{gap:14px}
           .adm-head{flex-direction:column;align-items:flex-start}
           .adm-row{width:100%}
@@ -441,6 +482,14 @@ export default function AdminPage() {
 
         {!loading && tab === 'referrals' && (
           <section className="adm-card">
+            <div className="adm-section-title">Resumo de afiliados</div>
+            <div className="adm-secondary">
+              <div className="adm-pill"><span>Conversões afiliadas (pagas)</span><strong>{stats?.affiliate_paid_conversions ?? 0}</strong></div>
+              <div className="adm-pill"><span>Comissão pendente</span><strong>R$ {(stats?.total_affiliate_commission_pending_brl ?? 0).toLocaleString('pt-BR')}</strong></div>
+              <div className="adm-pill"><span>Comissão earned</span><strong>R$ {(stats?.total_affiliate_commission_earned_brl ?? 0).toLocaleString('pt-BR')}</strong></div>
+              <div className="adm-pill"><span>Comissão paga</span><strong>R$ {(stats?.total_affiliate_commission_paid_brl ?? 0).toLocaleString('pt-BR')}</strong></div>
+            </div>
+
             <div className="adm-row" style={{ marginBottom: 16 }}>
               <input className="adm-input" placeholder="Código" value={code} onChange={(e) => setCode(e.target.value)} />
               <input className="adm-input" placeholder="Influenciador" value={influencer} onChange={(e) => setInfluencer(e.target.value)} />
@@ -451,11 +500,15 @@ export default function AdminPage() {
               {referrals.map((ref) => {
                 const uses = referralUsesByCode.get(ref.code) || [];
                 const paidConversions = paidConversionsByCode.get(ref.code) || 0;
+                const summary = commissionSummaryByCode.get(ref.code) || { earned: 0, paid: 0, pending: 0, latest: null };
                 return (
                   <div key={ref.id} className="adm-ref-grid">
                     <div>
                       <div style={{ fontWeight: 700 }}>{ref.code}</div>
-                      <div className="adm-muted">{ref.influencer_name} · {ref.uses} usos · {paidConversions} conversões pagas</div>
+                      <div className="adm-muted">{ref.influencer_name} · {ref.uses} usos · {paidConversions} conversões pagas · {ref.commission_pct}% comissão</div>
+                      <div className="adm-muted">
+                        Earned R$ {summary.earned.toLocaleString('pt-BR')} · Pago R$ {summary.paid.toLocaleString('pt-BR')} · Pendente R$ {summary.pending.toLocaleString('pt-BR')}
+                      </div>
                       <div className="adm-muted">Últimos usos: {uses.join(' · ') || 'nenhum'}</div>
                     </div>
                     <button className="adm-btn alt" onClick={() => actions.toggleReferral(ref.id, ref.active)}>{ref.active ? 'Pausar' : 'Ativar'}</button>
@@ -475,9 +528,10 @@ export default function AdminPage() {
                     <div><div className="adm-list-label">Usuário</div><div className="adm-list-value">{use.userName}<br /><span className="adm-muted">{use.userEmail}</span></div></div>
                     <div><div className="adm-list-label">Código</div><div className="adm-list-value">{use.code}</div></div>
                     <div><div className="adm-list-label">Data</div><div className="adm-list-value">{new Date(use.created_at).toLocaleString('pt-BR')}</div></div>
+                    <div><div className="adm-list-label">Payment ID</div><div className="adm-list-value">{use.payment_id || '—'}</div></div>
                     <div><div className="adm-list-label">Pagamento</div><div className="adm-list-value">{use.paymentStatusLabel}</div></div>
                     <div><div className="adm-list-label">Tipo de Pro</div><div className="adm-list-value">{use.proTypeLabel}</div></div>
-                    <div><div className="adm-list-label">Comissão</div><div className="adm-list-value">{use.isPaidPro ? 'Elegível' : 'Não elegível'}</div></div>
+                    <div><div className="adm-list-label">Comissão</div><div className="adm-list-value">{use.isPaidPro ? `${use.commissionStatusLabel} · R$ ${use.commissionAmount.toLocaleString('pt-BR')}` : 'Não elegível'}</div></div>
                   </div>
                 ))}
                 {referralUsageRows.length === 0 && <p className="adm-muted">Nenhum uso registrado.</p>}
@@ -485,6 +539,12 @@ export default function AdminPage() {
             </div>
 
             <div className="adm-section-title" style={{ marginTop: 8 }}>Visão para repasse de comissão</div>
+            <div className="adm-toolbar">
+              <button className={`adm-chip ${commissionFilter === 'all' ? 'on' : ''}`} onClick={() => setCommissionFilter('all')}>Todas</button>
+              <button className={`adm-chip ${commissionFilter === 'pending' ? 'on' : ''}`} onClick={() => setCommissionFilter('pending')}>Pending</button>
+              <button className={`adm-chip ${commissionFilter === 'earned' ? 'on' : ''}`} onClick={() => setCommissionFilter('earned')}>Earned</button>
+              <button className={`adm-chip ${commissionFilter === 'paid' ? 'on' : ''}`} onClick={() => setCommissionFilter('paid')}>Paid</button>
+            </div>
             <div className="adm-list">
               {commissionByCode.map((item) => (
                 <div className="adm-list-row" key={item.id}>
@@ -496,6 +556,47 @@ export default function AdminPage() {
                 </div>
               ))}
               {commissionByCode.length === 0 && <p className="adm-muted">Nenhuma informação de comissão disponível.</p>}
+            </div>
+
+            <div className="adm-section-title" style={{ marginTop: 8 }}>Gestão de comissões (por conversão)</div>
+            <div className="adm-list">
+              {filteredCommissions.map((item) => (
+                <div className="adm-list-row" key={`commission-${item.id}`}>
+                  <div><div className="adm-list-label">Código</div><div className="adm-list-value">{item.code}</div></div>
+                  <div><div className="adm-list-label">Payment ID</div><div className="adm-list-value">{item.payment_id || '—'}</div></div>
+                  <div><div className="adm-list-label">Valor comissão</div><div className="adm-list-value">R$ {Number(item.commission_amount || 0).toLocaleString('pt-BR')}</div></div>
+                  <div><div className="adm-list-label">Status</div><div className="adm-list-value">{item.commission_status}</div></div>
+                  <div><div className="adm-list-label">Pago em</div><div className="adm-list-value">{item.paid_at ? new Date(item.paid_at).toLocaleString('pt-BR') : '—'}</div></div>
+                  <div>
+                    <div className="adm-list-label">Ações</div>
+                    <div className="adm-row">
+                      {item.commission_status !== 'paid' && (
+                        <button
+                          className="adm-btn"
+                          onClick={() => actions.updateCommissionStatus(item.id, 'paid', payoutNoteDraft[item.id] || '')}
+                        >
+                          Marcar pago
+                        </button>
+                      )}
+                      {item.commission_status === 'paid' && (
+                        <button
+                          className="adm-btn alt"
+                          onClick={() => actions.updateCommissionStatus(item.id, 'earned', payoutNoteDraft[item.id] || '')}
+                        >
+                          Voltar p/ earned
+                        </button>
+                      )}
+                      <input
+                        className="adm-input"
+                        placeholder="Nota do repasse"
+                        value={payoutNoteDraft[item.id] || item.payout_note || ''}
+                        onChange={(e) => setPayoutNoteDraft((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filteredCommissions.length === 0 && <p className="adm-muted">Nenhuma comissão encontrada para este filtro.</p>}
             </div>
           </section>
         )}

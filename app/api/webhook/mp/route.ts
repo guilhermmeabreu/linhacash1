@@ -9,6 +9,7 @@ import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
 import { requireEnv } from '@/lib/env';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 import { findExistingReferralCode } from '@/lib/services/referral-service';
+import { upsertAffiliateCommission } from '@/lib/services/affiliate-commission-service';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -44,6 +45,7 @@ type MercadoPagoPaymentPayload = {
   metadata?: { user_id?: unknown; referral_code?: unknown; plan?: unknown } | null;
   status?: unknown;
   date_approved?: unknown;
+  transaction_amount?: unknown;
 };
 
 function resolveAndValidateUserId(payment: MercadoPagoPaymentPayload): string | null {
@@ -138,7 +140,11 @@ export async function POST(req: Request) {
     const profileReferralCode = typeof profile?.referral_code_used === 'string' ? profile.referral_code_used.trim().toUpperCase() : null;
     const validProfileReferral = await findExistingReferralCode(profileReferralCode);
     const validMetadataReferral = await findExistingReferralCode(metadataReferralCode);
-    const referralCode = validProfileReferral?.code || validMetadataReferral?.code || null;
+    const referralCode = validProfileReferral?.active
+      ? validProfileReferral.code
+      : validMetadataReferral?.active
+        ? validMetadataReferral.code
+        : null;
 
     await activatePaidPro({
       userId,
@@ -158,6 +164,20 @@ export async function POST(req: Request) {
           const { data: refData } = await supabase.from('referral_codes').select('uses').eq('code', referralCode).single();
           await supabase.from('referral_codes').update({ uses: (refData?.uses || 0) + 1 }).eq('code', referralCode);
         }
+      }
+
+      try {
+        await upsertAffiliateCommission({
+          code: referralCode,
+          userId,
+          paymentId,
+          plan,
+          transactionAmount: typeof payment.transaction_amount === 'number' ? payment.transaction_amount : null,
+          paidAt: typeof payment.date_approved === 'string' ? payment.date_approved : null,
+        });
+      } catch (commissionError) {
+        await auditLog('webhook_event', { status: 'warning', reason: 'commission_upsert_failed', paymentId, referralCode });
+        logRouteError('/api/webhook/mp', context.requestId, commissionError, { paymentId, referralCode, stage: 'commission_upsert' });
       }
     }
     invalidateCacheByPrefix('admin:');
