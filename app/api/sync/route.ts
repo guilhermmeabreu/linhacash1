@@ -7,6 +7,7 @@ import { fail, options } from '@/lib/http/responses';
 import { getIP, rateLimit } from '@/lib/rate-limit';
 import { auditLog } from '@/lib/services/audit-log-service';
 import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
+import { acquireDistributedLock, releaseDistributedLock } from '@/lib/services/distributed-lock-service';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +18,9 @@ const API_KEY = process.env.NBA_API_KEY!;
 const BASE_URL = 'v2.nba.api-sports.io';
 const SEASON = 2025;
 const SEASON_STATS = 2024;
+const SYNC_LOCK_KEY = 'sync:lock';
+const SYNC_LOCK_TTL_SECONDS = 5 * 60;
+const SYNC_TIMEOUT_MS = 60_000;
 
 const logs: string[] = [];
 function log(msg: string) {
@@ -24,18 +28,30 @@ function log(msg: string) {
   logs.push(`[${new Date().toLocaleTimeString('pt-BR')}] ${msg}`);
 }
 
-function apiGet(path: string): Promise<any> {
+function apiGet(path: string, signal?: AbortSignal): Promise<any> {
   return new Promise((resolve, reject) => {
     const options = { hostname: BASE_URL, path, headers: { 'x-apisports-key': API_KEY } };
-    https.get(options, (res) => {
+    const request = https.get(options, (res) => {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
-    }).on('error', reject);
+    });
+    request.on('error', reject);
+
+    if (signal) {
+      if (signal.aborted) {
+        request.destroy(new Error('Sync timeout exceeded'));
+        return;
+      }
+
+      const abortHandler = () => request.destroy(new Error('Sync timeout exceeded'));
+      signal.addEventListener('abort', abortHandler, { once: true });
+      request.on('close', () => signal.removeEventListener('abort', abortHandler));
+    }
   });
 }
 
-async function fetchGames() {
+async function fetchGames(signal?: AbortSignal) {
   const now = new Date();
   const brOffset = -3 * 60 * 60 * 1000;
   const nowBR = new Date(now.getTime() + brOffset);
@@ -51,7 +67,7 @@ async function fetchGames() {
 
   log(`Buscando jogos para ${brDate} BRT (buscando datas UTC: ${dates.join(', ')})`);
 
-  const results = await Promise.all(dates.map((d: string) => apiGet(`/games?date=${d}`)));
+  const results = await Promise.all(dates.map((d: string) => apiGet(`/games?date=${d}`, signal)));
   const allGames = results.flatMap((r: any) => r.response || []);
 
   // Remove duplicatas por ID
@@ -88,8 +104,8 @@ async function fetchGames() {
   return filtered;
 }
 
-async function fetchPlayers(teamId: number) {
-  const data = await apiGet(`/players?team=${teamId}&season=${SEASON_STATS}`);
+async function fetchPlayers(teamId: number, signal?: AbortSignal) {
+  const data = await apiGet(`/players?team=${teamId}&season=${SEASON_STATS}`, signal);
   if (!data.response || data.response.length === 0) return [];
   const players = data.response.map((p: any) => ({
     api_id: p.id, name: `${p.firstname} ${p.lastname}`,
@@ -101,8 +117,8 @@ async function fetchPlayers(teamId: number) {
   return players;
 }
 
-async function fetchPlayerStats(playerId: number, apiPlayerId: number) {
-  const data = await apiGet(`/players/statistics?id=${apiPlayerId}&season=${SEASON_STATS}`);
+async function fetchPlayerStats(playerId: number, apiPlayerId: number, signal?: AbortSignal) {
+  const data = await apiGet(`/players/statistics?id=${apiPlayerId}&season=${SEASON_STATS}`, signal);
   if (!data.response || data.response.length === 0) return;
   const stats = data.response.slice(0, 20).map((s: any) => ({
     player_id: playerId, game_date: s.game?.date || null,
@@ -158,6 +174,9 @@ export async function GET(req: Request) {
   logs.length = 0;
   const errors: string[] = [];
   let gamesCount = 0;
+  let lock: Awaited<ReturnType<typeof acquireDistributedLock>> = null;
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), SYNC_TIMEOUT_MS);
 
   try {
     if (!(await rateLimit(`sync:${getIP(req)}`, 10, 60_000))) {
@@ -165,48 +184,72 @@ export async function GET(req: Request) {
     }
 
     const auth = await requireCronRequest(req);
-    console.info('[SYNC]', JSON.stringify({ event: 'start', origin: auth.origin }));
+    console.info(`[SYNC] origin=${auth.origin} started`);
+
+    lock = await acquireDistributedLock(SYNC_LOCK_KEY, SYNC_LOCK_TTL_SECONDS);
+    if (!lock) {
+      console.info('[SYNC] already running');
+      return NextResponse.json({ message: 'Sync already running' }, { status: 202 });
+    }
 
     log('=== LinhaCash Sync Iniciado ===');
-    const games = await fetchGames();
-    gamesCount = games.length;
-    if (games.length === 0) {
-      await saveLog('no_games', 0, []);
-      await auditLog('sync_execution', { origin: auth.origin, status: 'no_games', durationMs: Date.now() - startedAt });
-      return NextResponse.json({ message: 'Nenhum jogo hoje', logs });
-    }
+    const runSync = async () => {
+      const games = await fetchGames(timeoutController.signal);
+      gamesCount = games.length;
+      if (games.length === 0) {
+        await saveLog('no_games', 0, []);
+        await auditLog('sync_execution', { origin: auth.origin, status: 'no_games', durationMs: Date.now() - startedAt });
+        console.info('[SYNC] success');
+        return NextResponse.json({ message: 'Nenhum jogo hoje', logs });
+      }
 
-    const teamIds = new Set<number>();
-    games.forEach((g: any) => { teamIds.add(g.teams.home.id); teamIds.add(g.teams.visitors.id); });
+      const teamIds = new Set<number>();
+      games.forEach((g: any) => { teamIds.add(g.teams.home.id); teamIds.add(g.teams.visitors.id); });
 
-    for (const teamId of teamIds) {
-      try {
-        const players = await fetchPlayers(teamId);
-        for (const player of players) {
-          try {
-            const { data } = await supabase.from('players').select('id').eq('api_id', player.api_id).single();
-            if (data) { await fetchPlayerStats(data.id, player.api_id); await calcMetrics(data.id); }
-          } catch (e: any) { errors.push(`Jogador ${player.api_id}: ${e.message}`); }
-        }
-      } catch (e: any) { errors.push(`Time ${teamId}: ${e.message}`); }
-    }
+      for (const teamId of teamIds) {
+        if (timeoutController.signal.aborted) throw new Error('Sync timeout exceeded');
+        try {
+          const players = await fetchPlayers(teamId, timeoutController.signal);
+          for (const player of players) {
+            if (timeoutController.signal.aborted) throw new Error('Sync timeout exceeded');
+            try {
+              const { data } = await supabase.from('players').select('id').eq('api_id', player.api_id).single();
+              if (data) {
+                await fetchPlayerStats(data.id, player.api_id, timeoutController.signal);
+                await calcMetrics(data.id);
+              }
+            } catch (e: any) { errors.push(`Jogador ${player.api_id}: ${e.message}`); }
+          }
+        } catch (e: any) { errors.push(`Time ${teamId}: ${e.message}`); }
+      }
 
-    await saveLog('success', gamesCount, errors);
-    invalidateCacheByPrefix('games:');
-    invalidateCacheByPrefix('players:');
-    invalidateCacheByPrefix('metrics:');
-    invalidateCacheByPrefix('admin:');
-    const durationMs = Date.now() - startedAt;
-    console.info('[SYNC]', JSON.stringify({ event: 'finish', origin: auth.origin, success: true, durationMs, errors: errors.length }));
-    await auditLog('sync_execution', { origin: auth.origin, status: 'success', durationMs, errors: errors.length });
-    return NextResponse.json({ message: 'Sync completo!', games: gamesCount, errors: errors.length, logs });
+      await saveLog('success', gamesCount, errors);
+      invalidateCacheByPrefix('games:');
+      invalidateCacheByPrefix('players:');
+      invalidateCacheByPrefix('metrics:');
+      invalidateCacheByPrefix('admin:');
+      const durationMs = Date.now() - startedAt;
+      await auditLog('sync_execution', { origin: auth.origin, status: 'success', durationMs, errors: errors.length });
+      console.info('[SYNC] success');
+      return NextResponse.json({ message: 'Sync completo!', games: gamesCount, errors: errors.length, logs });
+    };
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutController.signal.addEventListener('abort', () => reject(new Error('Sync timeout exceeded')), { once: true });
+    });
+
+    return await Promise.race([runSync(), timeoutPromise]);
   } catch (e: any) {
+    console.error('[SYNC] error', e);
     const durationMs = Date.now() - startedAt;
     log(`ERRO CRÍTICO: ${e?.message || 'unknown'}`);
     await saveLog('error', gamesCount, [String(e?.message || 'unknown')]);
     await auditLog('sync_execution', { status: 'error', durationMs });
     if (e instanceof AppError) return fail(e, origin);
     return NextResponse.json({ error: 'Sync failed', logs }, { status: 500 });
+  } finally {
+    clearTimeout(timeoutId);
+    await releaseDistributedLock(lock);
   }
 }
 
