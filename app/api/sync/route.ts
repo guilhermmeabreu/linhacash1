@@ -17,6 +17,7 @@ const API_KEY = process.env.NBA_API_KEY!;
 const BASE_URL = 'v2.nba.api-sports.io';
 const SEASON = 2025;
 const SEASON_STATS = 2024;
+let playerStatsColumnsPromise: Promise<Set<string>> | null = null;
 
 const logs: string[] = [];
 function log(msg: string) {
@@ -33,6 +34,27 @@ function apiGet(path: string): Promise<any> {
       res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
     }).on('error', reject);
   });
+}
+
+async function getPlayerStatsColumns(): Promise<Set<string>> {
+  if (!playerStatsColumnsPromise) {
+    playerStatsColumnsPromise = (async () => {
+      const { data, error } = await supabase
+        .from('information_schema.columns')
+        .select('column_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'player_stats');
+
+      if (error || !data) {
+        log(`Aviso: não foi possível ler colunas de player_stats (${error?.message || 'desconhecido'})`);
+        return new Set<string>();
+      }
+
+      return new Set<string>(data.map((row: { column_name: string }) => row.column_name));
+    })();
+  }
+
+  return playerStatsColumnsPromise;
 }
 
 async function fetchGames() {
@@ -94,7 +116,8 @@ async function fetchPlayers(teamId: number) {
   const players = data.response.map((p: any) => ({
     api_id: p.id, name: `${p.firstname} ${p.lastname}`,
     team: p.teams?.[0]?.name || '', team_id: teamId,
-    position: p.leagues?.standard?.pos || ''
+    position: p.leagues?.standard?.pos || '',
+    photo: p.photo || null,
   }));
   await supabase.from('players').upsert(players, { onConflict: 'api_id' });
   log(`${players.length} jogadores time ${teamId} salvos!`);
@@ -104,15 +127,31 @@ async function fetchPlayers(teamId: number) {
 async function fetchPlayerStats(playerId: number, apiPlayerId: number) {
   const data = await apiGet(`/players/statistics?id=${apiPlayerId}&season=${SEASON_STATS}`);
   if (!data.response || data.response.length === 0) return;
-  const stats = data.response.slice(0, 20).map((s: any) => ({
-    player_id: playerId, game_date: s.game?.date || null,
-    opponent: s.team?.name || '', is_home: true,
-    points: s.points || 0, rebounds: s.totReb || 0,
-    assists: s.assists || 0, three_pointers: s.tpm || 0,
-    fgm: s.fgm || 0,
-    fga: s.fga || 0,
-    minutes: parseInt(s.min) || 0
-  }));
+  const columns = await getPlayerStatsColumns();
+  const has = (column: string) => columns.has(column);
+  const stats = data.response.slice(0, 20).map((s: any) => {
+    const entry: Record<string, unknown> = {
+      player_id: playerId,
+      game_date: s.game?.date || null,
+      opponent: s.team?.name || '',
+      is_home: true,
+      points: s.points || 0,
+      rebounds: s.totReb || 0,
+      assists: s.assists || 0,
+      three_pointers: s.tpm || 0,
+      fgm: s.fgm || 0,
+      fga: s.fga || 0,
+      minutes: parseInt(s.min) || 0,
+    };
+
+    if (has('steals')) entry.steals = s.steals || 0;
+    if (has('blocks')) entry.blocks = s.blocks || 0;
+    if (has('fg2a')) entry.fg2a = s.p2a || 0;
+    if (has('fg3a')) entry.fg3a = s.p3a || 0;
+    if (has('three_pa')) entry.three_pa = s.p3a || 0;
+
+    return entry;
+  });
   await supabase.from('player_stats').upsert(stats);
 }
 
