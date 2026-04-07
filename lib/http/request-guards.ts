@@ -1,10 +1,17 @@
 import { AppError, AuthenticationError } from '@/lib/http/errors';
 
 function normalizeOrigin(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
   try {
-    return new URL(value).origin;
+    return new URL(trimmed).origin;
   } catch {
-    return value;
+    try {
+      return new URL(`https://${trimmed.replace(/^\/+/, '')}`).origin;
+    } catch {
+      return trimmed;
+    }
   }
 }
 
@@ -13,7 +20,12 @@ function normalizeHost(value: string): string {
 }
 
 function getConfiguredOrigins(): string[] {
-  return [process.env.NEXT_PUBLIC_URL || '', process.env.ALLOWED_ORIGINS || '']
+  return [
+    'https://linhacash.com.br',
+    'https://www.linhacash.com.br',
+    process.env.NEXT_PUBLIC_URL || '',
+    process.env.ALLOWED_ORIGINS || '',
+  ]
     .flatMap((value) => value.split(','))
     .map((origin) => origin.trim())
     .filter(Boolean)
@@ -64,7 +76,7 @@ function hasSafeMethod(req: Request) {
 export function assertAllowedOrigin(req: Request) {
   if (hasSafeMethod(req)) return;
 
-  const requestOrigin = req.headers.get('origin');
+  const requestOrigin = req.headers.get('origin') || '';
   if (!requestOrigin) {
     throw new AuthenticationError('Missing request origin');
   }
@@ -75,6 +87,11 @@ export function assertAllowedOrigin(req: Request) {
   if (allowList.includes(normalizedOrigin)) return;
   if (isAllowedVercelPreview(normalizedOrigin)) return;
 
+  console.warn('[SECURITY] Blocked request origin', {
+    requestOrigin,
+    normalizedOrigin,
+    allowList,
+  });
   throw new AppError('AUTHORIZATION_ERROR', 403, 'Origin not allowed');
 }
 

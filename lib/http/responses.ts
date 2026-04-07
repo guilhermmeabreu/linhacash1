@@ -1,10 +1,33 @@
 import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/http/errors';
 
+function normalizeOrigin(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    try {
+      return new URL(`https://${trimmed.replace(/^\/+/, '')}`).origin;
+    } catch {
+      return trimmed;
+    }
+  }
+}
+
 function allowedOrigins(): string[] {
-  return (process.env.ALLOWED_ORIGINS || process.env.NEXT_PUBLIC_URL || '')
-    .split(',')
-    .map((origin) => origin.trim())
+  return [
+    'https://linhacash.com.br',
+    'https://www.linhacash.com.br',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
+    process.env.NEXT_PUBLIC_URL || '',
+    process.env.ALLOWED_ORIGINS || '',
+  ]
+    .flatMap((value) => value.split(','))
+    .map((origin) => normalizeOrigin(origin))
     .filter(Boolean);
 }
 
