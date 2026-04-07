@@ -821,7 +821,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <span style="font-size:14px;font-weight:600;flex:1">Qual a diferença entre Gratuito e Pro?</span>
  <svg class="faq-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;transition:.2s;color:var(--mt)"><polyline points="6 9 12 15 18 9"/></svg>
  </div>
- <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Gratuito: todos os jogos visíveis, com 1 jogo liberado por dia, 1 jogador por time e stats PTS + 3PM. Pro: todos os jogos liberados, todos os jogadores, todas as stats (AST, REB, P+A, P+R, A+R, FG3A) e períodos H2H, L20 e L30.</div>
+ <div class="faq-ans" style="display:none;padding:0 20px 14px;font-size:13px;color:var(--mt);line-height:1.6">Gratuito: todos os jogos visíveis, com 1 jogo liberado por dia e 1 jogador por time. Pro: todos os jogos liberados, todos os jogadores e todas as estatísticas liberadas.</div>
  </div>
 
  <div class="faq-item" onclick="toggleFaq(this)" style="border-bottom:1px solid var(--bd);cursor:pointer">
@@ -918,7 +918,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <div style="display:flex;flex-direction:column;gap:6px">
  <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)"></span> Todos os jogos do dia</div>
  <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)"></span> Todos os jogadores</div>
- <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)"></span>Acesso a todos os mercados além de PTS + 3PM</div>
+ <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)"></span>Acesso parcial às estatísticas</div>
  <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--red)"></span> Períodos H2H, L20 e L30</div>
  </div>
  </div>
@@ -965,7 +965,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <div style="background:var(--s3);border:1px solid var(--bd);border-radius:0;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px">
  <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px"></span>Todos os jogos do dia</div>
  <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px"></span>Todos os jogadores</div>
- <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px"></span>AST, REB, P+A, P+R, A+R, FG3A desbloqueados</div>
+ <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px"></span>Todas as estatísticas liberadas</div>
  <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px"></span>Períodos H2H, L20 e L30</div>
  <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--green);font-weight:700;width:16px"></span>Splits Casa/Fora e vs Top 10 DEF</div>
  </div>
@@ -1130,7 +1130,7 @@ const dataServices = {
       const list = Array.isArray(payload?.players) ? payload.players : [];
       const homeTeamId = Number(gameContext?.home_team_id || 0);
       const awayTeamId = Number(gameContext?.away_team_id || 0);
-      return list.map((player) => ({
+      const players = list.map((player) => ({
         id: player.id,
         name: player.name || 'Jogador',
         team_id: Number(player.team_id || 0),
@@ -1142,6 +1142,8 @@ const dataServices = {
         position: player.position || 'N/A',
         line: Number(player.line || 0),
       }));
+      if (players.length) return players;
+      return createPlaceholderPlayers(gameContext);
     })();
     try{
       return await PLAYER_FETCH_PROMISES[gameId];
@@ -1204,6 +1206,20 @@ function renderPropModalSkeleton(){
 
 function renderEmptyState(title, message){
   return `<div class="empty-state"><div class="empty-title">${title}</div><div class="empty-sub">${message}</div></div>`;
+}
+
+function createPlaceholderPlayers(gameContext){
+  const homeTeamName = gameContext?.home_team || 'Time da casa';
+  const awayTeamName = gameContext?.away_team || 'Time visitante';
+  const homeTeamId = Number(gameContext?.home_team_id || -1);
+  const awayTeamId = Number(gameContext?.away_team_id || -2);
+  const baseId = Number(gameContext?.id || Date.now()) * 1000;
+  return [
+    { id: baseId + 1, name: `${homeTeamName} — Jogador A`, team_id: homeTeamId, team: homeTeamName, position: '—', line: 0, is_placeholder: true },
+    { id: baseId + 2, name: `${awayTeamName} — Jogador A`, team_id: awayTeamId, team: awayTeamName, position: '—', line: 0, is_placeholder: true },
+    { id: baseId + 3, name: `${homeTeamName} — Jogador B`, team_id: homeTeamId, team: homeTeamName, position: '—', line: 0, is_placeholder: true },
+    { id: baseId + 4, name: `${awayTeamName} — Jogador B`, team_id: awayTeamId, team: awayTeamName, position: '—', line: 0, is_placeholder: true },
+  ];
 }
 
 const NAV_ITEMS = [
@@ -1555,6 +1571,7 @@ async function renderPRows(){
    });
  }
  if(!ps.length){ document.getElementById('plist').innerHTML=renderEmptyState('Nenhum jogador encontrado','Sem jogadores disponíveis para este confronto no momento.'); return; }
+ const hasPlaceholderPlayers=ps.some((p)=>Boolean(p?.is_placeholder));
  document.getElementById('plist').innerHTML=ps.map((p)=>{
  if(!p||!p.id) return '';
  const teamLabel=p.team||'Time não informado';
@@ -1562,10 +1579,13 @@ async function renderPRows(){
  const ln=p.line>0?half(p.line):'—';
  return `<div class="prow2" onclick="openPlayer(${p.id})" role="button" tabindex="0">
  <div class="prav" style="background:linear-gradient(135deg,${clr}cc,${clr}66)">${ini(p.name||'Jogador')}</div>
- <div style="flex:1;min-width:0"><div class="prnm">${p.name||'Jogador'}</div><div class="prmt">${p.position||'—'} · ${teamLabel}</div></div>
+ <div style="flex:1;min-width:0"><div class="prnm">${p.name||'Jogador'}</div><div class="prmt">${p.position||'—'} · ${teamLabel}${p?.is_placeholder?' · Placeholder':''}</div></div>
  <div class="prrt"><div class="prln">${ln}</div></div>
  </div>`;
  }).join('');
+ if(hasPlaceholderPlayers){
+  document.getElementById('plist').insertAdjacentHTML('afterbegin','<div class="empty-sub" style="margin:0 0 12px;padding:0 4px">Dados de jogadores em modo placeholder até a sincronização completa.</div>');
+ }
 }
 
 // S3: DETALHE 
@@ -1746,8 +1766,8 @@ function renderProf(){
  </div>
  <div class="psec"><div class="psectitle">Planos</div>
  <div class="pplancard">
- <div class="pplanrow" style="${!ip?'':'opacity:.5'}"><div><div class="pplannm">Gratuito</div><div class="pplansb">Todos os jogos visíveis · 1 jogo liberado · 1 jogador/time · PTS + 3PM</div></div><div style="font-size:13px;font-weight:700;color:${!ip?'var(--green)':'var(--mt)'}">${!ip?'Ativo':'—'}</div></div>
- <div class="pplanrow" onclick="${!ip?'openPro()':''}" style="${!ip?'cursor:pointer':''}"><div><div class="pplannm" style="${ip?'color:var(--green)':''}">Pro ${ip?'<span class="protag">ATIVO</span>':'<span style="font-size:9px;background:var(--s4);color:var(--mt);border-radius:0;padding:2px 5px;font-weight:700;vertical-align:middle">R$24,90/mês</span>'}</div><div class="pplansb">Todos os jogos · Todos os jogadores · Todas as stats</div></div>${!ip?'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>':''}</div>
+ <div class="pplanrow" style="${!ip?'':'opacity:.5'}"><div><div class="pplannm">Gratuito</div><div class="pplansb">Todos os jogos visíveis · 1 jogo liberado · 1 jogador/time · Acesso parcial às estatísticas</div></div><div style="font-size:13px;font-weight:700;color:${!ip?'var(--green)':'var(--mt)'}">${!ip?'Ativo':'—'}</div></div>
+ <div class="pplanrow" onclick="${!ip?'openPro()':''}" style="${!ip?'cursor:pointer':''}"><div><div class="pplannm" style="${ip?'color:var(--green)':''}">Pro ${ip?'<span class="protag">ATIVO</span>':'<span style="font-size:9px;background:var(--s4);color:var(--mt);border-radius:0;padding:2px 5px;font-weight:700;vertical-align:middle">R$24,90/mês</span>'}</div><div class="pplansb">Todos os jogos · Todos os jogadores · Todas as estatísticas liberadas</div></div>${!ip?'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>':''}</div>
  </div>
  </div>
  <div class="psec"><div class="psectitle">Conta</div>

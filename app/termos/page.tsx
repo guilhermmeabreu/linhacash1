@@ -19,7 +19,7 @@ export default function TermosPage() {
       <LegalSection title="3. Planos Free e Pro">
         <ul style={listStyle}>
           <li>Free: acesso essencial com limitações de jogos, jogadores e métricas.</li>
-          <li>Pro: acesso completo aos recursos e métricas disponíveis no produto.</li>
+          <li>Pro: acesso completo aos recursos do produto, com todas as estatísticas liberadas.</li>
         </ul>
       </LegalSection>
 
