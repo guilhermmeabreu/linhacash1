@@ -63,8 +63,18 @@ export async function requireProUser(req: Request) {
 }
 
 export async function requireCronRequest(req: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = req.headers.get('authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+
+  if (cronSecret && bearerToken && bearerToken === cronSecret) {
+    return { origin: 'cron' as const };
+  }
+
   const headerSecret = req.headers.get('x-cron-secret');
-  if (headerSecret && headerSecret === process.env.CRON_SECRET) return { origin: 'cron' as const };
+  if (cronSecret && headerSecret && headerSecret === cronSecret) {
+    return { origin: 'cron' as const };
+  }
 
   await requireAdminUser(req);
   return { origin: 'admin' as const };
