@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     const supportInbox = process.env.SUPPORT_EMAIL || 'suporte@linhacash.com.br';
     const subjectPrefix = type === 'bug' ? 'Bug' : 'Suporte';
     const submittedAt = new Date().toISOString();
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'LinhaCash <onboarding@resend.dev>';
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'LinhaCash <suporte@linhacash.com.br>';
 
     const { error: insertError } = await (supabase as any).from('support_messages').insert({
       user_id: user?.id || null,

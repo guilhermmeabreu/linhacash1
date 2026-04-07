@@ -2,7 +2,7 @@
 // EMAILS — Templates profissionais LinhaCash
 // ═══════════════════════════════════════════════════════════════════════════
 
-const FROM = process.env.RESEND_FROM_EMAIL || 'LinhaCash <onboarding@resend.dev>';
+const FROM = process.env.RESEND_FROM_EMAIL || 'LinhaCash <suporte@linhacash.com.br>';
 const PUBLIC_SITE_URL = (process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : process.env.NEXT_PUBLIC_URL || 'https://linhacash.com.br').replace(/\/+$/, '');
