@@ -4,9 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'LinhaCash',
   description: 'Análise de props da NBA',
+  manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: '/icon',
+    apple: '/apple-icon',
+    shortcut: '/icon',
   },
 };
 
