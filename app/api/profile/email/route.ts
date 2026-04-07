@@ -45,6 +45,10 @@ export async function POST(req: Request) {
   }
 
   const publicUrl = resolvePublicUrl(req);
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return errorResponse('Serviço temporariamente indisponível. Tente novamente.', 503);
+  }
+
   const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
     method: 'PUT',
     headers: {

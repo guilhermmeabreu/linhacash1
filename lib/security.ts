@@ -130,10 +130,16 @@ export function corsHeaders() {
 }
 
 // ── Criptografia AES-256-GCM para dados sensíveis ────────────────────────────
-const ENCRYPTION_KEY = requireEnv('ENCRYPTION_KEY');
+let cachedEncryptionKey: string | null = null;
+
+function getEncryptionKey() {
+  if (cachedEncryptionKey) return cachedEncryptionKey;
+  cachedEncryptionKey = requireEnv('ENCRYPTION_KEY');
+  return cachedEncryptionKey;
+}
 
 export function encrypt(text: string): string {
-  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const key = Buffer.from(getEncryptionKey().slice(0, 64), 'hex');
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
@@ -143,7 +149,7 @@ export function encrypt(text: string): string {
 
 export function decrypt(text: string): string {
   const [ivHex, authTagHex, encryptedHex] = text.split(':');
-  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const key = Buffer.from(getEncryptionKey().slice(0, 64), 'hex');
   const iv = Buffer.from(ivHex, 'hex');
   const authTag = Buffer.from(authTagHex, 'hex');
   const encrypted = Buffer.from(encryptedHex, 'hex');

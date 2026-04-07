@@ -1,6 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (supabaseClient) return supabaseClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !serviceKey) return null;
+
+  supabaseClient = createClient(url, serviceKey);
+  return supabaseClient;
+}
 
 type AuditEvent =
   | 'admin_login_success'
@@ -29,7 +39,9 @@ export async function auditLog(event: AuditEvent, details: Record<string, unknow
   };
 
   try {
-    await supabase.from('audit_logs').insert(entry);
+    const supabase = getSupabase();
+    if (!supabase) throw new Error('Supabase unavailable');
+    await (supabase as any).from('audit_logs').insert(entry);
   } catch {
     console.info('[AUDIT]', JSON.stringify(entry));
   }

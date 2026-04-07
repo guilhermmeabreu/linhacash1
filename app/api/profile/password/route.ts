@@ -3,9 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 import { validateSession, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (supabaseClient) return supabaseClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !serviceKey) {
+    throw new Error('Supabase env vars are not configured');
+  }
+
+  supabaseClient = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  return supabaseClient;
+}
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -14,6 +26,7 @@ function isStrongPassword(password: string): boolean {
 }
 
 export async function POST(req: Request) {
+  const supabase = getSupabase();
   const session = await validateSession(req);
   if (!session.valid || !session.userId || !session.email) {
     return errorResponse('Não autorizado', 401);
