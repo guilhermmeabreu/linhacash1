@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     const submittedAt = new Date().toISOString();
     const fromAddress = process.env.RESEND_FROM_EMAIL || 'LinhaCash <suporte@linhacash.com.br>';
 
-    const { error: insertError } = await supabase.from('support_messages').insert({
+    const { error: insertError } = await (supabase as any).from('support_messages').insert({
       user_id: user?.id || null,
       email,
       type,
