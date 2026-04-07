@@ -4,12 +4,6 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'LinhaCash',
   description: 'Análise de props da NBA',
-  manifest: '/manifest.webmanifest',
-  icons: {
-    icon: '/icon',
-    apple: '/apple-icon',
-    shortcut: '/icon',
-  },
 };
 
 const themeBootScript = `(() => { try { const saved = localStorage.getItem('theme'); const theme = saved === 'light' ? 'light' : 'dark'; const root = document.documentElement; root.classList.add(theme); } catch (_) { document.documentElement.classList.add('dark'); } })();`;
