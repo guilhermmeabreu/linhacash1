@@ -8,15 +8,41 @@ const PUBLIC_SITE_URL = (process.env.VERCEL_PROJECT_PRODUCTION_URL
   : process.env.NEXT_PUBLIC_URL || 'https://linhacash.com.br').replace(/\/+$/, '');
 const LOGO_URL = `${PUBLIC_SITE_URL}/logo.png`;
 
-function base(content: string) {
+type AppEmail = { subject: string; html: string };
+
+type SupportEmailContext = {
+  subject: string;
+  message: string;
+  name: string;
+  email?: string | null;
+  userId?: string | null;
+  submittedAtISO?: string;
+};
+
+const DEFAULT_SUPPORT_RESPONSE_WINDOW = '24 horas';
+
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function nl2br(text: string): string {
+  return escapeHtml(text).replace(/\n/g, '<br/>');
+}
+
+export function getEmailLayout(content: string) {
   return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"/></head>
-    <body style="margin:0;padding:0;background:#050505;font-family:'Helvetica Neue',Arial,sans-serif">
+    <body style="margin:0;padding:0;background:#050505;font-family:'Helvetica Neue',Arial,sans-serif;color:#c6c6c6">
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#050505;padding:40px 20px">
         <tr><td align="center">
-          <table width="560" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border-top:3px solid #00e676;border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a">
+          <table width="560" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #1a1a1a;border-top:3px solid #00e676">
             <tr><td style="padding:32px 32px 0">
               <img src="${LOGO_URL}" width="36" height="36" style="display:block;margin-bottom:12px"/>
               <span style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.02em">Linha<span style="color:#00e676">Cash</span></span>
@@ -44,7 +70,7 @@ function base(content: string) {
 export function emailBoasVindas(name: string) {
   return {
     subject: 'Bem-vindo ao LinhaCash 🏀',
-    html: base(`
+    html: getEmailLayout(`
       <h2 style="color:#fff;font-size:22px;margin:0 0 16px;font-weight:800">Olá, ${name}!</h2>
       <p>Sua conta foi criada com sucesso. Agora você tem acesso às análises de props da NBA.</p>
       <table width="100%" style="background:#111;border-left:3px solid #00e676;padding:16px 20px;margin:20px 0">
@@ -65,7 +91,7 @@ export function emailBoasVindas(name: string) {
 export function emailProAtivado(name: string, plan: string) {
   return {
     subject: '⚡ Plano Pro ativado!',
-    html: base(`
+    html: getEmailLayout(`
       <h2 style="color:#00e676;font-size:22px;margin:0 0 16px;font-weight:800">Pro ativado, ${name}!</h2>
       <p>Seu plano <strong style="color:#fff">${plan === 'anual' ? 'Pro Anual' : 'Pro Mensal'}</strong> está ativo. Acesso completo desbloqueado.</p>
       <table width="100%" style="background:#111;border-left:3px solid #00e676;padding:16px 20px;margin:20px 0">
@@ -84,47 +110,138 @@ export function emailProAtivado(name: string, plan: string) {
   };
 }
 
-export function emailSuporte(name: string, email: string, subject: string, message: string) {
+export function buildSupportInternalEmail(context: SupportEmailContext): AppEmail {
+  const sentAt = context.submittedAtISO
+    ? new Date(context.submittedAtISO).toLocaleString('pt-BR')
+    : new Date().toLocaleString('pt-BR');
   return {
-    subject: `[Suporte] ${subject} — ${name}`,
-    html: base(`
-      <h2 style="color:#fff;font-size:18px;margin:0 0 20px;font-weight:800">Nova mensagem de suporte</h2>
+    subject: `LinhaCash • Suporte • ${context.subject}`,
+    html: getEmailLayout(`
+      <h2 style="color:#fff;font-size:18px;margin:0 0 20px;font-weight:800">Novo ticket de suporte</h2>
       <table width="100%" style="background:#111;border:1px solid #1a1a1a;margin-bottom:16px">
         <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Tipo</span><br/>
+          <strong style="color:#fff">Suporte</strong>
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Assunto</span><br/>
+          <strong style="color:#fff">${escapeHtml(context.subject)}</strong>
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
           <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">De</span><br/>
-          <strong style="color:#fff">${name}</strong> &lt;${email}&gt;
+          <strong style="color:#fff">${escapeHtml(context.name)}</strong> &lt;${escapeHtml(context.email || 'não informado')}&gt;
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">User ID</span><br/>
+          <code style="color:#aaa;font-size:12px">${escapeHtml(context.userId || 'não autenticado')}</code>
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Enviado em</span><br/>
+          <strong style="color:#fff">${sentAt}</strong>
         </td></tr>
         <tr><td style="padding:12px 16px">
           <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Mensagem</span><br/>
-          <p style="color:#ccc;margin:8px 0 0">${message.replace(/\n/g, '<br/>')}</p>
+          <p style="color:#ccc;margin:8px 0 0">${nl2br(context.message)}</p>
         </td></tr>
       </table>
-      <p style="font-size:12px;color:#444">Clique em Responder para responder direto para ${email}</p>
+      <p style="font-size:12px;color:#444">Use responder para retornar diretamente ao usuário.</p>
     `)
   };
 }
 
-export function emailConfirmacaoSuporte(name: string, message: string) {
+export function buildSupportConfirmationEmail(context: SupportEmailContext): AppEmail {
   return {
-    subject: 'Recebemos sua mensagem ✅',
-    html: base(`
-      <h2 style="color:#fff;font-size:20px;margin:0 0 12px;font-weight:800">Olá, ${name}!</h2>
-      <p>Recebemos sua mensagem e responderemos em até <strong style="color:#fff">24 horas</strong>.</p>
-      <table width="100%" style="background:#111;border-left:3px solid #555;padding:16px 20px;margin:20px 0">
+    subject: 'Recebemos sua mensagem — LinhaCash',
+    html: getEmailLayout(`
+      <h2 style="color:#fff;font-size:20px;margin:0 0 12px;font-weight:800">Olá, ${escapeHtml(context.name)}!</h2>
+      <p>Recebemos sua mensagem e retornaremos em até <strong style="color:#fff">${DEFAULT_SUPPORT_RESPONSE_WINDOW}</strong>.</p>
+      <table width="100%" style="background:#111;border-left:3px solid #00e676;padding:16px 20px;margin:20px 0">
         <tr><td>
-          <p style="margin:0 0 6px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Sua mensagem</p>
-          <p style="color:#aaa;margin:0">${message.replace(/\n/g, '<br/>')}</p>
+          <p style="margin:0 0 6px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Assunto</p>
+          <p style="color:#f1f1f1;margin:0 0 12px;font-weight:600">${escapeHtml(context.subject)}</p>
+        </td></tr>
+        <tr><td>
+          <p style="margin:0 0 6px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Resumo enviado</p>
+          <p style="color:#aaa;margin:0">${nl2br(context.message)}</p>
         </td></tr>
       </table>
-      <p style="font-size:13px;color:#555">Equipe LinhaCash 🏀</p>
+      <p style="font-size:13px;color:#555">Equipe LinhaCash</p>
     `)
   };
+}
+
+export function buildBugInternalEmail(context: SupportEmailContext): AppEmail {
+  const sentAt = context.submittedAtISO
+    ? new Date(context.submittedAtISO).toLocaleString('pt-BR')
+    : new Date().toLocaleString('pt-BR');
+  return {
+    subject: `LinhaCash • Bug report • ${context.subject}`,
+    html: getEmailLayout(`
+      <h2 style="color:#fff;font-size:18px;margin:0 0 20px;font-weight:800">Novo bug report</h2>
+      <table width="100%" style="background:#111;border:1px solid #1a1a1a;margin-bottom:16px">
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Tipo</span><br/>
+          <strong style="color:#fff">Bug report</strong>
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Assunto</span><br/>
+          <strong style="color:#fff">${escapeHtml(context.subject)}</strong>
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Usuário</span><br/>
+          <strong style="color:#fff">${escapeHtml(context.name)}</strong> &lt;${escapeHtml(context.email || 'não informado')}&gt;
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">User ID</span><br/>
+          <code style="color:#aaa;font-size:12px">${escapeHtml(context.userId || 'não autenticado')}</code>
+        </td></tr>
+        <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Timestamp</span><br/>
+          <strong style="color:#fff">${sentAt}</strong>
+        </td></tr>
+        <tr><td style="padding:12px 16px">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Descrição</span><br/>
+          <p style="color:#ccc;margin:8px 0 0">${nl2br(context.message)}</p>
+        </td></tr>
+      </table>
+    `)
+  };
+}
+
+export function buildBugConfirmationEmail(context: SupportEmailContext): AppEmail {
+  return {
+    subject: 'Recebemos seu bug report — LinhaCash',
+    html: getEmailLayout(`
+      <h2 style="color:#fff;font-size:20px;margin:0 0 12px;font-weight:800">Obrigado pelo reporte, ${escapeHtml(context.name)}.</h2>
+      <p>Nosso time técnico já recebeu o seu bug report e vamos analisar com prioridade. Retornaremos em até <strong style="color:#fff">${DEFAULT_SUPPORT_RESPONSE_WINDOW}</strong>.</p>
+      <table width="100%" style="background:#111;border-left:3px solid #00e676;padding:16px 20px;margin:20px 0">
+        <tr><td>
+          <p style="margin:0 0 6px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Assunto</p>
+          <p style="color:#f1f1f1;margin:0 0 12px;font-weight:600">${escapeHtml(context.subject)}</p>
+        </td></tr>
+        <tr><td>
+          <p style="margin:0 0 6px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.08em">Resumo enviado</p>
+          <p style="color:#aaa;margin:0">${nl2br(context.message)}</p>
+        </td></tr>
+      </table>
+      <p style="font-size:13px;color:#555">Seguimos à disposição no suporte oficial da LinhaCash.</p>
+    `)
+  };
+}
+
+// Compatibilidade com os pontos atuais do app.
+export function emailSuporte(name: string, email: string, subject: string, message: string) {
+  return buildSupportInternalEmail({ name, email, subject, message });
+}
+
+export function emailConfirmacaoSuporte(name: string, message: string) {
+  return buildSupportConfirmationEmail({ name, subject: 'Suporte LinhaCash', message });
 }
 
 export function emailNovoAssinante(email: string, plan: string, valor: number, referralCode: string | null) {
   return {
     subject: `⚡ Novo assinante Pro — ${email}`,
-    html: base(`
+    html: getEmailLayout(`
       <h2 style="color:#00e676;font-size:20px;margin:0 0 20px;font-weight:800">Novo assinante Pro!</h2>
       <table width="100%" style="background:#111;border:1px solid #1a1a1a">
         <tr><td style="padding:12px 16px;border-bottom:1px solid #1a1a1a">
@@ -155,7 +272,7 @@ export function emailNovoAssinante(email: string, plan: string, valor: number, r
 export function emailExclusaoConta(email: string, userId: string) {
   return {
     subject: '🗑️ Conta excluída — LGPD',
-    html: base(`
+    html: getEmailLayout(`
       <h2 style="color:#fff;font-size:18px;margin:0 0 16px;font-weight:800">Solicitação de exclusão</h2>
       <p>Um usuário solicitou exclusão de conta e dados conforme LGPD Art. 18.</p>
       <table width="100%" style="background:#111;border:1px solid #1a1a1a;margin:16px 0">

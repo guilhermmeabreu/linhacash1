@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { emailConfirmacaoSuporte, emailSuporte, sendEmailDetailed } from '@/lib/emails';
+import {
+  buildBugConfirmationEmail,
+  buildBugInternalEmail,
+  buildSupportConfirmationEmail,
+  buildSupportInternalEmail,
+  sendEmailDetailed
+} from '@/lib/emails';
 import { AppError } from '@/lib/http/errors';
 import { fail, internalError, ok, options } from '@/lib/http/responses';
 import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
@@ -73,7 +79,6 @@ export async function POST(req: Request) {
     const name = user?.name || 'Usuário';
     const email = user?.email || null;
     const supportInbox = process.env.SUPPORT_EMAIL || 'suporte@linhacash.com.br';
-    const subjectPrefix = type === 'bug' ? 'Bug' : 'Suporte';
     const submittedAt = new Date().toISOString();
     const fromAddress = process.env.RESEND_FROM_EMAIL || 'LinhaCash <suporte@linhacash.com.br>';
 
@@ -89,15 +94,20 @@ export async function POST(req: Request) {
       throw new AppError('INTERNAL_ERROR', 500, 'Não foi possível registrar sua mensagem agora.');
     }
 
-    const internalMessage = [
-      `Tipo: ${type}`,
-      `Assunto: ${subject}`,
-      `Email do usuário: ${email || 'não informado'}`,
-      `User ID: ${user?.id || 'não autenticado'}`,
-      `Enviado em: ${submittedAt}`,
-      '',
+    const emailContext = {
+      subject,
       message,
-    ].join('\n');
+      name,
+      email,
+      userId: user?.id || null,
+      submittedAtISO: submittedAt,
+    };
+    const internalEmail = type === 'bug'
+      ? buildBugInternalEmail(emailContext)
+      : buildSupportInternalEmail(emailContext);
+    const confirmationEmail = type === 'bug'
+      ? buildBugConfirmationEmail(emailContext)
+      : buildSupportConfirmationEmail(emailContext);
 
     logSecurityEvent('support_internal_email_started', {
       ...context,
@@ -105,13 +115,13 @@ export async function POST(req: Request) {
       to: supportInbox,
       from: fromAddress,
       replyTo: email || null,
-      subject: `[${subjectPrefix}] ${subject}`,
+      subject: internalEmail.subject,
       type,
       messageLength: message.length,
     });
     const internalDelivery = await sendEmailDetailed(
       supportInbox,
-      emailSuporte(name, email || 'não informado', `[${subjectPrefix}] ${subject}`, internalMessage),
+      internalEmail,
       email || undefined
     );
     const internalSent = internalDelivery.ok;
@@ -138,7 +148,7 @@ export async function POST(req: Request) {
 
     let confirmationSent = false;
     if (email) {
-      const confirmationDelivery = await sendEmailDetailed(email, emailConfirmacaoSuporte(name, message));
+      const confirmationDelivery = await sendEmailDetailed(email, confirmationEmail);
       confirmationSent = confirmationDelivery.ok;
       if (confirmationSent) {
         logSecurityEvent('support_confirmation_email_sent', {
