@@ -68,6 +68,7 @@ export async function POST(req: Request) {
     const email = user?.email || null;
     const supportInbox = process.env.SUPPORT_EMAIL || 'suporte@linhacash.com.br';
     const subjectPrefix = type === 'bug' ? 'Bug' : 'Suporte';
+    const submittedAt = new Date().toISOString();
 
     const { error: insertError } = await (supabase as any).from('support_messages').insert({
       user_id: user?.id || null,
@@ -81,13 +82,47 @@ export async function POST(req: Request) {
       throw new AppError('INTERNAL_ERROR', 500, 'Não foi possível registrar sua mensagem agora.');
     }
 
-    await sendEmail(supportInbox, emailSuporte(name, email || 'não informado', `[${subjectPrefix}] ${subject}`, message), email || undefined);
-    if (email) {
-      await sendEmail(email, emailConfirmacaoSuporte(name, message));
+    const internalMessage = [
+      `Tipo: ${type}`,
+      `Assunto: ${subject}`,
+      `Email do usuário: ${email || 'não informado'}`,
+      `User ID: ${user?.id || 'não autenticado'}`,
+      `Enviado em: ${submittedAt}`,
+      '',
+      message,
+    ].join('\n');
+
+    const internalSent = await sendEmail(
+      supportInbox,
+      emailSuporte(name, email || 'não informado', `[${subjectPrefix}] ${subject}`, internalMessage),
+      email || undefined
+    );
+
+    if (internalSent) {
+      logSecurityEvent('support_internal_email_sent', { ...context, userId: user?.id || null, to: supportInbox, type });
+    } else {
+      logSecurityEvent('support_internal_email_failed', { ...context, userId: user?.id || null, to: supportInbox, type });
     }
+
+    let confirmationSent = false;
+    if (email) {
+      confirmationSent = await sendEmail(email, emailConfirmacaoSuporte(name, message));
+      if (confirmationSent) {
+        logSecurityEvent('support_confirmation_email_sent', { ...context, userId: user?.id || null, to: email, type });
+      } else {
+        logSecurityEvent('support_confirmation_email_failed', { ...context, userId: user?.id || null, to: email, type });
+      }
+    }
+
     await auditLog('support_message_sent', { userId: user?.id || null, subject, type });
 
-    return ok({ sent: true });
+    return ok({
+      sent: true,
+      deliveries: {
+        internal: internalSent,
+        confirmation: email ? confirmationSent : false,
+      },
+    });
   } catch (error) {
     if (error instanceof AppError) return fail(error, origin);
     logRouteError('/api/support', context.requestId, error);
