@@ -584,48 +584,45 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
 .pro-placeholder{margin:0 16px 16px;border:1px dashed rgba(0,230,118,.35);background:rgba(0,230,118,.06);padding:14px;font-size:12px;line-height:1.5;color:#bdeccf}
 
 /* PROP DETALHE INLINE */
-.prop-inline{width:100%;margin:4px 0 0;padding:8px 10px 10px;background:linear-gradient(180deg,#090b0b,#070808);border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:7px}
+.prop-inline{max-width:760px;margin:8px auto 0;padding:12px;background:linear-gradient(180deg,#0f1213,#0a0c0d);border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.28);gap:10px}
 .prop-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.prop-back{display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--tx);padding:0;font-size:13px;font-weight:700;cursor:pointer;line-height:1}
+.prop-back{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:none;background:none;color:var(--tx);padding:0;font-size:14px;font-weight:700;cursor:pointer;line-height:1}
 .prop-back:hover{color:var(--green)}
-.prop-match{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0}
-.prop-match-left{display:flex;align-items:center;gap:10px;min-width:0}
-.prop-title{font-size:13px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(52vw,520px)}
-.prop-sub{margin-top:2px;font-size:10px;color:color-mix(in srgb,var(--tx) 52%,var(--mt) 48%)}
-.prop-line-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.line-chip{padding:5px 11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);font-size:11px;font-weight:700;border-radius:999px}
-.line-chip .lnv{font-family:var(--font-mono);font-weight:800;color:var(--tx);margin-left:4px}
-.line-chip.pos{border-color:rgba(34,197,94,.48);color:#b9f8d0;background:rgba(34,197,94,.12)}
-.line-chip.neg{border-color:rgba(211,47,47,.46);color:#ffc7c7;background:rgba(211,47,47,.12)}
-.prop-top-right{display:flex;align-items:center;gap:6px}
 .line-side{display:grid;gap:2px;text-align:right}
 .line-side .label{font-size:8px;color:var(--mt2);text-transform:uppercase;letter-spacing:.06em}
 .line-side .value{font-family:var(--font-mono);font-size:11px;font-weight:800;color:#d5ffe3}
-.line-side .value.pos{color:#9ff5bf}
-.line-side .value.neg{color:#ffb0b0}
+.line-side .value.pos{color:#9ff5bf}.line-side .value.neg{color:#ffb0b0}
+.prop-summary{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.prop-player{display:flex;align-items:center;gap:9px;min-width:0}
+.prop-player-meta{min-width:0}
+.prop-title{font-size:14px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prop-sub{margin-top:2px;font-size:10px;color:var(--mt)}
+.prop-line{margin-top:3px;font-size:11px;font-weight:800;color:var(--green);font-family:var(--font-mono)}
+.matchup-card{display:grid;gap:2px;justify-items:end;padding:7px 9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);border-radius:10px}
+.matchup-score{font-size:13px;font-weight:800;color:#dfffe9}
 .match-pill{padding:2px 7px;border:1px solid rgba(255,255,255,.16);font-size:9px;font-weight:800;border-radius:999px}
 .match-pill.good{color:var(--green);background:rgba(34,197,94,.08)} .match-pill.neutral{color:#d1d5db;background:rgba(255,255,255,.03)} .match-pill.bad{color:#ff9c9c;background:rgba(211,47,47,.1)}
-.prop-tabs{display:flex;gap:6px;padding:0 0 2px;overflow-x:auto}
-.prop-tab{border:1px solid rgba(255,255,255,.14);padding:5px 10px;font-size:10px;font-weight:800;color:#b8bcc2;cursor:pointer;white-space:nowrap;background:transparent;border-radius:999px;letter-spacing:.03em}
-.prop-tab.on{color:#03140b;background:#33db77;border-color:#33db77;box-shadow:none} .prop-tab.lk{opacity:.5}
-.hit-strip{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);font-family:var(--font-mono);font-size:10px;letter-spacing:.01em;color:#aab3ba;white-space:nowrap;overflow-x:auto}
-.hit-k{font-size:10px;color:#d5dbe1}
-.hit-v{font-size:10px;color:#eef3f7;font-weight:700}
-.hit-lock{opacity:.6}
-.hit-sep{opacity:.32}
-.chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.prop-tabs{display:flex;gap:6px;overflow-x:auto}
+.prop-tab{border:1px solid rgba(255,255,255,.15);padding:5px 9px;font-size:10px;font-weight:800;color:#b8bcc2;cursor:pointer;white-space:nowrap;background:rgba(255,255,255,.01);border-radius:999px;letter-spacing:.02em}
+.prop-tab.on{color:#04150c;background:#31d976;border-color:#31d976}.prop-tab.lk{opacity:.5}
+.info-row,.avg-row,.metrics-row,.context-row{display:grid;gap:7px}
+.info-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+.avg-row{grid-template-columns:1fr auto}
+.metrics-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+.context-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mini-card{padding:7px 8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.015);border-radius:9px}
+.mini-label{font-size:9px;color:var(--mt2);text-transform:uppercase;letter-spacing:.06em}
+.mini-value{margin-top:2px;font-size:12px;font-weight:800}
+.mini-value.sub{font-size:10px;color:#d4d9dd}
+.chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
 .line-adjust{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .chart-caption{font-size:10px;color:var(--mt);margin-bottom:2px;letter-spacing:.03em;text-transform:uppercase}
-.chart-legend{font-size:9px;color:color-mix(in srgb,var(--tx) 44%,var(--mt) 56%);font-weight:700}
+.chart-legend{font-size:9px;color:color-mix(in srgb,var(--tx) 46%,var(--mt) 54%);font-weight:700}
 .chartsec{padding:0}
-.cbars{height:430px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.004));border:none;padding:8px 6px 0}
-.cdates{margin-top:5px}
-.prop-context{display:flex;gap:8px;overflow-x:auto}
-.context-pill{border:1px solid rgba(255,255,255,.14);padding:5px 10px;font-size:11px;color:var(--mt2);font-weight:700;white-space:nowrap;border-radius:999px}
-.context-pill.on{color:var(--tx);border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}
-.context-pill.ph{opacity:.45}
-.prop-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:2px}
-@media(max-width:760px){.prop-inline{margin:0;border-radius:0}.prop-title{max-width:65vw}.cbars{height:240px}.prop-bottom{flex-direction:column;align-items:stretch}}
+.cbars{height:290px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.1);padding:10px 10px 0;border-radius:10px}
+.cdates{margin-top:6px}
+.prop-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
+@media(max-width:760px){.prop-inline{margin:0;border-radius:0;padding:10px}.info-row{grid-template-columns:1fr}.avg-row{grid-template-columns:1fr}.metrics-row{grid-template-columns:repeat(2,minmax(0,1fr))}.context-row{grid-template-columns:1fr}.cbars{height:220px}}
 
 @media(max-width:1023px){
   .auth-layout{display:block;padding:0;min-height:auto}
@@ -1707,49 +1704,47 @@ function renderPropModal(){
  const matchupCls=modalData.defenseRank<=10?'good':(modalData.defenseRank<=20?'neutral':'bad');
  const matchupText=modalData.defenseRank<=10?'Favorável':(modalData.defenseRank<=20?'Neutro':'Difícil');
  const tabs=STATS.map((s)=>{const lk=!pro()&&!SFREE.includes(s);return `<button class="prop-tab ${cStat===s?'on':''} ${lk?'lk':''}" onclick="${lk?'openPro()':`changeTab('${s}')`}">${s}${lk?' · Pro':''}</button>`;}).join('');
- const contextPills=[
-  {label:'HOME',active:true},
-  {label:'AWAY',active:false},
-  {label:'REG SEASON',active:true},
-  {label:'PLAYOFFS',active:false},
-  {label:'WIN',active:false,placeholder:true},
-  {label:'LOSS',active:false,placeholder:true},
- ].map((item)=>`<span class="context-pill ${item.active?'on':''} ${item.placeholder?'ph':''}">${item.label}</span>`).join('');
- const seasonTag='25/26';
- const prevSeasonTag='24/25';
- const stripPairs=[
-  {label:'H2H',value:summary.find((item)=>item.label==='H2H')},
-  {label:'L5',value:summary.find((item)=>item.label==='L5')},
-  {label:'L10',value:summary.find((item)=>item.label==='L10')},
-  {label:'L20',value:summary.find((item)=>item.label==='L20')},
- ];
- const hitStrip=[
-  `<span class="hit-k">${seasonTag}</span>`,
-  `<span class="hit-v">${modalData.avg===null?'—':Math.max(0,Math.min(100,Math.round((modalData.avg/(modalData.line||1))*100)))}%</span>`,
-  ...stripPairs.flatMap((item)=>{
-    const cell=item.value;
-    const pct=cell?.locked?'🔒':(cell?.pct===null?'—':`${cell.pct}%`);
-    const valClass=cell?.locked?'hit-v hit-lock':'hit-v';
-    return [`<span class="hit-sep">|</span>`,`<span class="hit-k">${item.label}</span>`,`<span class="${valClass}">${pct}</span>`];
-  }),
-  `<span class="hit-sep">|</span>`,
-  `<span class="hit-k">${prevSeasonTag}</span>`
- ].join('');
+ const metricLabels=['L5','L10','L20','H2H'];
+ const metricCards=metricLabels.map((label)=>{
+  const item=summary.find((row)=>row.label===label);
+  const pct=item?.locked?'🔒':(item?.pct===null?'—':`${item.pct}%`);
+  return `<div class="mini-card"><div class="mini-label">${label}</div><div class="mini-value">${pct}</div><div class="mini-value sub">${item?.locked?'Pro':(item?.note||'Dados limitados')}</div></div>`;
+ }).join('');
+ const contextCards=[
+  {label:'CASA',value:'Ativo'},
+  {label:'FORA',value:'Ativo'},
+  {label:'RECORTE',value:'L10'},
+ ].map((item)=>`<div class="mini-card"><div class="mini-label">${item.label}</div><div class="mini-value sub">${item.value}</div></div>`).join('');
  const barsHtml=bars.length?bars.map((b)=>`<div class="ccol"><div class="cbar ${b.tone}" style="height:${b.height}%"><span class="cbarv">${b.value}</span></div></div>`).join(''):'<div style="padding:14px;color:var(--mt);font-size:12px">Dados recentes limitados para este mercado.</div>';
  const labelsHtml=bars.map((b)=>`<div class="cdate">${b.label}</div>`).join('');
  const edge=modalData.avg===null?null:Number((modalData.avg-modalData.line).toFixed(1));
  const edgeClass=edge===null?'':(edge>=0?'pos':'neg');
  const edgeText=edge===null?'N/D':`${edge>0?'+':''}${edge}`;
  const lineOdds=edge===null?'—':(edge>=0?'Over lean':'Under lean');
-  container.innerHTML=`
- <div class="prop-inline">
+ container.innerHTML=`
+<div class="prop-inline">
  <div class="prop-nav"><button class="prop-back" onclick="backToPlayers()">←</button><div class="line-side"><span class="label">Edge vs linha</span><span class="value ${edgeClass}">${edgeText}</span></div></div>
- <div class="prop-match">
-  <div class="prop-match-left"><div class="prav" style="width:32px;height:32px;font-size:12px">${ini(cPlayer.name)}</div><div style="min-width:0"><div class="prop-title">${cPlayer.name}</div><div class="prop-sub">${cPlayer.team} vs ${modalData.opp} · ${cPlayer.position||'—'}</div></div></div>
-  <div class="prop-top-right"><div class="line-side"><span class="label">Leitura</span><span class="value">${lineOdds}</span></div><span class="match-pill ${matchupCls}">${matchupText}</span></div>
+ <div class="prop-summary">
+  <div class="prop-player">
+   <div class="prav" style="width:34px;height:34px;font-size:12px">${ini(cPlayer.name)}</div>
+   <div class="prop-player-meta">
+    <div class="prop-title">${cPlayer.name}</div>
+    <div class="prop-sub">${cPlayer.team} · ${cPlayer.position||'—'}</div>
+    <div class="prop-line">Linha ${modalData.line}</div>
+   </div>
+  </div>
+  <div class="matchup-card"><div class="mini-label">MATCHUP</div><div class="matchup-score">${lineOdds}</div><span class="match-pill ${matchupCls}">${matchupText}</span></div>
  </div>
  <div class="prop-tabs">${tabs}</div>
- <div class="hit-strip">${hitStrip}</div>
+ <div class="info-row">
+  <div class="mini-card"><div class="mini-label">OPP</div><div class="mini-value">${modalData.opp}</div></div>
+  <div class="mini-card"><div class="mini-label">DEF RANK</div><div class="mini-value">#${modalData.defenseRank}</div></div>
+  <div class="mini-card"><div class="mini-label">HORÁRIO</div><div class="mini-value">${modalData.gameTime}</div></div>
+ </div>
+ <div class="avg-row">
+  <div class="mini-card"><div class="mini-label">AVG L10</div><div class="mini-value">${modalData.avg===null?'—':modalData.avg}</div></div>
+  <div class="lnctrl"><button class="lnbtn" onclick="adjLine(-0.5)">−</button><span class="lnval">${modalData.line}</span><button class="lnbtn" onclick="adjLine(0.5)">+</button></div>
+ </div>
  <div class="chart-top">
   <div><div class="chart-caption">${cStat} · Últimos jogos</div><div class="chart-legend">Verde = over linha · Vermelho = under linha</div></div>
   <div class="line-adjust"><div class="avgb">Média <span class="val">${modalData.avg===null?'—':modalData.avg}</span></div></div>
@@ -1761,10 +1756,8 @@ function renderPropModal(){
   </div>
   <div class="cdates">${labelsHtml}</div>
  </div>
- <div class="prop-bottom">
-  <div class="prop-context">${contextPills}</div>
-  <div class="lnctrl"><button class="lnbtn" onclick="adjLine(-0.5)">−</button><span class="lnval">${modalData.line}</span><button class="lnbtn" onclick="adjLine(0.5)">+</button></div>
- </div>
+ <div class="metrics-row">${metricCards}</div>
+ <div class="context-row">${contextCards}</div>
  </div>`;
 }
 
