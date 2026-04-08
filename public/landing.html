@@ -18,120 +18,135 @@
 })();
 </script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@500;700&display=swap');
+
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#000000;--s1:#0a0a0a;--s2:#111111;--bd:#1f1f1f;--bd2:#2b2b2b;--tx:#ffffff;--mt:#888888;--green:#22c55e;--green-soft:rgba(34,197,94,.14);--sp-1:8px;--sp-2:12px;--sp-3:16px;--sp-4:24px;--sp-5:40px;--sp-6:72px}
-html.light{--bg:#f8faf8;--s1:#ffffff;--s2:#f2f5f3;--bd:#dde5df;--bd2:#cad5cd;--tx:#0e1511;--mt:#5f6d64;--green:#1ea754;--green-soft:rgba(30,167,84,.16)}
+:root{--bg:#000000;--surface:#0a0a0a;--tx:#ffffff;--muted:#888888;--green:#22c55e;--line:#1a1a1a;--line-strong:#242424;--glow:rgba(34,197,94,.16)}
+html.light{--bg:#f9faf9;--surface:#ffffff;--tx:#0c130f;--muted:#5f6c63;--green:#1f9b50;--line:#dce4dd;--line-strong:#c8d2ca;--glow:rgba(31,155,80,.14)}
 html,body{font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);scroll-behavior:smooth}
-body{overflow-x:hidden;line-height:1.5}
+body{overflow-x:hidden;line-height:1.45;font-weight:400;position:relative}
+body::before{content:'';position:fixed;top:-28vh;left:50%;transform:translateX(-50%);width:min(980px,88vw);height:66vh;background:radial-gradient(circle,var(--glow),transparent 68%);pointer-events:none;z-index:0}
 a{text-decoration:none;color:inherit}
-.wrap{width:min(100%,1160px);margin:0 auto;padding:0 clamp(18px,3vw,var(--sp-4))}
-nav{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--bd);background:color-mix(in srgb,var(--bg) 88%, transparent);backdrop-filter:blur(14px)}
-.nav-inner{height:72px;display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+.wrap{width:min(100%,1180px);margin:0 auto;padding:0 clamp(18px,3vw,30px);position:relative;z-index:1}
+.mono{font-family:'JetBrains Mono',monospace}
+
+nav{position:sticky;top:0;z-index:50;border-bottom:1px solid color-mix(in srgb,var(--line) 86%, transparent);background:color-mix(in srgb,var(--surface) 74%, transparent);backdrop-filter:blur(12px) saturate(108%)}
+.nav-inner{height:72px;display:flex;justify-content:space-between;align-items:center}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-.03em}
 .logo img{width:28px;height:28px}
 .brand-accent{color:var(--green)}
-.nav-links{display:flex;gap:18px;align-items:center}
-.nav-link{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--mt);transition:color .2s ease}
+.nav-links{display:flex;gap:22px}
+.nav-link{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;transition:color .2s}
 .nav-link:hover{color:var(--tx)}
-.nav-actions{display:flex;gap:10px;align-items:center}
-.btn{min-height:42px;padding:0 16px;border:1px solid var(--bd2);font-size:12px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--tx);transition:.2s ease;cursor:pointer}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.btn{min-height:40px;padding:0 15px;border:1px solid var(--line-strong);font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;display:inline-flex;align-items:center;justify-content:center;transition:.2s;background:transparent;color:var(--tx);cursor:pointer}
 .btn:hover{border-color:var(--green);color:var(--green)}
-.btn.primary{background:var(--green);border-color:var(--green);color:#042312}
-.btn.primary:hover{color:#042312;filter:brightness(.96)}
-.btn.ghost{background:var(--s1)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#041f10}
+.btn.primary:hover{color:#041f10;filter:brightness(.97)}
+.btn.subtle{background:var(--surface)}
 #theme{width:40px;padding:0;display:grid;place-items:center}
 #theme svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9}
-main section{padding:var(--sp-6) 0;border-top:1px solid var(--bd)}
-.hero{border-top:none;padding:88px 0 72px}
-.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:30px;align-items:center}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid var(--bd2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mt)}
+
+main section{border-top:1px solid var(--line)}
+.hero{border-top:none;padding:112px 0 84px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:end}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid var(--line-strong);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .eyebrow::before{content:'';width:6px;height:6px;border-radius:999px;background:var(--green)}
-h1{margin-top:18px;font-size:clamp(36px,5.8vw,64px);line-height:1.03;letter-spacing:-.04em;max-width:12ch;text-wrap:balance}
-.subtitle{margin-top:18px;font-size:18px;color:var(--mt);line-height:1.62;max-width:42ch}
-.hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-.hero-note{margin-top:10px;color:var(--mt);font-size:12px}
-.preview{border:1px solid var(--bd);background:linear-gradient(180deg,color-mix(in srgb,var(--s1) 84%, transparent),color-mix(in srgb,var(--s2) 90%, transparent));padding:22px}
-.preview-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
-.preview-title{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--mt)}
-.preview-match{margin-top:8px;font-size:20px;font-weight:700;letter-spacing:-.02em}
-.tag{font-size:11px;color:var(--green);border:1px solid color-mix(in srgb,var(--green) 50%, var(--bd) 50%);background:var(--green-soft);padding:5px 8px}
-.kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
-.kpi{border:1px solid var(--bd);background:var(--bg);padding:12px}
-.kpi-label{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.06em}
-.kpi-value{margin-top:6px;font-size:22px;font-weight:700;letter-spacing:-.03em}
-.kpi-sub{margin-top:4px;font-size:12px;color:var(--mt)}
-.proof-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--bd)}
-.proof-item{padding:18px;border-right:1px solid var(--bd);background:var(--s1)}
-.proof-item:last-child{border-right:none}
-.proof-label{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.07em}
-.proof-value{margin-top:8px;font-size:24px;font-weight:800;letter-spacing:-.03em}
-.proof-desc{margin-top:4px;font-size:13px;color:var(--mt)}
-.h2{font-size:clamp(28px,4vw,46px);line-height:1.1;letter-spacing:-.03em;max-width:18ch}
-.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:30px}
-.section-copy{max-width:54ch;color:var(--mt)}
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.step{padding:24px 22px;border:1px solid var(--bd);background:var(--s1)}
-.step-num{font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:.08em}
-.step h3{margin-top:10px;font-size:22px;letter-spacing:-.02em}
-.step p{margin-top:10px;font-size:14px;color:var(--mt)}
-.value-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:stretch}
-.value-copy{padding:26px;border:1px solid var(--bd);background:var(--s1)}
-.value-list{display:grid;gap:14px;margin-top:18px}
-.value-list li{list-style:none;padding-left:20px;position:relative;color:var(--mt)}
-.value-list li::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);position:absolute;left:0;top:.45em}
-.value-rail{padding:24px;border:1px solid var(--bd);background:var(--s1);display:grid;gap:14px}
-.rail-item{padding-bottom:14px;border-bottom:1px solid var(--bd)}
-.rail-item:last-child{padding-bottom:0;border-bottom:none}
-.rail-label{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.06em}
-.rail-value{margin-top:6px;font-size:27px;letter-spacing:-.03em;font-weight:800}
-.plans-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.plan{padding:26px;border:1px solid var(--bd);background:var(--s1)}
-.plan.pro{border-color:color-mix(in srgb,var(--green) 45%, var(--bd) 55%)}
-.plan h3{font-size:26px;letter-spacing:-.02em}
-.price{margin-top:10px;font-size:44px;font-weight:800;letter-spacing:-.03em}
-.price span{font-size:15px;font-weight:600;color:var(--mt)}
-.small{margin-top:10px;color:var(--mt);font-size:14px;line-height:1.6}
+h1{margin-top:20px;font-size:clamp(42px,8vw,104px);line-height:.9;letter-spacing:-.05em;font-weight:900;max-width:12ch;text-wrap:balance}
+.subtitle{margin-top:22px;font-size:18px;color:var(--muted);max-width:44ch;line-height:1.62}
+.hero-cta{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px}
+.hero-note{margin-top:12px;color:var(--muted);font-size:12px;font-weight:400}
+
+.data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line)}
+.data-cell{padding:16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--surface) 90%, transparent)}
+.data-cell:nth-child(2n){border-right:none}
+.data-cell:nth-last-child(-n+2){border-bottom:none}
+.data-label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.data-value{margin-top:8px;font-size:28px;letter-spacing:-.03em;font-weight:700}
+.data-sub{margin-top:4px;font-size:12px;color:var(--muted);font-weight:400}
+
+.value-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.value-item{padding:22px 18px;border-bottom:1px solid var(--line);border-top:1px solid var(--line);border-right:1px solid var(--line)}
+.value-item:last-child{border-right:1px solid var(--line)}
+.value-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.value-main{margin-top:10px;font-size:30px;font-weight:900;line-height:1;letter-spacing:-.04em}
+.value-desc{margin-top:6px;font-size:13px;color:var(--muted);font-weight:400}
+
+.section{padding:72px 0}
+.section-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:24px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.h2{font-size:clamp(28px,4.8vw,56px);line-height:.95;letter-spacing:-.04em;font-weight:900;max-width:18ch}
+.section-copy{color:var(--muted);max-width:60ch;font-weight:400}
+
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-left:1px solid var(--line);border-right:1px solid var(--line);margin-top:18px}
+.grid-item{padding:24px 20px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.grid-item:last-child{border-right:none}
+.step-num{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--green);font-weight:600}
+.grid-item h3{margin-top:9px;font-size:24px;letter-spacing:-.03em;line-height:1.03;font-weight:900}
+.grid-item p{margin-top:9px;font-size:14px;color:var(--muted);font-weight:400}
+
+.product-grid{display:grid;grid-template-columns:1.1fr .9fr;border:1px solid var(--line);margin-top:18px}
+.product-copy{padding:24px;border-right:1px solid var(--line)}
+.product-list{margin-top:16px;display:grid;gap:12px}
+.product-list li{list-style:none;padding-left:18px;position:relative;color:var(--muted)}
+.product-list li::before{content:'';position:absolute;left:0;top:.5em;width:7px;height:7px;border-radius:999px;background:var(--green)}
+.product-rail{display:grid}
+.rail-item{padding:22px;border-bottom:1px solid var(--line)}
+.rail-item:last-child{border-bottom:none}
+.rail-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.rail-value{margin-top:8px;font-size:29px;line-height:.98;letter-spacing:-.04em;font-weight:900}
+
+.plans-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line);margin-top:18px}
+.plan{padding:26px;border-right:1px solid var(--line)}
+.plan:last-child{border-right:none}
+.plan h3{font-size:30px;letter-spacing:-.03em;line-height:1;font-weight:900}
+.price{margin-top:10px;font-size:48px;letter-spacing:-.04em;line-height:.95;font-weight:900}
+.price span{font-size:14px;color:var(--muted);font-weight:600}
+.small{margin-top:12px;font-size:14px;color:var(--muted);font-weight:400;line-height:1.6}
 .list{margin-top:16px;display:grid;gap:8px}
-.list li{list-style:none;font-size:14px;color:var(--mt)}
+.list li{list-style:none;color:var(--muted);font-size:14px;font-weight:400}
 .list li.on{color:var(--tx)}
-.price-note{margin-top:16px;padding:10px 12px;border:1px solid var(--bd2);background:var(--s2);font-size:12px;color:var(--mt)}
-.final{padding-top:82px;padding-bottom:82px;text-align:center}
-.final h2{margin:0 auto;max-width:16ch}
-.final p{margin:16px auto 28px;max-width:60ch;color:var(--mt)}
-.footer{border-top:1px solid var(--bd);padding:30px 0 36px}
-.footer-content{max-width:720px;margin:0 auto;text-align:center;display:grid;gap:8px}
-.footer-brand{font-weight:800;letter-spacing:-.02em}
-.footer-desc,.footer-meta,.disclaimer,.copy{color:var(--mt)}
+.price-note{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.55}
+
+.final{padding:86px 0;text-align:center}
+.final .h2{max-width:16ch;margin:0 auto}
+.final p{margin:16px auto 28px;color:var(--muted);max-width:60ch}
+
+.footer{border-top:1px solid var(--line);padding:32px 0 36px}
+.footer-content{max-width:760px;margin:0 auto;text-align:center;display:grid;gap:8px}
+.footer-brand{font-weight:900;letter-spacing:-.03em}
+.footer-desc,.disclaimer,.copy{color:var(--muted);font-weight:400}
 .footer-links a:hover,.footer-contact a:hover{color:var(--green)}
-.fade{opacity:0;transform:translateY(10px);animation:fadeUp .65s ease forwards}
+
+.fade{opacity:0;transform:translateY(10px);animation:fadeUp .6s ease forwards}
 .delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}.delay-3{animation-delay:.24s}
-.reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .45s ease,transform .45s ease}
 .reveal.is-visible{opacity:1;transform:none}
 @keyframes fadeUp{to{opacity:1;transform:none}}
-@media (max-width:1024px){
-  .hero-grid,.value-grid{grid-template-columns:1fr}
-  .proof-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .proof-item:nth-child(2){border-right:none}
-  .proof-item:nth-child(-n+2){border-bottom:1px solid var(--bd)}
-  .steps,.plans-grid{grid-template-columns:1fr}
+
+@media (max-width:1060px){
+  .hero-grid,.section-head,.product-grid{grid-template-columns:1fr}
+  .product-copy{border-right:none;border-bottom:1px solid var(--line)}
+  .value-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .value-item:nth-child(2n){border-right:none}
 }
 @media (max-width:760px){
-  .nav-inner{height:auto;min-height:64px;padding:10px 0;gap:8px}
+  .nav-inner{height:auto;min-height:64px;padding:10px 0}
   .nav-links{display:none}
   .logo{font-size:18px}
   .logo img{width:24px;height:24px}
-  .nav-actions .btn.primary{padding:0 12px;font-size:11px}
   #theme{width:34px;min-height:34px}
-  .hero{padding-top:56px;padding-bottom:54px}
-  h1{font-size:clamp(30px,10vw,42px)}
+  .hero{padding:72px 0 56px}
+  h1{font-size:clamp(34px,15vw,56px);max-width:unset}
   .subtitle{font-size:15px}
   .hero-cta{flex-direction:column}
   .hero-cta .btn{width:100%}
-  .proof-strip{grid-template-columns:1fr}
-  .proof-item{border-right:none;border-bottom:1px solid var(--bd)}
-  .proof-item:last-child{border-bottom:none}
-  .section-head{display:block;margin-bottom:22px}
-  .h2{font-size:clamp(24px,9vw,34px)}
+  .data-grid,.grid-3,.plans-grid,.value-strip{grid-template-columns:1fr}
+  .data-cell,.grid-item,.plan,.value-item{border-right:none}
+  .data-cell:nth-last-child(-n+2){border-bottom:1px solid var(--line)}
+  .data-cell:last-child,.grid-item:last-child,.plan:last-child,.value-item:last-child{border-bottom:none}
+  .data-cell{border-bottom:1px solid var(--line)}
+  .section{padding:58px 0}
+  .h2{font-size:clamp(24px,10vw,40px)}
 }
 </style>
 </head>
@@ -155,86 +170,89 @@ h1{margin-top:18px;font-size:clamp(36px,5.8vw,64px);line-height:1.03;letter-spac
     <div class="wrap hero-grid">
       <div>
         <span class="eyebrow fade">Análise NBA orientada por dados</span>
-        <h1 class="fade delay-1">Leitura clara de props para decidir com mais precisão.</h1>
-        <p class="subtitle fade delay-2">LinhaCash organiza tendência recente, linha atual e contexto do jogador em segundos. Menos ruído, mais decisão.</p>
+        <h1 class="fade delay-1">Menos ruído. Mais leitura real de props.</h1>
+        <p class="subtitle fade delay-2">LinhaCash organiza linha, amostra recente e contexto do jogador para decisões mais rápidas e consistentes.</p>
         <div class="hero-cta fade delay-3">
           <a class="btn primary" href="/app.html">Começar grátis</a>
-          <a class="btn ghost" href="#planos">Ver Free vs Pro</a>
+          <a class="btn subtle" href="#planos">Ver Free vs Pro</a>
         </div>
-        <p class="hero-note fade delay-3">Sem cartão no plano Free · upgrade quando quiser</p>
+        <p class="hero-note fade delay-3">Plano Free sem cartão · upgrade para Pro quando quiser</p>
       </div>
 
-      <aside class="preview fade delay-2" aria-label="Prévia de análise">
-        <div class="preview-top">
-          <div>
-            <p class="preview-title">Prévia de leitura</p>
-            <p class="preview-match">LAL vs BOS · LeBron James</p>
-          </div>
-          <span class="tag">PROP: PTS 26.5</span>
-        </div>
-        <div class="kpi-grid">
-          <div class="kpi"><p class="kpi-label">Últimos 10</p><p class="kpi-value">28.4</p><p class="kpi-sub">média de pontos</p></div>
-          <div class="kpi"><p class="kpi-label">Over linha</p><p class="kpi-value">70%</p><p class="kpi-sub">7 de 10 jogos</p></div>
-          <div class="kpi"><p class="kpi-label">Uso ofensivo</p><p class="kpi-value">31.2%</p><p class="kpi-sub">últimos 5 jogos</p></div>
-          <div class="kpi"><p class="kpi-label">Minutos</p><p class="kpi-value">36.8</p><p class="kpi-sub">consistência recente</p></div>
+      <aside class="reveal" aria-label="Prévia de análise">
+        <div class="data-grid">
+          <article class="data-cell" style="grid-column:1/-1">
+            <p class="data-label">Jogo / jogador</p>
+            <p class="data-value" style="font-size:24px">LAL vs BOS · LeBron James</p>
+            <p class="data-sub mono">PTS line 26.5</p>
+          </article>
+          <article class="data-cell"><p class="data-label">Últimos 10</p><p class="data-value mono">28.4</p><p class="data-sub">média de pontos</p></article>
+          <article class="data-cell"><p class="data-label">Over da linha</p><p class="data-value mono">70%</p><p class="data-sub">7 de 10 jogos</p></article>
+          <article class="data-cell"><p class="data-label">Uso ofensivo</p><p class="data-value mono">31.2%</p><p class="data-sub">últimos 5</p></article>
+          <article class="data-cell"><p class="data-label">Minutos</p><p class="data-value mono">36.8</p><p class="data-sub">consistência recente</p></article>
         </div>
       </aside>
     </div>
   </section>
 
   <section class="wrap reveal" aria-label="Provas de valor">
-    <div class="proof-strip">
-      <article class="proof-item"><p class="proof-label">Leitura</p><p class="proof-value">Rápida</p><p class="proof-desc">Métricas relevantes em uma visão objetiva.</p></article>
-      <article class="proof-item"><p class="proof-label">Contexto</p><p class="proof-value">Completo</p><p class="proof-desc">Janela recente, linha e consistência lado a lado.</p></article>
-      <article class="proof-item"><p class="proof-label">Rotina</p><p class="proof-value">Diária</p><p class="proof-desc">Acesse os jogos do dia e vá direto ao ponto.</p></article>
-      <article class="proof-item"><p class="proof-label">Decisão</p><p class="proof-value">Mais clara</p><p class="proof-desc">Menos interpretação solta, mais direção prática.</p></article>
+    <div class="value-strip">
+      <article class="value-item"><p class="value-label">Leitura</p><p class="value-main">Rápida</p><p class="value-desc">Métricas essenciais em segundos.</p></article>
+      <article class="value-item"><p class="value-label">Contexto</p><p class="value-main">Claro</p><p class="value-desc">Janela recente + linha atual lado a lado.</p></article>
+      <article class="value-item"><p class="value-label">Rotina</p><p class="value-main">Diária</p><p class="value-desc">Vá direto aos jogos relevantes do dia.</p></article>
+      <article class="value-item"><p class="value-label">Decisão</p><p class="value-main">Melhor</p><p class="value-desc">Mais base analítica antes da entrada.</p></article>
     </div>
   </section>
 
-  <section id="como-funciona">
+  <section id="como-funciona" class="section">
     <div class="wrap">
       <div class="section-head reveal">
         <h2 class="h2">Como funciona</h2>
-        <p class="section-copy">Fluxo direto para análise de props: escolha o jogo, abra o jogador e compare linha com desempenho recente.</p>
+        <p class="section-copy">Fluxo enxuto: escolha o jogo, abra o jogador e compare a linha com os indicadores que realmente importam.</p>
       </div>
-      <div class="steps">
-        <article class="step reveal"><p class="step-num">Passo 1</p><h3>Selecione o jogo</h3><p>Veja a rodada e entre no confronto que você quer estudar.</p></article>
-        <article class="step reveal"><p class="step-num">Passo 2</p><h3>Leia o jogador</h3><p>Acompanhe métricas úteis para props sem navegar em telas confusas.</p></article>
-        <article class="step reveal"><p class="step-num">Passo 3</p><h3>Decida melhor</h3><p>Use tendência, contexto e linha para uma decisão mais embasada.</p></article>
+      <div class="grid-3">
+        <article class="grid-item reveal"><p class="step-num">Passo 1</p><h3>Escolha o jogo</h3><p>Comece pela rodada do dia e entre no confronto que você quer analisar.</p></article>
+        <article class="grid-item reveal"><p class="step-num">Passo 2</p><h3>Abra o jogador</h3><p>Visualize props e indicadores de performance em uma leitura objetiva.</p></article>
+        <article class="grid-item reveal"><p class="step-num">Passo 3</p><h3>Decida com contexto</h3><p>Cruze linha, tendência e consistência antes de confirmar a aposta.</p></article>
       </div>
     </div>
   </section>
 
-  <section>
-    <div class="wrap value-grid">
-      <article class="value-copy reveal">
-        <h2 class="h2">O que você recebe no LinhaCash</h2>
-        <ul class="value-list">
-          <li>Leitura de props com foco em jogador, linha e janela recente.</li>
-          <li>Comparação rápida entre consistência, volume e eficiência.</li>
-          <li>Visão pronta para rotina de quem aposta em NBA com frequência.</li>
-          <li>Estrutura limpa para decidir sem excesso de informação visual.</li>
-        </ul>
-      </article>
-      <aside class="value-rail reveal" aria-label="Indicadores de produto">
-        <div class="rail-item"><p class="rail-label">Foco do produto</p><p class="rail-value">Player Props NBA</p></div>
-        <div class="rail-item"><p class="rail-label">Forma de leitura</p><p class="rail-value">Dados organizados</p></div>
-        <div class="rail-item"><p class="rail-label">Objetivo</p><p class="rail-value">Decisão mais consistente</p></div>
-      </aside>
-    </div>
-  </section>
-
-  <section id="planos">
+  <section class="section">
     <div class="wrap">
       <div class="section-head reveal">
-        <h2 class="h2">Free para começar. Pro para profundidade total.</h2>
-        <p class="section-copy">Entre sem custo para validar a rotina. Faça upgrade para destravar todos os jogos, jogadores e métricas.</p>
+        <h2 class="h2">Produto focado em análise de player props NBA</h2>
+        <p class="section-copy">LinhaCash não tenta ser tudo. Ele entrega leitura organizada de dados para quem quer decidir com velocidade e critério.</p>
+      </div>
+      <div class="product-grid">
+        <article class="product-copy reveal">
+          <ul class="product-list">
+            <li>Janela recente para entender forma e consistência real.</li>
+            <li>Comparação rápida entre linha, desempenho e contexto.</li>
+            <li>Estrutura limpa para leitura analítica sem distração visual.</li>
+            <li>Base diária para rotina de apostas em NBA props.</li>
+          </ul>
+        </article>
+        <aside class="product-rail reveal" aria-label="Identidade do produto">
+          <div class="rail-item"><p class="rail-label">Foco</p><p class="rail-value">Player Props NBA</p></div>
+          <div class="rail-item"><p class="rail-label">Formato</p><p class="rail-value">Dados organizados</p></div>
+          <div class="rail-item"><p class="rail-label">Objetivo</p><p class="rail-value">Decisão consistente</p></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="planos" class="section">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="h2">Free para entrar. Pro para profundidade total.</h2>
+        <p class="section-copy">Comece sem custo para validar sua rotina. Faça upgrade para liberar todos os jogos, jogadores e métricas.</p>
       </div>
       <div class="plans-grid">
         <article class="plan reveal">
           <h3>Free</h3>
-          <p class="price">R$0</p>
-          <p class="small">Entrada ideal para conhecer o fluxo e testar sua rotina diária.</p>
+          <p class="price mono">R$0</p>
+          <p class="small">Perfeito para testar o fluxo e começar a leitura diária.</p>
           <ul class="list">
             <li class="on">Visualização da rodada completa</li>
             <li class="on">1 jogo liberado por dia</li>
@@ -243,17 +261,17 @@ h1{margin-top:18px;font-size:clamp(36px,5.8vw,64px);line-height:1.03;letter-spac
           </ul>
           <a class="btn" href="/app.html">Começar no Free</a>
         </article>
-        <article class="plan pro reveal">
+        <article class="plan reveal">
           <h3>Pro</h3>
-          <p class="price">R$24,90 <span>/mês</span></p>
-          <p class="small">Plano para quem acompanha NBA diariamente e quer leitura completa.</p>
+          <p class="price mono">R$24,90 <span>/mês</span></p>
+          <p class="small">Para quem acompanha NBA todos os dias e quer leitura completa.</p>
           <ul class="list">
             <li class="on">Todos os jogos da rodada</li>
             <li class="on">Todos os jogadores</li>
             <li class="on">Todas as estatísticas liberadas</li>
-            <li class="on">Mais contexto para decisões rápidas</li>
+            <li class="on">Mais contexto para decisão rápida</li>
           </ul>
-          <p class="price-note"><strong style="color:var(--tx)">Pro anual: R$197/ano</strong><br/>Equivale a R$16,41/mês (economia aproximada de 34%).</p>
+          <p class="price-note"><strong style="color:var(--tx)" class="mono">Pro anual: R$197/ano</strong><br/>Equivale a <span class="mono">R$16,41/mês</span> (economia aproximada de 34%).</p>
           <div style="margin-top:16px"><a class="btn primary" href="/app.html">Assinar Pro</a></div>
         </article>
       </div>
@@ -261,8 +279,8 @@ h1{margin-top:18px;font-size:clamp(36px,5.8vw,64px);line-height:1.03;letter-spac
   </section>
 
   <section class="final wrap">
-    <h2 class="h2 reveal">Comece no Free hoje. Evolua para Pro quando quiser profundidade total.</h2>
-    <p class="reveal">LinhaCash foi feito para leitura rápida de dados relevantes antes da decisão. Sem fricção, sem ruído.</p>
+    <h2 class="h2 reveal">Comece no Free hoje. Evolua para Pro com profundidade total.</h2>
+    <p class="reveal">Leitura premium de dados de props, sem visual de template e sem excesso de elementos.</p>
     <a class="btn primary reveal" href="/app.html">Criar conta grátis</a>
   </section>
 </main>
