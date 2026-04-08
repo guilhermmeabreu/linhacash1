@@ -280,7 +280,6 @@ body{min-height:100dvh}
  .scrl::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:0}
 
  /* Detail desktop: max width centralizado */
- #pdetail > *{max-width:800px;margin-left:auto;margin-right:auto}
  .chartsec{padding:10px 24px 0}
  .alrow{padding:10px 24px}
  .istrip{padding:10px 24px}
@@ -584,57 +583,48 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
 .analytics-value{margin-top:6px;font-size:20px;font-family:var(--font-mono);font-weight:700}
 .pro-placeholder{margin:0 16px 16px;border:1px dashed rgba(0,230,118,.35);background:rgba(0,230,118,.06);padding:14px;font-size:12px;line-height:1.5;color:#bdeccf}
 
-/* PROP MODAL */
-.prop-modal{width:100%;max-width:1180px;max-height:92dvh;margin:12px auto;background:radial-gradient(circle at top right,rgba(34,197,94,.09),transparent 32%),linear-gradient(180deg,#0d0d0d,#090909 58%,#060606);border:1px solid rgba(255,255,255,.12);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.55)}
-.prop-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 22px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
-.prop-top-left{display:flex;gap:12px;align-items:center;min-width:0}
-.prop-title{font-size:21px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(50vw,560px)}
-.prop-sub{margin-top:4px;font-size:12px;color:var(--mt)}
-.prop-line-meta{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* PROP DETALHE INLINE */
+.prop-inline{width:100%;margin:8px 0 0;padding:10px 14px 14px;background:linear-gradient(180deg,#0d0d0d,#070707);border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+.prop-nav{display:flex;align-items:center;gap:10px}
+.prop-back{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--tx);padding:2px 0;font-size:12px;font-weight:700;cursor:pointer}
+.prop-match{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
+.prop-match-left{display:flex;align-items:center;gap:10px;min-width:0}
+.prop-title{font-size:14px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(50vw,460px)}
+.prop-sub{margin-top:2px;font-size:11px;color:var(--mt)}
+.prop-line-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .line-chip{padding:5px 11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);font-size:11px;font-weight:700;border-radius:999px}
 .line-chip .lnv{font-family:var(--font-mono);font-weight:800;color:var(--tx);margin-left:4px}
 .line-chip.pos{border-color:rgba(34,197,94,.48);color:#b9f8d0;background:rgba(34,197,94,.12)}
 .line-chip.neg{border-color:rgba(211,47,47,.46);color:#ffc7c7;background:rgba(211,47,47,.12)}
-.prop-top-right{display:flex;align-items:flex-start;gap:8px}
-.line-side{display:grid;gap:6px;text-align:right}
-.line-side .label{font-size:10px;color:var(--mt2);text-transform:uppercase;letter-spacing:.06em}
-.line-side .value{font-family:var(--font-mono);font-size:18px;font-weight:800;color:#d5ffe3}
+.prop-top-right{display:flex;align-items:center;gap:8px}
+.line-side{display:grid;gap:2px;text-align:right}
+.line-side .label{font-size:9px;color:var(--mt2);text-transform:uppercase;letter-spacing:.06em}
+.line-side .value{font-family:var(--font-mono);font-size:13px;font-weight:800;color:#d5ffe3}
 .match-pill{padding:4px 8px;border:1px solid var(--bd2);font-size:11px;font-weight:700}
 .match-pill.good{color:var(--green);background:var(--gdim)} .match-pill.neutral{color:#d1d5db;background:#1a1a1a} .match-pill.bad{color:#ff9c9c;background:rgba(211,47,47,.12)}
-.prop-tabs{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto}
+.prop-tabs{display:flex;gap:8px;padding:0;overflow-x:auto}
 .prop-tab{border:1px solid rgba(255,255,255,.2);padding:6px 12px;font-size:12px;font-weight:700;color:#c9c9c9;cursor:pointer;white-space:nowrap;background:rgba(255,255,255,.03);border-radius:999px}
 .prop-tab.on{color:#03140b;background:var(--green);border-color:var(--green)} .prop-tab.lk{opacity:.55}
-.prop-filters{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto}
-.prop-filter{border:1px solid rgba(255,255,255,.14);padding:5px 10px;font-size:11px;font-weight:700;color:var(--mt2);letter-spacing:.02em;white-space:nowrap;background:rgba(255,255,255,.02);border-radius:999px}
-.prop-filter.on{color:var(--tx);border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.12)}
-.prop-filter.lk{opacity:.55}
-.hit-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:10px 20px 12px}
-.hit-pill{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);text-align:center}
-.hit-pill .hlabel{font-size:10px;color:var(--mt2);text-transform:uppercase}
-.hit-pill .hval{margin-top:4px;font-size:16px;font-family:var(--font-mono);font-weight:800}
-.hit-pill .hmeta{margin-top:2px;font-size:10px;color:var(--mt2)}
+.hit-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.hit-pill{padding:7px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.09);text-align:center}
+.hit-pill .hlabel{font-size:9px;color:var(--mt2);text-transform:uppercase}
+.hit-pill .hval{margin-top:1px;font-size:12px;font-family:var(--font-mono);font-weight:800}
+.hit-pill .hmeta{margin-top:1px;font-size:9px;color:var(--mt2)}
 .hit-pill.lock{opacity:.6}
-.prop-main{padding:2px 20px 10px}
-.chart-card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.008));border:none;padding:12px 0}
-.chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
-.line-adjust{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.chart-caption{font-size:11px;color:var(--mt);margin-bottom:2px}
+.prop-main{padding:0}
+.chart-card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.008));border:1px solid rgba(255,255,255,.08);padding:10px}
+.chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.line-adjust{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chart-caption{font-size:11px;color:var(--mt);margin-bottom:0}
 .chartsec{padding:0}
-.cbars{height:320px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 12px 0}
+.cbars{height:390px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.08);padding:12px 12px 0}
 .cdates{margin-top:8px}
-.prop-context{display:flex;gap:8px;overflow-x:auto;padding:0 20px 12px}
+.prop-context{display:flex;gap:8px;overflow-x:auto}
 .context-pill{border:1px solid rgba(255,255,255,.14);padding:5px 10px;font-size:11px;color:var(--mt2);font-weight:700;white-space:nowrap;border-radius:999px}
 .context-pill.on{color:var(--tx);border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}
 .context-pill.ph{opacity:.45}
-.hit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 20px 12px}
-.hit-card,.split-card{background:var(--s2);border:1px solid var(--bd);padding:10px;min-height:72px}
-.hit-card .ttl,.split-card .ttl{font-size:10px;color:var(--mt);text-transform:uppercase}
-.hit-card .pct{font-size:19px;font-weight:800;font-family:var(--font-mono);margin-top:6px}
-.hit-card .meta{font-size:11px;color:var(--mt);margin-top:4px}
-.split-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 20px 12px}
-.insight{margin:0 20px 14px;padding:12px;border:1px solid rgba(0,230,118,.35);background:rgba(0,230,118,.07);font-size:12px;line-height:1.5;color:#d7ffe9}
-.modal-note{padding:0 20px 14px;font-size:11px;color:var(--mt)}
-@media(max-width:760px){.hit-strip,.hit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.split-grid{grid-template-columns:1fr}.prop-modal{margin:0;max-height:100dvh;border-radius:0}.prop-main,.prop-tabs,.prop-filters,.prop-context,.hit-strip,.hit-grid,.split-grid,.insight,.modal-note{padding-left:14px;padding-right:14px}.prop-top{padding:14px}.prop-title{max-width:65vw;font-size:17px}.cbars{height:200px}}
+.prop-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
+@media(max-width:760px){.hit-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.prop-inline{margin:0;border-radius:0}.prop-title{max-width:65vw}.prop-match{padding:8px}.cbars{height:220px}.prop-bottom{flex-direction:column;align-items:stretch}}
 
 @media(max-width:1023px){
   .auth-layout{display:block;padding:0;min-height:auto}
@@ -784,20 +774,6 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <div class="scrl"><div id="gbanner"></div><div id="plist"></div></div>
 </div>
 
-<!-- S3: DETALHE -->
-<div class="scr" id="s3">
- <div class="hdr">
- <button class="hbk" onclick="back()">←</button>
- <div class="htl" id="s3ttl">Jogador</div>
- <div class="hact">
- <button class="hico" onclick="nav(4)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
- <button class="hico" onclick="toggleTheme()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
- </div>
- </div>
- <div class="stabs" id="stabs"></div>
- <div class="scrl" id="pdetail"></div>
-</div>
-
 <!-- S4: PERFIL -->
 <div class="scr" id="s4">
  <div class="hdr">
@@ -810,14 +786,6 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
 
 </div><!-- .desk-main -->
 </div><!-- .app -->
-
-<!-- MODAL PLAYER PROP -->
-<div class="overlay" id="mProp" onclick="if(event.target===this)closePropModal()">
- <div class="sheet prop-modal">
-  <div class="shhandle"></div>
-  <div id="propModalContent" style="overflow:auto"></div>
- </div>
-</div>
 
 <!-- MODAL FAQ -->
 <div class="overlay" id="mFaq" onclick="if(event.target===this)closeFaq()">
@@ -1622,8 +1590,7 @@ async function openPlayer(id){
  cPlayer=getCurrentPlayers().find(p=>p.id===id);if(!cPlayer)return;
  cStat='PTS';cLine=null;cModalPlayerId=id;
  track('player_modal_opened',{player_id:id,player_name:cPlayer?.name||null,game_id:cGame?.id||null});
- openPropModal();
- const container=document.getElementById('propModalContent');
+ const container=document.getElementById('plist');
  if(container) container.innerHTML=renderPropModalSkeleton();
  await ensureMarketData(id,cStat);
  renderPropModal();
@@ -1635,7 +1602,7 @@ async function changeTab(s,el){
  cStat=s;cLine=null;
  track('market_changed',{context:'player_modal',market:s,player_id:cModalPlayerId||null});
  if(!METRICS[cModalPlayerId]?.[s]&&!(PLAYER_GAMES[cModalPlayerId]?.[s]||[]).length){
-   const container=document.getElementById('propModalContent');
+   const container=document.getElementById('plist');
    if(container) container.innerHTML=renderPropModalSkeleton();
    await ensureMarketData(cModalPlayerId,s);
  }
@@ -1647,8 +1614,10 @@ function adjLine(d){
  track('line_adjusted',{player_id:cModalPlayerId||null,market:cStat,line:cLine,delta:d});
  renderPropModal();
 }
-function openPropModal(){const el=document.getElementById('mProp');if(el)el.style.display='flex';}
-function closePropModal(){const el=document.getElementById('mProp');if(el)el.style.display='none';}
+function backToPlayers(){
+ cPlayer=null;cModalPlayerId=null;cLine=null;
+ renderPRows();
+}
 
 async function ensurePlayerModalData(playerId){
  if(PLAYER_MODAL_CACHE[playerId]) return PLAYER_MODAL_CACHE[playerId];
@@ -1716,14 +1685,6 @@ function getRecentGameBars(games, line){
  return recent.map((g)=>{const v=Number(g.value||0);const h=Math.max(8,Math.round((v/maxVal)*100));const tone=v>line?'hit':(v===line?'tie':'miss');return {value:v,height:h,tone,label:formatGameLabel(g.date)};});
 }
 
-function getPlayerPropInsights(data, summary){
- const l10=summary.find(s=>s.label==='L10');
- if(!l10||l10.missing) return 'Dados históricos limitados para uma leitura completa. Use esta linha com cautela.';
- const trend=data.avg!==null&&data.avg>=data.line?'acima':'abaixo';
- const matchup=data.defenseRank<=10?'favorável':(data.defenseRank<=20?'neutro':'desafiador');
- return `Tendência recente ${trend} da linha (${data.line}). Bateu em ${l10.hits} de ${l10.total} nos últimos jogos e o matchup parece ${matchup}.`;
-}
-
 function formatGameLabel(dateStr){
  if(!dateStr) return '—';
  const d=new Date(dateStr);
@@ -1732,21 +1693,15 @@ function formatGameLabel(dateStr){
 
 function renderPropModal(){
  if(!cPlayer||!cModalPlayerId) return;
- const container=document.getElementById('propModalContent');
+ const container=document.getElementById('plist');
  if(!container) return;
  const modalData=getPlayerPropModalData(cPlayer,cStat);
  const bars=getRecentGameBars(modalData.games,modalData.line);
  const summary=getHitRateSummary(modalData.games,modalData.line);
- const insight=getPlayerPropInsights(modalData,summary);
  const linePct=Math.min(96,Math.max(4,(modalData.line/Math.max(modalData.line,...bars.map(b=>b.value),1))*100));
  const matchupCls=modalData.defenseRank<=10?'good':(modalData.defenseRank<=20?'neutral':'bad');
  const matchupText=modalData.defenseRank<=10?'Favorável':(modalData.defenseRank<=20?'Neutro':'Difícil');
  const tabs=STATS.map((s)=>{const lk=!pro()&&!SFREE.includes(s);return `<button class="prop-tab ${cStat===s?'on':''} ${lk?'lk':''}" onclick="${lk?'openPro()':`changeTab('${s}')`}">${s}${lk?' · Pro':''}</button>`;}).join('');
- const filters=['25/26','H2H','L5','L10','L20','L30','24/25'].map((f)=>{
-  const lk=(f==='H2H'||f==='L20'||f==='L30')&&!pro();
-  const on=f==='L10';
-  return `<span class="prop-filter ${on?'on':''} ${lk?'lk':''}">${f}${lk?' · Pro':''}</span>`;
- }).join('');
  const contextPills=[
   {label:'HOME',active:true},
   {label:'AWAY',active:false},
@@ -1756,26 +1711,26 @@ function renderPropModal(){
   {label:'LOSS',active:false,placeholder:true},
  ].map((item)=>`<span class="context-pill ${item.active?'on':''} ${item.placeholder?'ph':''}">${item.label}</span>`).join('');
  const hitStrip=summary.map((card)=>`<div class="hit-pill ${card.locked?'lock':''}"><div class="hlabel">${card.label}</div><div class="hval">${card.locked?'🔒':(card.pct===null?'—':card.pct+'%')}</div><div class="hmeta">${card.locked?'Pro':card.note}</div></div>`).join('');
- const splitCards=renderSplitCards(modalData);
  const barsHtml=bars.length?bars.map((b)=>`<div class="ccol"><div class="cbar ${b.tone}" style="height:${b.height}%"><span class="cbarv">${b.value}</span></div></div>`).join(''):'<div style="padding:14px;color:var(--mt);font-size:12px">Dados recentes limitados para este mercado.</div>';
  const labelsHtml=bars.map((b)=>`<div class="cdate">${b.label}</div>`).join('');
  const edge=modalData.avg===null?null:Number((modalData.avg-modalData.line).toFixed(1));
  const edgeClass=edge===null?'':(edge>=0?'pos':'neg');
  const edgeText=edge===null?'N/D':`${edge>0?'+':''}${edge}`;
  const lineOdds=edge===null?'—':(edge>=0?'Over lean':'Under lean');
- container.innerHTML=`
- <div class="prop-top">
-  <div class="prop-top-left"><div class="prav" style="width:52px;height:52px">${ini(cPlayer.name)}</div><div style="min-width:0"><div class="prop-title">${cPlayer.name}</div><div class="prop-sub">${cPlayer.team} vs ${modalData.opp} · ${cPlayer.position||'—'}</div><div class="prop-line-meta"><span class="line-chip">Linha ${cStat}<span class="lnv">${modalData.line}</span></span><span class="line-chip ${edgeClass}">Valor ${edgeText}</span></div></div></div>
-  <div class="prop-top-right"><div class="line-side"><span class="label">Leitura</span><span class="value">${lineOdds}</span></div><span class="match-pill ${matchupCls}">${matchupText}</span><button class="hico" onclick="closePropModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  container.innerHTML=`
+ <div class="prop-inline">
+ <div class="prop-nav"><button class="prop-back" onclick="backToPlayers()">← Voltar</button></div>
+ <div class="prop-match">
+  <div class="prop-match-left"><div class="prav" style="width:32px;height:32px;font-size:12px">${ini(cPlayer.name)}</div><div style="min-width:0"><div class="prop-title">${cPlayer.name}</div><div class="prop-sub">${cPlayer.team} vs ${modalData.opp} · ${cPlayer.position||'—'}</div></div></div>
+  <div class="prop-top-right"><div class="line-side"><span class="label">Leitura</span><span class="value">${lineOdds}</span></div><span class="match-pill ${matchupCls}">${matchupText}</span></div>
  </div>
  <div class="prop-tabs">${tabs}</div>
- <div class="prop-filters">${filters}</div>
  <div class="hit-strip">${hitStrip}</div>
  <div class="prop-main">
   <div class="chart-card">
    <div class="chart-top">
-    <div><div class="chart-caption">${cStat} · Últimos jogos</div><div class="cmaxlbl">Linha em destaque, barras por resultado de jogo</div></div>
-    <div class="line-adjust"><div class="avgb">Média: <span class="val">${modalData.avg===null?'—':modalData.avg}</span></div><div class="lnctrl"><button class="lnbtn" onclick="adjLine(-0.5)">−</button><span class="lnval">${modalData.line}</span><button class="lnbtn" onclick="adjLine(0.5)">+</button></div></div>
+    <div><div class="chart-caption">${cStat} · Últimos jogos</div></div>
+    <div class="line-adjust"><div class="avgb">Média <span class="val">${modalData.avg===null?'—':modalData.avg}</span></div></div>
    </div>
    <div class="chartsec">
     <div class="cbars">
@@ -1786,20 +1741,11 @@ function renderPropModal(){
   </div>
   </div>
  </div>
- <div class="prop-context">${contextPills}</div>
- <div class="split-grid">${splitCards}</div>
- <div class="insight">${insight}</div>
- <div class="modal-note">${!bars.length?'Dados limitados disponíveis para este jogador nesta estatística.':'Análise dinâmica: ajustar a linha atualiza hit rates e leitura instantaneamente.'}</div>`;
-}
-
-function renderSplitCards(modalData){
- const metric=modalData.metric||{};
- const items=[
-  {label:'Casa',value:metric.avg_home},
-  {label:'Fora',value:metric.avg_away},
-  {label:'L10 Real',value:modalData.avg},
- ];
- return items.map((item)=>`<div class="split-card"><div class="ttl">${item.label}</div><div class="pct">${item.value===undefined||item.value===null?'—':Number(item.value).toFixed(1)}</div><div class="meta">${item.value===undefined||item.value===null?'Dados limitados':'Média calculada'}</div></div>`).join('');
+ <div class="prop-bottom">
+  <div class="prop-context">${contextPills}</div>
+  <div class="lnctrl"><button class="lnbtn" onclick="adjLine(-0.5)">−</button><span class="lnval">${modalData.line}</span><button class="lnbtn" onclick="adjLine(0.5)">+</button></div>
+ </div>
+ </div>`;
 }
 
 // S4: PERFIL 
@@ -2245,7 +2191,7 @@ function updateSidebar(){
  if(!sb) return;
  // Só mostra sidebar se estiver logado E em desktop
  const currentScr = stack[stack.length-1];
- const isAuthenticatedScreen = ['s1','s2','s3','s4'].includes(currentScr);
+ const isAuthenticatedScreen = ['s1','s2','s4'].includes(currentScr);
  sb.style.display = (isDesktop() && isAuthenticatedScreen && !!supabaseUser) ? 'flex' : 'none';
  const avEl = document.getElementById('sdAvLetter');
  const nmEl = document.getElementById('sdUserName');
