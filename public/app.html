@@ -584,51 +584,48 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
 .pro-placeholder{margin:0 16px 16px;border:1px dashed rgba(0,230,118,.35);background:rgba(0,230,118,.06);padding:14px;font-size:12px;line-height:1.5;color:#bdeccf}
 
 /* PROP DETALHE INLINE */
-.prop-inline{width:100%;margin:8px 0 0;padding:12px 14px 16px;background:linear-gradient(180deg,#101313,#090b0a);border:1px solid color-mix(in srgb,var(--green) 18%,rgba(255,255,255,.08));border-radius:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 22px 40px rgba(0,0,0,.28)}
-.prop-nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.prop-back{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.02);color:var(--tx);padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;border-radius:999px}
-.prop-back:hover{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.12)}
-.prop-match{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border-radius:12px}
+.prop-inline{width:100%;margin:4px 0 0;padding:8px 10px 10px;background:linear-gradient(180deg,#090b0b,#070808);border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:7px}
+.prop-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prop-back{display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--tx);padding:0;font-size:13px;font-weight:700;cursor:pointer;line-height:1}
+.prop-back:hover{color:var(--green)}
+.prop-match{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0}
 .prop-match-left{display:flex;align-items:center;gap:10px;min-width:0}
-.prop-title{font-size:15px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(50vw,460px)}
-.prop-sub{margin-top:3px;font-size:11px;color:color-mix(in srgb,var(--tx) 58%,var(--mt) 42%)}
+.prop-title{font-size:13px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(52vw,520px)}
+.prop-sub{margin-top:2px;font-size:10px;color:color-mix(in srgb,var(--tx) 52%,var(--mt) 48%)}
 .prop-line-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .line-chip{padding:5px 11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);font-size:11px;font-weight:700;border-radius:999px}
 .line-chip .lnv{font-family:var(--font-mono);font-weight:800;color:var(--tx);margin-left:4px}
 .line-chip.pos{border-color:rgba(34,197,94,.48);color:#b9f8d0;background:rgba(34,197,94,.12)}
 .line-chip.neg{border-color:rgba(211,47,47,.46);color:#ffc7c7;background:rgba(211,47,47,.12)}
-.prop-top-right{display:flex;align-items:center;gap:8px}
+.prop-top-right{display:flex;align-items:center;gap:6px}
 .line-side{display:grid;gap:2px;text-align:right}
-.line-side .label{font-size:9px;color:var(--mt2);text-transform:uppercase;letter-spacing:.06em}
-.line-side .value{font-family:var(--font-mono);font-size:12px;font-weight:800;color:#d5ffe3}
+.line-side .label{font-size:8px;color:var(--mt2);text-transform:uppercase;letter-spacing:.06em}
+.line-side .value{font-family:var(--font-mono);font-size:11px;font-weight:800;color:#d5ffe3}
 .line-side .value.pos{color:#9ff5bf}
 .line-side .value.neg{color:#ffb0b0}
-.match-pill{padding:5px 8px;border:1px solid var(--bd2);font-size:10px;font-weight:800;border-radius:999px}
-.match-pill.good{color:var(--green);background:var(--gdim)} .match-pill.neutral{color:#d1d5db;background:#1a1a1a} .match-pill.bad{color:#ff9c9c;background:rgba(211,47,47,.12)}
-.prop-tabs{display:flex;gap:7px;padding:0;overflow-x:auto}
-.prop-tab{border:1px solid rgba(255,255,255,.18);padding:7px 12px;font-size:11px;font-weight:800;color:#c9c9c9;cursor:pointer;white-space:nowrap;background:rgba(255,255,255,.02);border-radius:999px;letter-spacing:.03em}
-.prop-tab.on{color:#03140b;background:linear-gradient(180deg,#44eb84,#1ec761);border-color:#44eb84;box-shadow:0 6px 16px rgba(34,197,94,.24)} .prop-tab.lk{opacity:.55}
-.hit-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-.hit-pill{padding:8px 8px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.12);text-align:center;border-radius:10px}
-.hit-pill .hlabel{font-size:9px;color:var(--mt2);text-transform:uppercase}
-.hit-pill .hval{margin-top:1px;font-size:12px;font-family:var(--font-mono);font-weight:800}
-.hit-pill .hmeta{margin-top:1px;font-size:9px;color:var(--mt2)}
-.hit-pill.lock{opacity:.6}
-.prop-main{padding:0}
-.chart-card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.008));border:1px solid rgba(255,255,255,.12);padding:12px;border-radius:12px}
-.chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.match-pill{padding:2px 7px;border:1px solid rgba(255,255,255,.16);font-size:9px;font-weight:800;border-radius:999px}
+.match-pill.good{color:var(--green);background:rgba(34,197,94,.08)} .match-pill.neutral{color:#d1d5db;background:rgba(255,255,255,.03)} .match-pill.bad{color:#ff9c9c;background:rgba(211,47,47,.1)}
+.prop-tabs{display:flex;gap:6px;padding:0 0 2px;overflow-x:auto}
+.prop-tab{border:1px solid rgba(255,255,255,.14);padding:5px 10px;font-size:10px;font-weight:800;color:#b8bcc2;cursor:pointer;white-space:nowrap;background:transparent;border-radius:999px;letter-spacing:.03em}
+.prop-tab.on{color:#03140b;background:#33db77;border-color:#33db77;box-shadow:none} .prop-tab.lk{opacity:.5}
+.hit-strip{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);font-family:var(--font-mono);font-size:10px;letter-spacing:.01em;color:#aab3ba;white-space:nowrap;overflow-x:auto}
+.hit-k{font-size:10px;color:#d5dbe1}
+.hit-v{font-size:10px;color:#eef3f7;font-weight:700}
+.hit-lock{opacity:.6}
+.hit-sep{opacity:.32}
+.chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
 .line-adjust{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.chart-caption{font-size:11px;color:var(--mt);margin-bottom:2px;letter-spacing:.03em;text-transform:uppercase}
-.chart-legend{font-size:10px;color:color-mix(in srgb,var(--tx) 52%,var(--mt) 48%);font-weight:700}
+.chart-caption{font-size:10px;color:var(--mt);margin-bottom:2px;letter-spacing:.03em;text-transform:uppercase}
+.chart-legend{font-size:9px;color:color-mix(in srgb,var(--tx) 44%,var(--mt) 56%);font-weight:700}
 .chartsec{padding:0}
-.cbars{height:400px;background:linear-gradient(180deg,rgba(255,255,255,.038),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.12);padding:14px 14px 0;border-radius:10px}
-.cdates{margin-top:9px}
+.cbars{height:430px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.004));border:none;padding:8px 6px 0}
+.cdates{margin-top:5px}
 .prop-context{display:flex;gap:8px;overflow-x:auto}
 .context-pill{border:1px solid rgba(255,255,255,.14);padding:5px 10px;font-size:11px;color:var(--mt2);font-weight:700;white-space:nowrap;border-radius:999px}
 .context-pill.on{color:var(--tx);border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}
 .context-pill.ph{opacity:.45}
-.prop-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
-@media(max-width:760px){.hit-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.prop-inline{margin:0;border-radius:0}.prop-title{max-width:65vw}.prop-match{padding:8px}.cbars{height:220px}.prop-bottom{flex-direction:column;align-items:stretch}}
+.prop-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:2px}
+@media(max-width:760px){.prop-inline{margin:0;border-radius:0}.prop-title{max-width:65vw}.cbars{height:240px}.prop-bottom{flex-direction:column;align-items:stretch}}
 
 @media(max-width:1023px){
   .auth-layout{display:block;padding:0;min-height:auto}
@@ -1718,7 +1715,26 @@ function renderPropModal(){
   {label:'WIN',active:false,placeholder:true},
   {label:'LOSS',active:false,placeholder:true},
  ].map((item)=>`<span class="context-pill ${item.active?'on':''} ${item.placeholder?'ph':''}">${item.label}</span>`).join('');
- const hitStrip=summary.map((card)=>`<div class="hit-pill ${card.locked?'lock':''}"><div class="hlabel">${card.label}</div><div class="hval">${card.locked?'🔒':(card.pct===null?'—':card.pct+'%')}</div><div class="hmeta">${card.locked?'Pro':card.note}</div></div>`).join('');
+ const seasonTag='25/26';
+ const prevSeasonTag='24/25';
+ const stripPairs=[
+  {label:'H2H',value:summary.find((item)=>item.label==='H2H')},
+  {label:'L5',value:summary.find((item)=>item.label==='L5')},
+  {label:'L10',value:summary.find((item)=>item.label==='L10')},
+  {label:'L20',value:summary.find((item)=>item.label==='L20')},
+ ];
+ const hitStrip=[
+  `<span class="hit-k">${seasonTag}</span>`,
+  `<span class="hit-v">${modalData.avg===null?'—':Math.max(0,Math.min(100,Math.round((modalData.avg/(modalData.line||1))*100)))}%</span>`,
+  ...stripPairs.flatMap((item)=>{
+    const cell=item.value;
+    const pct=cell?.locked?'🔒':(cell?.pct===null?'—':`${cell.pct}%`);
+    const valClass=cell?.locked?'hit-v hit-lock':'hit-v';
+    return [`<span class="hit-sep">|</span>`,`<span class="hit-k">${item.label}</span>`,`<span class="${valClass}">${pct}</span>`];
+  }),
+  `<span class="hit-sep">|</span>`,
+  `<span class="hit-k">${prevSeasonTag}</span>`
+ ].join('');
  const barsHtml=bars.length?bars.map((b)=>`<div class="ccol"><div class="cbar ${b.tone}" style="height:${b.height}%"><span class="cbarv">${b.value}</span></div></div>`).join(''):'<div style="padding:14px;color:var(--mt);font-size:12px">Dados recentes limitados para este mercado.</div>';
  const labelsHtml=bars.map((b)=>`<div class="cdate">${b.label}</div>`).join('');
  const edge=modalData.avg===null?null:Number((modalData.avg-modalData.line).toFixed(1));
@@ -1727,27 +1743,23 @@ function renderPropModal(){
  const lineOdds=edge===null?'—':(edge>=0?'Over lean':'Under lean');
   container.innerHTML=`
  <div class="prop-inline">
- <div class="prop-nav"><button class="prop-back" onclick="backToPlayers()">← Voltar para jogadores</button><div class="line-side"><span class="label">Edge vs linha</span><span class="value ${edgeClass}">${edgeText}</span></div></div>
+ <div class="prop-nav"><button class="prop-back" onclick="backToPlayers()">←</button><div class="line-side"><span class="label">Edge vs linha</span><span class="value ${edgeClass}">${edgeText}</span></div></div>
  <div class="prop-match">
   <div class="prop-match-left"><div class="prav" style="width:32px;height:32px;font-size:12px">${ini(cPlayer.name)}</div><div style="min-width:0"><div class="prop-title">${cPlayer.name}</div><div class="prop-sub">${cPlayer.team} vs ${modalData.opp} · ${cPlayer.position||'—'}</div></div></div>
   <div class="prop-top-right"><div class="line-side"><span class="label">Leitura</span><span class="value">${lineOdds}</span></div><span class="match-pill ${matchupCls}">${matchupText}</span></div>
  </div>
  <div class="prop-tabs">${tabs}</div>
  <div class="hit-strip">${hitStrip}</div>
- <div class="prop-main">
-  <div class="chart-card">
-   <div class="chart-top">
-    <div><div class="chart-caption">${cStat} · Últimos jogos</div><div class="chart-legend">Verde = over linha · Vermelho = under linha</div></div>
-    <div class="line-adjust"><div class="avgb">Média <span class="val">${modalData.avg===null?'—':modalData.avg}</span></div></div>
-   </div>
-   <div class="chartsec">
-    <div class="cbars">
-     <div class="cref" style="bottom:${linePct}%"><span class="creflbl">Linha ${modalData.line}</span></div>
-     ${barsHtml}
-    </div>
-    <div class="cdates">${labelsHtml}</div>
+ <div class="chart-top">
+  <div><div class="chart-caption">${cStat} · Últimos jogos</div><div class="chart-legend">Verde = over linha · Vermelho = under linha</div></div>
+  <div class="line-adjust"><div class="avgb">Média <span class="val">${modalData.avg===null?'—':modalData.avg}</span></div></div>
+ </div>
+ <div class="chartsec">
+  <div class="cbars">
+   <div class="cref" style="bottom:${linePct}%"><span class="creflbl">Linha ${modalData.line}</span></div>
+   ${barsHtml}
   </div>
-  </div>
+  <div class="cdates">${labelsHtml}</div>
  </div>
  <div class="prop-bottom">
   <div class="prop-context">${contextPills}</div>
