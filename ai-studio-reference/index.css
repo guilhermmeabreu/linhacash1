@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-accent: #22c55e;
+  --color-muted: #888888;
+  --color-surface: #0a0a0a;
+  --color-border: #1a1a1a;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-accent selection:text-black;
+  }
+  
+  h1, h2, h3, h4 {
+    @apply font-display font-black tracking-tighter uppercase leading-[0.9];
+  }
+
+  input, textarea, select {
+    @apply bg-surface border border-border px-4 py-3 text-sm focus:border-accent outline-none transition-colors;
+  }
+
+  label {
+    @apply text-[10px] font-black text-muted uppercase tracking-widest mb-2 block;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass {
+  @apply bg-surface/80 backdrop-blur-md border border-border;
+}
+
+.btn-primary {
+  @apply bg-accent text-black font-black px-6 py-4 uppercase tracking-widest text-xs hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply bg-transparent text-white border border-border font-black px-6 py-4 uppercase tracking-widest text-xs hover:bg-white/5 transition-all active:scale-95;
+}
+
+.btn-ghost {
+  @apply p-2 hover:bg-white/5 rounded-lg transition-colors text-muted hover:text-white;
+}
+
+.technical-grid {
+  @apply grid gap-px bg-border border border-border overflow-hidden;
+}
+
+.technical-item {
+  @apply bg-background p-4 hover:bg-surface transition-colors cursor-pointer flex items-center justify-between;
+}
+
+.sheet-modal {
+  @apply fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 backdrop-blur-sm;
+}
+
+.sheet-content {
+  @apply w-full max-w-lg bg-surface border-t-4 border-accent md:border-t-0 md:border-l-4 overflow-hidden;
+}
