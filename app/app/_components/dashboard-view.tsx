@@ -77,6 +77,17 @@ type PlayerGameSample = {
   minutes: number | null;
 };
 
+type ChartBarTone = 'hit' | 'miss' | 'tie';
+
+type PlayerDetailChartBar = {
+  date: string | null;
+  value: number;
+  minutes: number;
+  tone: ChartBarTone;
+  heightPct: number;
+  label: string;
+};
+
 type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; message: string };
@@ -432,7 +443,7 @@ export function DashboardView() {
     setSelectedPlayerId(null);
   }, []);
 
-  const getChartBarClassName = useCallback((tone: 'hit' | 'miss' | 'tie') => {
+  const getChartBarClassName = useCallback((tone: ChartBarTone) => {
     if (tone === 'hit') return `${styles.chartBar} ${styles.chartBarHit}`;
     if (tone === 'tie') return `${styles.chartBar} ${styles.chartBarTie}`;
     return `${styles.chartBar} ${styles.chartBarMiss}`;
@@ -451,9 +462,9 @@ export function DashboardView() {
     const line = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
     const average = values.length ? Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1)) : null;
     const chartBase = Math.max(line, ...values, 1);
-    const bars = games.slice(0, 12).reverse().map((sample) => {
+    const bars: PlayerDetailChartBar[] = games.slice(0, 12).reverse().map((sample) => {
       const pct = Math.max(8, Math.round((sample.value / chartBase) * 100));
-      const tone = sample.value > line ? 'hit' : sample.value === line ? 'tie' : 'miss';
+      const tone: ChartBarTone = sample.value > line ? 'hit' : sample.value === line ? 'tie' : 'miss';
       const date = sample.date ? new Date(sample.date) : null;
       const label = date ? `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}` : '—';
       return { ...sample, tone, heightPct: pct, label };
