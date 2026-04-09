@@ -563,8 +563,9 @@ textarea {
 .lc-brand-text,
 .lc-sidebar-brand-text { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.03em; }
 .lc-sidebar-brand-text span { color: var(--lc-accent); }
-.lc-sidebar-item { justify-content: space-between; }
-.lc-sidebar-item-main { display: inline-flex; align-items: center; gap: var(--lc-space-2); }
+.lc-sidebar-item { justify-content: flex-start; align-items: center; }
+.lc-sidebar-item-main { display: inline-flex; align-items: center; gap: var(--lc-space-2); flex: 1; justify-content: flex-start; }
+.lc-sidebar-item-meta { display: inline-flex; align-items: center; justify-content: flex-end; min-width: 3.9rem; }
 .lc-sidebar-badge { font-size: .52rem; color: var(--lc-muted); letter-spacing: .08em; }
 
 .lc-brand-icon {

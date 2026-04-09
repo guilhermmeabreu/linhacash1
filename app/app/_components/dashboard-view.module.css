@@ -11,18 +11,42 @@
   justify-content: flex-end;
 }
 
-.sidebarFooterInfo {
+.accountSummary {
+  border: 1px solid var(--lc-border);
+  background: color-mix(in srgb, var(--lc-surface) 78%, var(--lc-surface-elevated) 22%);
+  padding: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.accountAvatar {
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 35%, var(--lc-border) 65%);
+  background: color-mix(in srgb, var(--lc-accent) 15%, var(--lc-surface) 85%);
   display: grid;
-  gap: 0.45rem;
+  place-items: center;
+  color: var(--lc-accent);
+  font-weight: 900;
+  font-size: 0.7rem;
 }
 
-.sidebarFooterInfo strong {
-  font-size: 0.78rem;
+.accountMeta {
+  display: grid;
+  gap: 0.1rem;
 }
 
-.sidebarFooterInfo span {
+.accountMeta strong {
+  font-size: 0.76rem;
+  line-height: 1.1;
+}
+
+.accountMeta span {
   color: var(--lc-muted);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .stateText {
@@ -42,6 +66,11 @@
 .profileView {
   width: min(100%, 78rem);
   margin: 0 auto;
+}
+
+.sectionRule {
+  border-top: 1px solid var(--lc-border);
+  margin-bottom: 0.25rem;
 }
 
 .gameGrid {
@@ -545,84 +574,103 @@
 }
 
 .profileHero {
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: 0.45rem;
-  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.95rem;
 }
 
-.profileAvatar {
-  width: 4rem;
-  height: 4rem;
+.profileHeaderAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
   display: grid;
   place-items: center;
-  background: var(--lc-accent);
-  color: #07160d;
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 35%, var(--lc-border) 65%);
+  background: color-mix(in srgb, var(--lc-accent) 15%, var(--lc-surface) 85%);
+  color: var(--lc-accent);
   font-weight: 900;
 }
 
-.profileHero h2 {
+.profileHeaderMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.profileHeaderMeta h2 {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
-  font-size: 1.2rem;
 }
 
-.profileHero p {
+.profileHeaderMeta p {
   color: var(--lc-muted);
-  max-width: 48ch;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
+  margin-top: 0.12rem;
 }
 
-.profileGrid {
+.profileStack {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.8rem;
 }
 
-.profileCard {
+.profileSection {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
-.profileCard h3 {
-  font-size: 0.76rem;
+.profileSection h3 {
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.profileCard p {
-  color: var(--lc-muted);
-  font-size: 0.84rem;
-}
-
-.profileMetaList {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.profileActions {
+.profileSectionHeader {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-.profileLinks {
+.profileRows {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
-.profileLinks a,
-.profileLinks button {
+.profileRow {
+  width: 100%;
   text-decoration: none;
   border: 1px solid var(--lc-border);
-  min-height: 2.2rem;
+  min-height: 2.45rem;
+  background: color-mix(in srgb, var(--lc-surface) 82%, var(--lc-surface-elevated) 18%);
+  color: var(--lc-text);
+  padding: 0.5rem 0.65rem;
+  display: grid;
+  text-align: left;
+  gap: 0.14rem;
+}
+
+.profileRow span {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  background: var(--lc-surface);
-  color: var(--lc-text);
-  padding: 0 0.65rem;
-  font-size: 0.78rem;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+}
+
+.profileRow small {
+  color: var(--lc-muted);
+  font-size: 0.66rem;
+}
+
+.profileRowActive {
+  border-color: color-mix(in srgb, var(--lc-accent) 48%, var(--lc-border) 52%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 20%, transparent);
+}
+
+.profileRowControl {
+  justify-self: start;
 }
 
 .upgradeOverlay {
@@ -774,15 +822,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .profileGrid {
-    grid-template-columns: 1fr;
-  }
-
   .chartCanvas {
     min-height: 180px;
   }
 
   .upgradeModal {
     width: 100%;
+  }
+
+  .profileHero {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

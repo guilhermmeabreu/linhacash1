@@ -15,7 +15,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Shield,
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -217,9 +216,7 @@ export function DashboardView() {
   const [metricsStatusByPlayer, setMetricsStatusByPlayer] = useState<Record<number, Partial<Record<Stat, ResourceStatus>>>>({});
   const [metricsErrorByPlayer, setMetricsErrorByPlayer] = useState<Record<number, Partial<Record<Stat, string | null>>>>({});
   const [plan, setPlan] = useState<Plan>('free');
-  const [planLoaded, setPlanLoaded] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [profileStatus, setProfileStatus] = useState<ResourceStatus>('idle');
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<'mensal' | 'anual'>('anual');
   const [upgradeCode, setUpgradeCode] = useState('');
@@ -467,12 +464,10 @@ export function DashboardView() {
         if (!canceled) {
           setPlan('free');
           setProfile(null);
-          setPlanLoaded(true);
         }
         return;
       }
 
-      setProfileStatus('loading');
       const result = await apiFetch<{ profile?: ProfileData }>('/api/profile');
       if (canceled) return;
 
@@ -480,12 +475,8 @@ export function DashboardView() {
         const resolvedPlan = result.data.profile?.plan === 'pro' ? 'pro' : 'free';
         setPlan(resolvedPlan);
         setProfile(result.data.profile ?? null);
-        setProfileStatus(result.data.profile ? 'ready' : 'empty');
-      } else {
-        setProfileStatus('error');
       }
 
-      setPlanLoaded(true);
     }
 
     loadPlan();
@@ -638,9 +629,12 @@ export function DashboardView() {
           activeKey={activeSidebarKey}
           onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
-            <div className={styles.sidebarFooterInfo}>
-              <strong>{profile?.name || 'Guilherme'}</strong>
-              <span>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</span>
+            <div className={styles.accountSummary}>
+              <div className={styles.accountAvatar}>{(profile?.name || 'G').slice(0, 1).toUpperCase()}</div>
+              <div className={styles.accountMeta}>
+                <strong>{profile?.name || 'Guilherme'}</strong>
+                <span>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</span>
+              </div>
             </div>
           )}
         />
@@ -651,9 +645,12 @@ export function DashboardView() {
           activeKey={activeSidebarKey}
           onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
-            <div className={styles.sidebarFooterInfo}>
-              <strong>{profile?.name || 'Guilherme'}</strong>
-              <span>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</span>
+            <div className={styles.accountSummary}>
+              <div className={styles.accountAvatar}>{(profile?.name || 'G').slice(0, 1).toUpperCase()}</div>
+              <div className={styles.accountMeta}>
+                <strong>{profile?.name || 'Guilherme'}</strong>
+                <span>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</span>
+              </div>
             </div>
           )}
         />
@@ -665,11 +662,6 @@ export function DashboardView() {
           actions={
             <div className={styles.topbarBadges}>
               <ThemeToggle compact />
-              {planLoaded ? (
-                <Badge variant={plan === 'pro' ? 'success' : 'default'}>
-                  {plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}
-                </Badge>
-              ) : null}
               {canGoBack ? (
                 <Button size="sm" variant="ghost" onClick={() => setView(view === 'detail' ? 'players' : 'games')}>
                   <ArrowLeft size={14} /> Voltar
@@ -684,6 +676,7 @@ export function DashboardView() {
         <div className={styles.dashboardCanvas}>
           {view === 'games' ? (
             <section className={styles.gamesView}>
+              <div className={styles.sectionRule} />
               {gamesStatus === 'loading' ? (
                 <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogos...</p></Surface>
               ) : null}
@@ -720,12 +713,12 @@ export function DashboardView() {
                         <div className={styles.teamBadge}>
                           {game.away_logo ? <img src={game.away_logo} alt={game.away_team} loading="lazy" /> : shortTeamName(game.away_team)}
                         </div>
-                        <div className={styles.gameVs}>vs</div>
+                        <div className={styles.gameVs}>X</div>
                         <div className={styles.teamBadge}>
                           {game.home_logo ? <img src={game.home_logo} alt={game.home_team} loading="lazy" /> : shortTeamName(game.home_team)}
                         </div>
                       </div>
-                      <p className={styles.gameMatchup}>{game.away_team} <span>vs</span> {game.home_team}</p>
+                      <p className={styles.gameMatchup}>{game.away_team} <span>x</span> {game.home_team}</p>
                       <div className={styles.gameCardDivider} />
                       <button
                         type="button"
@@ -963,42 +956,56 @@ export function DashboardView() {
           {view === 'profile' ? (
             <section className={styles.profileView}>
               <Surface className={styles.profileHero}>
-                <div className={styles.profileAvatar}>LC</div>
-                <h2>Minha conta</h2>
-                <p>Gerencie plano, segurança e suporte sem sair da experiência principal.</p>
+                <div className={styles.profileHeaderAvatar}>{(profile?.name || 'G').slice(0, 1).toUpperCase()}</div>
+                <div className={styles.profileHeaderMeta}>
+                  <h2>{profile?.name || 'Guilherme'}</h2>
+                  <p>{profile?.email || 'email@linhacash.com.br'}</p>
+                </div>
                 <Badge variant={plan === 'pro' ? 'success' : 'default'}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</Badge>
               </Surface>
 
-              <div className={styles.profileGrid}>
-                <Surface className={styles.profileCard}>
-                  <h3>Dados do perfil</h3>
-                  {profileStatus === 'loading' ? <p>Carregando dados da conta...</p> : null}
-                  {profileStatus === 'error' ? <p>Não foi possível carregar seus dados agora.</p> : null}
-                  {profile ? (
-                    <div className={styles.profileMetaList}>
-                      <p><strong>Nome:</strong> {profile.name || 'Não informado'}</p>
-                      <p><strong>Email:</strong> {profile.email || 'Não informado'}</p>
-                      <p><strong>Membro desde:</strong> {profileSince || 'N/D'}</p>
+              <div className={styles.profileStack}>
+                <Surface className={styles.profileSection}>
+                  <div className={styles.profileSectionHeader}>
+                    <h3>Planos</h3>
+                    {plan !== 'pro' ? <Button size="sm" onClick={openUpgradeSurface}>Fazer upgrade</Button> : null}
+                  </div>
+                  <div className={styles.profileRows}>
+                    <div className={`${styles.profileRow} ${plan === 'free' ? styles.profileRowActive : ''}`}>
+                      <span>Free</span>
+                      <small>{plan === 'free' ? 'Plano ativo' : 'Disponível'}</small>
                     </div>
-                  ) : null}
-                </Surface>
-
-                <Surface className={styles.profileCard}>
-                  <h3>Plano e cobrança</h3>
-                  <p>{plan === 'pro' ? 'Você está no Pro com recursos completos.' : 'Atualize para liberar todos os jogos e mercados.'}</p>
-                  <div className={styles.profileActions}>
-                    {plan !== 'pro' ? <Button size="sm" onClick={openUpgradeSurface}>Assinar Pro</Button> : null}
-                    <Link href="/app?view=games"><Button size="sm" variant="secondary">Ver dashboard</Button></Link>
+                    <div className={`${styles.profileRow} ${plan === 'pro' ? styles.profileRowActive : ''}`}>
+                      <span>Pro</span>
+                      <small>{plan === 'pro' ? 'Plano ativo' : 'Inclui mercados avançados'}</small>
+                    </div>
                   </div>
                 </Surface>
 
-                <Surface className={styles.profileCard}>
-                  <h3>Conta e suporte</h3>
-                  <div className={styles.profileLinks}>
-                    <Link href="/termos"><Shield size={14} /> Termos de uso</Link>
-                    <Link href="/privacidade"><Lock size={14} /> Política de privacidade</Link>
-                    <a href="mailto:suporte@linhacash.com.br">suporte@linhacash.com.br</a>
-                    <button type="button" onClick={() => window.location.assign('/login')}><LogOut size={14} /> Sair da conta</button>
+                <Surface className={styles.profileSection}>
+                  <h3>Conta</h3>
+                  <div className={styles.profileRows}>
+                    <button type="button" className={styles.profileRow}><span>Editar perfil</span><small>{profileSince ? `Membro desde ${profileSince}` : 'Dados da conta'}</small></button>
+                    <button type="button" className={styles.profileRow}><span>Segurança</span><small>Senha e recuperação</small></button>
+                    <div className={styles.profileRow}>
+                      <span>Tema</span>
+                      <div className={styles.profileRowControl}><ThemeToggle compact /></div>
+                    </div>
+                  </div>
+                </Surface>
+
+                <Surface className={styles.profileSection}>
+                  <h3>Suporte</h3>
+                  <div className={styles.profileRows}>
+                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br?subject=FAQ%20LinhaCash"><span>Perguntas frequentes</span><small>Respostas rápidas</small></a>
+                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br"><span>Falar com suporte</span><small>suporte@linhacash.com.br</small></a>
+                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br?subject=Relatar%20problema"><span>Reportar um problema</span><small>Enviar detalhes do erro</small></a>
+                    <Link className={styles.profileRow} href="/termos"><span>Termos de uso</span><small>Condições da plataforma</small></Link>
+                    <Link className={styles.profileRow} href="/privacidade"><span>Política de privacidade</span><small>Tratamento de dados</small></Link>
+                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br?subject=Excluir%20conta%20e%20dados"><span>Excluir minha conta e dados</span><small>Solicitação de remoção</small></a>
+                    <button type="button" className={styles.profileRow} onClick={() => window.location.assign('/login')}>
+                      <span><LogOut size={14} /> Sair da conta</span><small>Encerrar sessão atual</small>
+                    </button>
                   </div>
                 </Surface>
               </div>
