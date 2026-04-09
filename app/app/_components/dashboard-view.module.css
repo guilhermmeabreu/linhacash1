@@ -38,6 +38,7 @@
 
 .gameCard {
   text-align: left;
+  border-radius: 0;
   border: 1px solid var(--lc-border);
   background: #060606;
   padding: 1rem;
@@ -114,7 +115,9 @@
 
 .playersTopbar h2 {
   font-size: 1.1rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  font-weight: 900;
   text-transform: uppercase;
 }
 
@@ -181,6 +184,7 @@
 
 .playerRow {
   width: 100%;
+  border-radius: 0;
   border: 1px solid var(--lc-border);
   background: #060606;
   padding: 0.8rem;
@@ -266,6 +270,7 @@
 
 .playerHeroName {
   margin-top: 0.4rem;
+  font-weight: 900;
   font-size: clamp(1.7rem, 5vw, 3.4rem);
   line-height: 0.95;
   text-transform: uppercase;
@@ -310,6 +315,35 @@
   color: var(--lc-accent);
 }
 
+
+.oddsBox {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  min-width: 12rem;
+}
+
+.oddsBox > div {
+  border: 1px solid var(--lc-border);
+  background: #0a0a0a;
+  padding: 0.55rem 0.7rem;
+  text-align: right;
+}
+
+.oddsBox span {
+  display: block;
+  font-size: 0.55rem;
+  color: var(--lc-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.oddsBox strong {
+  font-size: 1.15rem;
+  font-family: var(--lc-font-mono);
+}
+
 .quickStatsGrid {
   border: 1px solid var(--lc-border);
   display: grid;
@@ -320,6 +354,7 @@
 
 .quickStatsGrid > div {
   background: #090909;
+  border-radius: 0;
   padding: 0.8rem;
   text-align: center;
   display: grid;
@@ -361,7 +396,7 @@
 }
 
 .chartTitle {
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   color: var(--lc-muted);
   text-transform: uppercase;
   font-weight: 800;
@@ -412,7 +447,8 @@
 .chartColumn small {
   color: var(--lc-muted);
   text-align: center;
-  font-size: 0.56rem;
+  font-size: 0.54rem;
+  letter-spacing: 0.04em;
 }
 
 .chartBar {
@@ -545,6 +581,7 @@
 @media (max-width: 860px) {
   .playersTopbar,
   .playerHero,
+  .oddsBox,
   .errorBox {
     flex-direction: column;
     align-items: flex-start;
@@ -554,7 +591,8 @@
     min-width: 100%;
   }
 
-  .quickStatsGrid {
+
+.quickStatsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

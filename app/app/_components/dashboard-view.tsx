@@ -593,12 +593,12 @@ export function DashboardView() {
                 />
               ) : null}
 
-              <div className={styles.gameGrid}>
+              <div className={`${styles.gameGrid} technical-grid`}>
                 {games.map((game) => (
                   <button
                     key={game.id}
                     type="button"
-                    className={styles.gameCard}
+                    className={`${styles.gameCard} technical-item`}
                     onClick={() => {
                       setSelectedGameId(game.id);
                       setSelectedPlayerId(null);
@@ -678,13 +678,13 @@ export function DashboardView() {
                     ) : null}
 
                     {!marketLocked ? (
-                      <div className={styles.playerList}>
+                      <div className={`${styles.playerList} technical-grid`}>
                         {filteredPlayers.map((player) => {
                           const line = metricsByPlayer[player.id]?.[selectedStat]?.metrics?.line;
                           return (
                             <button
                               key={player.id}
-                              className={styles.playerRow}
+                              className={`${styles.playerRow} technical-item`}
                               type="button"
                               onClick={() => {
                                 setSelectedPlayerId(player.id);
@@ -743,6 +743,16 @@ export function DashboardView() {
                     <button type="button" onClick={() => setLineAdjustment((value) => Number((value - 0.5).toFixed(1)))}><Minus size={16} /></button>
                     <strong>{playerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
                     <button type="button" onClick={() => setLineAdjustment((value) => Number((value + 0.5).toFixed(1)))}><Plus size={16} /></button>
+                  </div>
+                </div>
+                <div className={styles.oddsBox}>
+                  <div>
+                    <span>OVER</span>
+                    <strong>{playerDetailModel && playerDetailModel.edge !== null ? `${playerDetailModel.edge > 0 ? '+' : ''}${playerDetailModel.edge}` : 'N/D'}</strong>
+                  </div>
+                  <div>
+                    <span>HIT L10</span>
+                    <strong>{playerDetailModel?.windows[1]?.value ?? '—'}</strong>
                   </div>
                 </div>
               </div>

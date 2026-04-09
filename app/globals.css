@@ -654,3 +654,83 @@ textarea {
   .lc-plan-grid { grid-template-columns: 1fr; }
   .lc-public-actions a { display: none; }
 }
+
+
+/* Precision fidelity pass */
+.lc-landing :is(h1, h2, h3),
+.lc-auth-page :is(h1, h2, h3),
+.lc-shell :is(h1, h2, h3),
+.lc-legal-page :is(h1, h2, h3) {
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.lc-shell .lc-badge,
+.lc-shell .lc-stat-label,
+.lc-shell .lc-tab-trigger,
+.lc-shell label,
+.lc-public-actions a,
+.lc-legal-header p,
+.lc-auth-form label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+}
+
+.lc-shell-content {
+  padding-top: 1rem;
+}
+
+.lc-sidebar {
+  gap: 0.6rem;
+  padding: 0.9rem;
+}
+
+.lc-sidebar-item {
+  min-height: 2.25rem;
+  padding: 0 0.65rem;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 800;
+}
+
+.technical-grid {
+  box-shadow: none;
+}
+
+.technical-item {
+  border-radius: 0;
+  padding: 0.75rem;
+}
+
+.lc-hero {
+  padding-top: clamp(5.8rem, 9vw, 8.4rem);
+  padding-bottom: 3.5rem;
+}
+
+.lc-plan-grid article,
+.lc-step-grid article,
+.lc-auth-card,
+.lc-surface {
+  border-radius: 0;
+}
+
+.lc-auth-input {
+  min-height: 2.65rem;
+}
+
+.lc-auth-input svg {
+  color: #8d8d8d;
+  flex: 0 0 auto;
+}
+
+.lc-auth-form {
+  gap: 0.85rem;
+}
+
+.lc-auth-divider {
+  margin: 0.45rem 0 0.25rem;
+}
