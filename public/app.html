@@ -220,101 +220,73 @@ html.light{
 html,body{font-family:Hele,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;height:100%}
 body{min-height:100dvh}
 
-/* MOBILE: app em coluna, max 440px */
-.app{display:flex;flex-direction:column;height:100dvh;max-width:440px;margin:0 auto;position:relative;overflow:hidden}
+/* APP SHELL */
+.app{display:flex;flex-direction:column;height:100dvh;max-width:100%;margin:0 auto;position:relative;overflow:hidden;background:#000}
 
-/* DESKTOP: expande layout */
 @media(min-width:768px){
- body{background:var(--s1)}
- .app{max-width:100%;height:100dvh;flex-direction:row;overflow:hidden}
+ body{background:#000}
+ .app{height:100dvh;overflow:hidden}
 
- /* Sidebar esquerda fixa */
+ /* Sidebar desktop fixa */
  .sidebar-desk{
- width:240px;flex-shrink:0;
- background:var(--bg);border-right:1px solid var(--bd);
- display:flex;flex-direction:column;
- padding:24px 0;
- height:100dvh;
+  width:272px;position:fixed;left:0;top:0;bottom:0;z-index:60;
+  background:#0a0a0a;border-right:1px solid #1f1f1f;
+  display:flex;flex-direction:column;padding:20px 0;
  }
- .sd-logo{padding:0 20px 28px;font-size:20px;font-weight:800;letter-spacing:0}
- .sd-logo em{color:var(--green);font-style:normal}
- .sd-nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
-.sd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;transition:.15s}
-.sd-item:hover{background:var(--s2);color:var(--tx)}
-.sd-item.on{background:color-mix(in srgb,var(--green) 10%, var(--s2) 90%);color:var(--tx);font-weight:600;border:1px solid color-mix(in srgb,var(--green) 42%, var(--bd) 58%)}
-.sd-item-soon{opacity:.45;cursor:not-allowed!important;pointer-events:none}
+ .sd-logo{padding:0 20px 20px;font-size:20px;font-weight:800;letter-spacing:-.02em}
+ .sd-logo em{color:#22c55e;font-style:normal}
+ .sd-nav{display:flex;flex-direction:column;gap:4px;padding:0 10px;flex:1}
+ .sd-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-left:2px solid transparent;font-size:14px;font-weight:500;color:#888;cursor:pointer;transition:.15s}
+ .sd-item:hover{background:#111;color:#fafafa}
+ .sd-item.on{background:rgba(34,197,94,.08);color:#eafff1;border-left-color:#22c55e}
+ .sd-item-soon{opacity:.45;cursor:not-allowed!important;pointer-events:none}
  .sd-bottom{padding:12px}
- .sd-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--s1);border:1px solid var(--bd);cursor:pointer;transition:.15s}
- .sd-user:hover{background:var(--s2);border-color:var(--bd2)}
- .sd-av{width:32px;height:32px;border-radius:8px;background:color-mix(in srgb,var(--green) 78%, #0f0f0f 22%);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#051b0d;flex-shrink:0}
+ .sd-user{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0d0d0d;border:1px solid #1f1f1f;cursor:pointer;transition:.15s}
+ .sd-user:hover{border-color:#2e2e2e;background:#101010}
+ .sd-av{width:32px;height:32px;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#04130a;flex-shrink:0}
  .sd-info{flex:1;min-width:0}
  .sd-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- .sd-plan{font-size:11px;color:var(--mt)}
+ .sd-plan{font-size:11px;color:#888}
 
- /* Conteúdo principal */
- .desk-main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-
- /* Screens no desktop: sem animação de slide, ficam na área principal */
- .scr{position:relative;inset:auto;height:100%;animation:none!important}
+ .desk-main{margin-left:272px;flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+ .scr{position:relative;inset:auto;height:100%;animation:none!important;background:#000}
  .scr.on{display:flex}
 
- /* Header desktop: mais compacto, sem back button visível */
- .hdr{padding:14px 26px 12px;border-bottom:1px solid var(--bd)}
+ .hdr{padding:14px 28px 12px;border-bottom:1px solid #1f1f1f;background:rgba(0,0,0,.88);backdrop-filter:blur(8px)}
  .hbk.hide{display:none}
 
- /* Auth desktop: minimal composição com card central mais robusto */
+ #s1 .scrl,#s2 .scrl,#s4 .scrl{width:min(100%,1240px);margin:0 auto}
+
  #sAuth .scrl{display:flex;align-items:center;justify-content:center}
  .auth-layout{width:min(100%,980px);margin:0 auto;padding:28px 24px 30px}
  .auth-panel{display:flex;justify-content:center}
  .auth-panel .awrap{max-width:520px;width:100%;margin:0 auto;padding:34px 34px;background:linear-gradient(180deg,color-mix(in srgb,var(--s2) 90%, #050505 10%),var(--s2));border:1px solid color-mix(in srgb,var(--bd2) 70%, var(--tx) 30%);box-shadow:0 20px 36px rgba(0,0,0,.28)}
 
- /* Games grid no desktop */
- #glist{width:min(100%,1240px);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:12px 18px 16px}
+ #glist{width:min(100%,1240px);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:16px 20px 18px}
  .gcard{margin:0;border-bottom:1px solid var(--bd)}
 
- /* Players list desktop: mais espaçoso */
  .prow2{padding:12px 24px}
  .scrl{padding-right:0}
  .scrl::-webkit-scrollbar{width:6px;display:block}
  .scrl::-webkit-scrollbar-track{background:transparent}
  .scrl::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:0}
 
- /* Detail desktop: max width centralizado */
  .chartsec{padding:10px 24px 0}
  .alrow{padding:10px 24px}
  .istrip{padding:10px 24px}
  .pbrow{padding:10px 24px 20px}
 
- /* Modais desktop: centralizados no meio da tela */
  .overlay{align-items:center}
  .sheet{border-radius:0;max-width:480px;margin:auto}
  .shhandle{display:none}
 
- /* Perfil desktop */
- #profcont{
-  width:min(100%,1160px);
-  margin:0 auto;
-  padding:28px 24px 40px;
-  display:grid;
-  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
-  gap:18px;
-  align-content:start;
- }
- #profcont > .ptop{
-  grid-column:1/-1;
-  padding:22px 22px 20px;
-  border:1px solid var(--bd);
-  background:var(--s2);
- }
+ #profcont{width:min(100%,1160px);margin:0 auto;padding:28px 24px 40px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-content:start}
+ #profcont > .ptop{grid-column:1/-1;padding:22px 22px 20px;border:1px solid var(--bd);background:var(--s2)}
  #profcont > .psec{padding:0}
  #profcont > .psec:nth-child(2){grid-column:1}
  #profcont > .psec:nth-child(3){grid-column:2}
  #profcont > .psec:nth-child(4){grid-column:1/-1}
- #profcont > .plogout{
-  grid-column:1/-1;
-  margin:8px 0 0;
-  text-align:left;
- }
+ #profcont > .plogout{grid-column:1/-1;margin:8px 0 0;text-align:left}
  #profcont > .plogout button{padding-inline:24px}
  .datebar{width:min(100%,1240px);margin:0 auto;padding:16px 26px 10px}
  .sectitle{padding:12px 26px 6px}
@@ -323,24 +295,24 @@ body{min-height:100dvh}
 }
 
 @media(min-width:1100px){
- .sidebar-desk{width:260px}
+ .sidebar-desk{width:280px}
+ .desk-main{margin-left:280px}
  #glist{grid-template-columns:repeat(3,1fr)}
  #profcont{gap:22px}
 }
 
-
 /* ── MOBILE DRAWER ── */
-.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;opacity:0;transition:opacity .25s}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;opacity:0;transition:opacity .25s}
 .drawer-overlay.open{display:block;opacity:1}
-.drawer{position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--bg);border-right:1px solid var(--bd);z-index:201;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:0}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(84vw,280px);background:#0a0a0a;border-right:1px solid #1f1f1f;z-index:201;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:0}
 .drawer.open{transform:translateX(0)}
-.drawer-logo{padding:24px 20px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;letter-spacing:0;color:var(--tx)}
+.drawer-logo{padding:22px 20px 18px;border-bottom:1px solid #1f1f1f;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--tx)}
 .drawer-logo img{width:26px;height:26px;object-fit:contain}
 .drawer-logo em{color:var(--green);font-style:normal}
-.drawer-item{display:flex;align-items:center;gap:10px;padding:14px 20px;font-size:14px;font-weight:500;color:var(--mt);cursor:pointer;border-left:2px solid transparent;transition:.15s}
-.drawer-item:hover{background:var(--s2);color:var(--tx)}
-.drawer-item.on{background:color-mix(in srgb,var(--green) 10%, var(--s2) 90%);color:var(--tx);border-left-color:color-mix(in srgb,var(--green) 75%, transparent);font-weight:600}
-.hburguer{display:flex;flex-direction:column;gap:4px;width:34px;height:34px;background:none;border:none;cursor:pointer;align-items:center;justify-content:center;color:var(--tx)}
+.drawer-item{display:flex;align-items:center;gap:10px;padding:13px 20px;font-size:14px;font-weight:500;color:#888;cursor:pointer;border-left:2px solid transparent;transition:.15s}
+.drawer-item:hover{background:#111;color:var(--tx)}
+.drawer-item.on{background:rgba(34,197,94,.08);color:#eafff1;border-left-color:#22c55e;font-weight:600}
+.hburguer{display:flex;flex-direction:column;gap:4px;width:34px;height:34px;background:#0d0d0d;border:1px solid #1f1f1f;cursor:pointer;align-items:center;justify-content:center;color:var(--tx)}
 .hburguer span{display:block;width:18px;height:2px;background:currentColor;transition:.2s}
 @media(min-width:768px){
   .hburguer{display:none}
@@ -364,10 +336,10 @@ body{min-height:100dvh}
 .scrl::-webkit-scrollbar{display:none}
 
 /* HEADER */
-.hdr{display:flex;align-items:center;gap:10px;padding:12px 16px 10px;background:var(--bg);border-bottom:1px solid var(--bd);flex-shrink:0}
+.hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#000;border-bottom:1px solid #1f1f1f;flex-shrink:0}
 .hbk{width:34px;height:34px;border-radius:0;background:var(--s3);border:none;color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hbk.hide{visibility:hidden}
-.htl{flex:1;font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.htl{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0;text-align:center}.htl-title{font-size:15px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.htl-context{font-size:11px;font-family:var(--font-mono);color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hlogo{font-size:18px;font-weight:800;letter-spacing:0}
 .hlogo em{color:var(--green);font-style:normal}
 .hact{display:flex;gap:6px;flex-shrink:0}
@@ -750,7 +722,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
  <button class="hburguer" onclick="openDrawer()">
   <span></span><span></span><span></span>
  </button>
- <div class="htl"></div>
+ <div class="htl"><span class="htl-title">Jogos do dia</span><span class="htl-context">NBA props</span></div>
  <div class="hact">
  <button class="hico" onclick="nav(4)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
  <button class="hico" onclick="toggleTheme()"><svg id="thico" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
@@ -763,7 +735,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
 <div class="scr" id="s2">
  <div class="hdr">
  <button class="hbk" onclick="back()">←</button>
- <div class="htl" id="s2ttl">Jogadores</div>
+ <div class="htl" id="s2ttl"><span class="htl-title">Jogadores</span><span class="htl-context" id="s2ctx">Seleção por jogo</span></div>
  <div class="hact">
  <button class="hico" onclick="nav(4)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
  <button class="hico" onclick="toggleTheme()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
@@ -776,7 +748,7 @@ button:focus-visible,.schip:focus-visible,.stab:focus-visible,.abtn:focus-visibl
 <div class="scr" id="s4">
  <div class="hdr">
  <button class="hbk" onclick="back()">←</button>
- <div class="htl">Meu Perfil</div>
+ <div class="htl"><span class="htl-title">Meu Perfil</span><span class="htl-context">Conta e assinatura</span></div>
  <div class="hact"><button class="hico" onclick="back()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
  </div>
  <div class="scrl" id="profcont"></div>
@@ -1491,7 +1463,7 @@ async function openGame(id){
  if(!cGame) return;
  const openedGameId=id;
  track('game_opened',{game_id:id,away_team:cGame?.away_team||null,home_team:cGame?.home_team||null});
- document.getElementById('s2ttl').textContent='';
+ const s2Title=document.getElementById('s2ttl'); if(s2Title){ s2Title.innerHTML='<span class="htl-title">Jogadores</span><span class="htl-context" id="s2ctx">Seleção por jogo</span>'; }
  const hc=getClr(cGame.home_team),ac=getClr(cGame.away_team);
  const time=new Date(cGame.game_time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  const awayAvatar=cGame.away_logo
@@ -1950,11 +1922,16 @@ async function saveEdit(){
 function openDrawer(){
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 function closeDrawer(){
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('drawerOverlay').classList.remove('open');
+  document.body.style.overflow='';
 }
+window.addEventListener('keydown',function(event){
+  if(event.key==='Escape') closeDrawer();
+});
 function drawerNav(page){
   closeDrawer();
   if(page==='calendario'||page==='classificacao'){ toast('Em breve.'); return; }

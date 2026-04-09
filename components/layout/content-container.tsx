@@ -13,5 +13,5 @@ const widthClasses: Record<NonNullable<ContentContainerProps['width']>, string> 
 };
 
 export function ContentContainer({ className, width = 'content', ...props }: ContentContainerProps) {
-  return <div className={cn('lc-content-container', widthClasses[width], className)} {...props} />;
+  return <div className={cn('lc-content-container', 'lc-content-gutter', widthClasses[width], className)} {...props} />;
 }

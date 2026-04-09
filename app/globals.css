@@ -272,16 +272,45 @@ textarea {
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  background: var(--lc-bg);
+  background: #000;
 }
 
 .lc-shell-sidebar {
+  display: none;
   position: sticky;
   top: 0;
-  max-height: 100dvh;
-  overflow: auto;
+  height: 100dvh;
   z-index: var(--lc-z-sidebar);
 }
+
+.lc-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lc-transition-fast);
+  z-index: var(--lc-z-overlay);
+}
+.lc-mobile-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lc-mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(86vw, 18rem);
+  height: 100dvh;
+  background: #0a0a0a;
+  border-right: 1px solid var(--lc-border);
+  transform: translateX(-100%);
+  transition: transform var(--lc-transition-fast);
+  z-index: calc(var(--lc-z-overlay) + 1);
+}
+.lc-mobile-drawer.is-open { transform: translateX(0); }
 
 .lc-shell-main {
   min-width: 0;
@@ -293,36 +322,99 @@ textarea {
   position: sticky;
   top: 0;
   z-index: var(--lc-z-topbar);
+  min-height: 3.75rem;
   border-bottom: 1px solid var(--lc-border);
-  background: color-mix(in srgb, var(--lc-bg) 92%, transparent);
+  background: color-mix(in srgb, #000 94%, transparent);
   backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: var(--lc-space-2);
+  padding-inline: var(--lc-space-4);
+}
+
+.lc-mobile-menu-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--lc-border);
+  background: #0a0a0a;
+  color: var(--lc-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lc-shell-content {
   width: 100%;
-  padding: var(--lc-space-4);
+  padding: var(--lc-space-4) 0 var(--lc-space-6);
 }
 
 .lc-sidebar {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lc-space-4);
   padding: var(--lc-space-4);
   border-right: 1px solid var(--lc-border);
-  background: var(--lc-surface);
+  background: #0a0a0a;
+}
+
+.lc-sidebar-nav {
+  display: grid;
+  gap: var(--lc-space-1);
+  align-content: start;
+  flex: 1;
+}
+
+.lc-sidebar-item {
+  min-height: 2.5rem;
+  padding: 0 var(--lc-space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lc-space-2);
+  color: var(--lc-muted);
+  border-left: 2px solid transparent;
+}
+.lc-sidebar-item:hover { color: var(--lc-text); background: #0f0f0f; }
+.lc-sidebar-item.is-active {
+  color: var(--lc-accent);
+  border-left-color: var(--lc-accent);
+  background: color-mix(in srgb, var(--lc-accent) 8%, #0a0a0a 92%);
+}
+.lc-sidebar-item.is-disabled { opacity: .45; pointer-events: none; }
+
+.lc-sidebar-footer {
+  border-top: 1px solid var(--lc-border);
+  padding-top: var(--lc-space-3);
 }
 
 .lc-topbar {
-  min-height: 4rem;
-  padding: 0 var(--lc-space-4);
+  min-height: 3.25rem;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--lc-space-3);
 }
+.lc-topbar-context { min-width: 0; }
+.lc-topbar-title {
+  font-size: var(--lc-text-h3);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.lc-topbar-subtitle {
+  margin-top: 0.15rem;
+  color: var(--lc-muted);
+  font-size: var(--lc-text-label);
+  font-family: var(--lc-font-mono);
+}
+.lc-topbar-actions { display: inline-flex; align-items: center; gap: var(--lc-space-2); }
 
 .lc-content-container {
   width: min(100%, var(--lc-container-content));
   margin-inline: auto;
 }
+.lc-content-gutter { padding-inline: var(--lc-space-4); }
 .lc-container-md { max-width: var(--lc-container-md); }
 .lc-container-lg { max-width: var(--lc-container-lg); }
 .lc-container-xl { max-width: var(--lc-container-xl); }
@@ -338,8 +430,19 @@ textarea {
   .lc-shell {
     grid-template-columns: 16rem minmax(0, 1fr);
   }
+  .lc-shell-sidebar {
+    display: block;
+  }
+  .lc-mobile-menu-btn,
+  .lc-mobile-overlay,
+  .lc-mobile-drawer {
+    display: none;
+  }
   .lc-shell-content {
-    padding: var(--lc-space-6);
+    padding: var(--lc-space-6) 0 var(--lc-space-6);
+  }
+  .lc-content-gutter {
+    padding-inline: var(--lc-space-6);
   }
   .lc-page-section {
     padding-block: var(--lc-space-6);
