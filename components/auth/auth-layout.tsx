@@ -24,6 +24,8 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           <Link href="/termos">Termos</Link>
           <span>·</span>
           <Link href="/privacidade">Privacidade</Link>
+          <span>·</span>
+          <a href="mailto:suporte@linhacash.com.br">suporte@linhacash.com.br</a>
         </footer>
       </section>
     </main>

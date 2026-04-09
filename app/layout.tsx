@@ -4,6 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'LinhaCash',
   description: 'Análise de props da NBA',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 const themeBootScript = `(() => { try { const saved = localStorage.getItem('theme'); const theme = saved === 'light' ? 'light' : 'dark'; const root = document.documentElement; root.classList.remove('light', 'dark'); root.classList.add(theme); root.dataset.theme = theme; } catch (_) { document.documentElement.classList.add('dark'); document.documentElement.dataset.theme = 'dark'; } })();`;

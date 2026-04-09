@@ -10,6 +10,7 @@ export interface SidebarItem {
   href: string;
   icon: LucideIcon;
   disabled?: boolean;
+  secondary?: boolean;
 }
 
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
@@ -31,7 +32,7 @@ export function Sidebar({ className, items = [], activeKey, footer, onItemClick,
 
           if (item.disabled) {
             return (
-              <span key={item.key} className={cn('lc-sidebar-item', 'is-disabled')} aria-disabled="true">
+              <span key={item.key} className={cn('lc-sidebar-item', item.secondary && 'is-secondary', 'is-disabled')} aria-disabled="true">
                 <span className="lc-sidebar-item-main">
                   <Icon size={16} aria-hidden="true" />
                   <span>{item.label}</span>
@@ -42,7 +43,7 @@ export function Sidebar({ className, items = [], activeKey, footer, onItemClick,
           }
 
           return (
-            <Link key={item.key} href={item.href} className={cn('lc-sidebar-item', active && 'is-active')} onClick={() => onItemClick?.(item)}>
+            <Link key={item.key} href={item.href} className={cn('lc-sidebar-item', item.secondary && 'is-secondary', active && 'is-active')} onClick={() => onItemClick?.(item)}>
               <Icon size={16} aria-hidden="true" />
               <span>{item.label}</span>
             </Link>

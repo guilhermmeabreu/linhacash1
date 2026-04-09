@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useMemo, useState } from 'react';
-import { Lock, Mail, User } from 'lucide-react';
+import { Lock, Mail, ShieldCheck, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -84,13 +84,9 @@ export function LoginForm() {
       </label>
       {error ? <p className="lc-auth-error">{error}</p> : null}
       {message ? <p className="lc-auth-success">{message}</p> : null}
+
       <Button type="submit" size="lg" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</Button>
-      <div className="lc-auth-divider"><span>ou</span></div>
-      <div className="lc-auth-row">
-        <button type="button" className="lc-link-btn" onClick={onForgot} disabled={loading}>Enviar recuperação</button>
-        <Link href={recoveryHref}>Abrir página de recuperação</Link>
-      </div>
-      <p className="lc-auth-help">Novo por aqui? <Link href="/signup">Criar conta grátis</Link></p>
+
       <button
         type="button"
         className="lc-google-btn"
@@ -106,8 +102,24 @@ export function LoginForm() {
           window.location.href = data.url;
         }}
       >
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.8-4.1 2.8-6.9 0-.7-.1-1.5-.2-2.2H12Z"/>
+          <path fill="#34A853" d="M12 22c2.6 0 4.8-.9 6.4-2.5l-3.1-2.4c-.9.6-2 .9-3.3.9-2.5 0-4.6-1.7-5.4-4l-3.2 2.5C5 19.8 8.2 22 12 22Z"/>
+          <path fill="#4A90E2" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L3.4 7.5C2.5 9 2 10.5 2 12s.5 3 1.4 4.5L6.6 14Z"/>
+          <path fill="#FBBC05" d="M12 6.2c1.4 0 2.6.5 3.5 1.4l2.6-2.6C16.7 3.7 14.5 3 12 3 8.2 3 5 5.2 3.4 8.5L6.6 11c.8-2.3 2.9-4.8 5.4-4.8Z"/>
+        </svg>
         Continuar com Google
       </button>
+
+      <div className="lc-auth-recovery">
+        <div className="lc-auth-row">
+          <button type="button" className="lc-link-btn" onClick={onForgot} disabled={loading}>Enviar recuperação</button>
+          <Link href={recoveryHref}>Abrir página de recuperação</Link>
+        </div>
+        <p className="lc-auth-legal-copy"><ShieldCheck size={14} /> Ao continuar, você concorda com os <Link href="/termos">Termos</Link> e a <Link href="/privacidade">Política de Privacidade</Link>.</p>
+      </div>
+
+      <p className="lc-auth-help">Novo por aqui? <Link href="/signup">Criar conta grátis</Link></p>
     </form>
   );
 }

@@ -16,10 +16,13 @@
   gap: 0.45rem;
 }
 
-.sidebarFooterInfo a {
+.sidebarFooterInfo strong {
+  font-size: 0.78rem;
+}
+
+.sidebarFooterInfo span {
   color: var(--lc-muted);
   font-size: 0.68rem;
-  word-break: break-word;
 }
 
 .stateText {
@@ -178,6 +181,11 @@
 .lockedStateBox {
   display: grid;
   gap: 0.65rem;
+}
+.lockedActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .lockedTitle {
@@ -566,6 +574,109 @@
   font-size: 0.78rem;
 }
 
+.upgradeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: color-mix(in srgb, var(--lc-bg) 70%, black 30%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.upgradeModal {
+  width: min(100%, 34rem);
+  display: grid;
+  gap: 0.8rem;
+  position: relative;
+}
+
+.upgradeClose {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  display: grid;
+  place-items: center;
+}
+
+.upgradeKicker {
+  color: var(--lc-accent);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 800;
+}
+
+.upgradeSubtitle {
+  color: var(--lc-muted);
+  font-size: 0.84rem;
+}
+
+.upgradeSubtitle strong {
+  color: var(--lc-text);
+}
+
+.upgradePlans {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.upgradePlanBtn {
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface);
+  padding: 0.75rem;
+  text-align: left;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.upgradePlanBtn span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lc-muted);
+}
+
+.upgradePlanBtn strong {
+  font-size: 1rem;
+}
+
+.upgradePlanBtn small {
+  color: var(--lc-accent);
+  font-size: 0.7rem;
+}
+
+.upgradePlanBtn.isSelected {
+  border-color: color-mix(in srgb, var(--lc-accent) 44%, var(--lc-border) 56%);
+  background: color-mix(in srgb, var(--lc-accent) 10%, var(--lc-surface) 90%);
+}
+
+.upgradeField {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--lc-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.upgradeField input {
+  min-height: 2.5rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  color: var(--lc-text);
+  padding: 0 0.65rem;
+}
+
+.upgradeError {
+  color: #ff9e9e;
+  font-size: 0.82rem;
+}
+
 .infoBanner { background: color-mix(in srgb, var(--lc-surface) 83%, #0d151f 17%); }
 
 .errorBox {
@@ -618,5 +729,9 @@
 
   .chartCanvas {
     min-height: 180px;
+  }
+
+  .upgradeModal {
+    width: 100%;
   }
 }
