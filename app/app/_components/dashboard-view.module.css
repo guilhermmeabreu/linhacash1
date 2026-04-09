@@ -137,10 +137,9 @@
   gap: 0.4rem;
 }
 
-.playerDetailPreview {
+.playerDetailPanel {
   display: grid;
-  gap: 0.7rem;
-  border-style: dashed;
+  gap: 0.8rem;
 }
 
 .playerDetailHeader {
@@ -158,7 +157,130 @@
 .playerDetailActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.summaryStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.45rem;
+}
+
+.summaryCard {
+  border: 1px solid var(--lc-border);
+  padding: 0.5rem;
+  display: grid;
+  gap: 0.12rem;
+  background: color-mix(in srgb, var(--lc-surface) 82%, #0b1320 18%);
+}
+
+.summaryCard span {
+  color: var(--lc-muted);
+  font-size: 0.68rem;
+  font-family: var(--lc-font-mono);
+}
+
+.summaryCard strong {
+  font-size: 0.9rem;
+}
+
+.summaryCard small {
+  font-size: 0.7rem;
+  color: var(--lc-muted);
+}
+
+.chartCard {
+  border: 1px solid var(--lc-border);
+  background: color-mix(in srgb, var(--lc-surface) 76%, #09111a 24%);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.chartTitle {
+  font-size: 0.85rem;
+  color: var(--lc-muted);
+}
+
+.chartHeaderBadges {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.chartCanvas {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.35rem;
+  min-height: 220px;
+  align-items: end;
+  padding-top: 1.4rem;
+}
+
+.chartReference {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--lc-accent) 55%, var(--lc-border) 45%);
+}
+
+.chartReference span {
+  position: absolute;
+  top: -0.9rem;
+  left: 0;
+  font-size: 0.64rem;
+  color: var(--lc-muted);
+  font-family: var(--lc-font-mono);
+  background: var(--lc-surface);
+  padding-right: 0.35rem;
+}
+
+.chartColumn {
+  display: grid;
+  gap: 0.3rem;
+  align-items: end;
+}
+
+.chartColumn small {
+  color: var(--lc-muted);
+  text-align: center;
+  font-size: 0.62rem;
+}
+
+.chartBar {
+  min-height: 8px;
+  display: grid;
+  align-content: flex-start;
+  justify-items: center;
+  padding-top: 0.2rem;
+}
+
+.chartBar span {
+  font-size: 0.6rem;
+  color: #dbe7e3;
+  font-family: var(--lc-font-mono);
+}
+
+.chartBarHit {
+  background: linear-gradient(180deg, #26d07c 0%, #149d5e 100%);
+}
+
+.chartBarTie {
+  background: linear-gradient(180deg, #5b78ff 0%, #4b63cf 100%);
+}
+
+.chartBarMiss {
+  background: linear-gradient(180deg, #f78e51 0%, #d4663d 100%);
 }
 
 .errorBox {

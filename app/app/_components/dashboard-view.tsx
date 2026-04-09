@@ -58,6 +58,36 @@ type Player = {
   jersey: string | number | null;
 };
 
+type PlayerMetrics = {
+  player_id: number;
+  stat: Stat;
+  avg_l5?: number | null;
+  avg_l10?: number | null;
+  avg_l20?: number | null;
+  avg_l30?: number | null;
+  avg_home?: number | null;
+  avg_away?: number | null;
+  hit_rate_l10?: number | null;
+  line?: number | null;
+};
+
+type PlayerGameSample = {
+  date: string | null;
+  value: number | null;
+  minutes: number | null;
+};
+
+type ChartBarTone = 'hit' | 'miss' | 'tie';
+
+type PlayerDetailChartBar = {
+  date: string | null;
+  value: number;
+  minutes: number;
+  tone: ChartBarTone;
+  heightPct: number;
+  label: string;
+};
+
 type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; message: string };
@@ -143,11 +173,15 @@ export function DashboardView() {
   const [selectedStat, setSelectedStat] = useState<Stat>(() => resolveInitialStat(searchParams.get('s')));
   const [gamesStatus, setGamesStatus] = useState<ResourceStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [metricsByPlayer, setMetricsByPlayer] = useState<Record<number, Partial<Record<Stat, { metrics: PlayerMetrics | null; games: PlayerGameSample[] }>>>>({});
+  const [metricsStatusByPlayer, setMetricsStatusByPlayer] = useState<Record<number, Partial<Record<Stat, ResourceStatus>>>>({});
+  const [metricsErrorByPlayer, setMetricsErrorByPlayer] = useState<Record<number, Partial<Record<Stat, string | null>>>>({});
   const [plan, setPlan] = useState<Plan>('free');
   const [planLoaded, setPlanLoaded] = useState(false);
 
   const gamesRequestRef = useRef(0);
   const playersRequestRef = useRef<Record<number, number>>({});
+  const metricsRequestRef = useRef<Record<string, number>>({});
 
   const selectedGame = useMemo(
     () => games.find((game) => game.id === selectedGameId) ?? null,
@@ -165,6 +199,10 @@ export function DashboardView() {
 
   const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
   const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
+  const selectedMetricsResource = selectedPlayerId ? metricsByPlayer[selectedPlayerId]?.[selectedStat] : null;
+  const selectedMetricsStatus = selectedPlayerId ? metricsStatusByPlayer[selectedPlayerId]?.[selectedStat] ?? 'idle' : 'idle';
+  const selectedMetricsError = selectedPlayerId ? metricsErrorByPlayer[selectedPlayerId]?.[selectedStat] ?? null : null;
+  const marketLocked = isLockedStat(selectedStat, plan);
 
   const syncQueryString = useCallback(
     (nextState: { gameId: number | null; stat: Stat; playerId: number | null }) => {
@@ -226,6 +264,57 @@ export function DashboardView() {
       setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: mappedPlayers.length ? 'ready' : 'empty' }));
     },
     [playersStatusByGame],
+  );
+
+  const loadMetricsForPlayer = useCallback(
+    async (playerId: number, stat: Stat, options?: { force?: boolean }) => {
+      const existingStatus = metricsStatusByPlayer[playerId]?.[stat];
+      if (!options?.force && (existingStatus === 'ready' || existingStatus === 'loading')) return;
+
+      const key = `${playerId}:${stat}`;
+      const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
+      metricsRequestRef.current[key] = requestId;
+
+      setMetricsStatusByPlayer((prev) => ({
+        ...prev,
+        [playerId]: { ...(prev[playerId] ?? {}), [stat]: 'loading' },
+      }));
+      setMetricsErrorByPlayer((prev) => ({
+        ...prev,
+        [playerId]: { ...(prev[playerId] ?? {}), [stat]: null },
+      }));
+
+      const result = await apiFetch<{ metrics: PlayerMetrics | null; games: PlayerGameSample[] }>(`/api/metrics?playerId=${playerId}&stat=${stat}`);
+
+      if (metricsRequestRef.current[key] !== requestId) return;
+
+      if (!result.ok) {
+        setMetricsStatusByPlayer((prev) => ({
+          ...prev,
+          [playerId]: { ...(prev[playerId] ?? {}), [stat]: 'error' },
+        }));
+        setMetricsErrorByPlayer((prev) => ({
+          ...prev,
+          [playerId]: { ...(prev[playerId] ?? {}), [stat]: result.message },
+        }));
+        return;
+      }
+
+      const payload = {
+        metrics: result.data.metrics ?? null,
+        games: Array.isArray(result.data.games) ? result.data.games : [],
+      };
+
+      setMetricsByPlayer((prev) => ({
+        ...prev,
+        [playerId]: { ...(prev[playerId] ?? {}), [stat]: payload },
+      }));
+      setMetricsStatusByPlayer((prev) => ({
+        ...prev,
+        [playerId]: { ...(prev[playerId] ?? {}), [stat]: payload.games.length || payload.metrics ? 'ready' : 'empty' },
+      }));
+    },
+    [metricsStatusByPlayer],
   );
 
   const loadGames = useCallback(async () => {
@@ -310,23 +399,88 @@ export function DashboardView() {
   }, [loadPlayersForGame, selectedGame]);
 
   useEffect(() => {
+    if (!selectedPlayerId || marketLocked) return;
+    const timer = window.setTimeout(() => {
+      void loadMetricsForPlayer(selectedPlayerId, selectedStat);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadMetricsForPlayer, marketLocked, selectedPlayerId, selectedStat]);
+
+  useEffect(() => {
+    if (!selectedPlayerId) return;
+    const availableStats = plan === 'pro' ? STATS : FREE_STATS;
+    if (typeof window === 'undefined') return;
+    const schedule = window.requestIdleCallback ?? ((cb: IdleRequestCallback) => window.setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 } as IdleDeadline), 120));
+    const handle = schedule(() => {
+      availableStats.forEach((stat) => {
+        if (stat === selectedStat) return;
+        void loadMetricsForPlayer(selectedPlayerId, stat);
+      });
+    });
+    return () => {
+      if ('cancelIdleCallback' in window && typeof window.cancelIdleCallback === 'function' && typeof handle === 'number') {
+        window.cancelIdleCallback(handle);
+      } else {
+        window.clearTimeout(handle as number);
+      }
+    };
+  }, [loadMetricsForPlayer, plan, selectedPlayerId, selectedStat]);
+
+  useEffect(() => {
     syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null });
   }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString]);
 
   const authTokenMissing = typeof window !== 'undefined' && !getAuthToken();
-  const marketLocked = isLockedStat(selectedStat, plan);
 
   const handleStatChange = useCallback((value: string) => {
     const nextStat = resolveInitialStat(value);
     if (isLockedStat(nextStat, plan)) return;
     setSelectedStat(nextStat);
-    setSelectedPlayerId(null);
   }, [plan]);
 
   const handleSelectGame = useCallback((gameId: number) => {
     setSelectedGameId(gameId);
     setSelectedPlayerId(null);
   }, []);
+
+  const getChartBarClassName = useCallback((tone: ChartBarTone) => {
+    if (tone === 'hit') return `${styles.chartBar} ${styles.chartBarHit}`;
+    if (tone === 'tie') return `${styles.chartBar} ${styles.chartBarTie}`;
+    return `${styles.chartBar} ${styles.chartBarMiss}`;
+  }, []);
+
+  const playerDetailModel = useMemo(() => {
+    if (!selectedPlayer) return null;
+    const payload = selectedMetricsResource;
+    const games = (payload?.games ?? []).map((sample) => ({
+      date: sample.date,
+      value: Number(sample.value ?? 0),
+      minutes: Number(sample.minutes ?? 0),
+    }));
+    const values = games.map((sample) => sample.value);
+    const lineBase = Number(payload?.metrics?.line ?? payload?.metrics?.avg_l10 ?? 0);
+    const line = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
+    const average = values.length ? Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1)) : null;
+    const chartBase = Math.max(line, ...values, 1);
+    const bars: PlayerDetailChartBar[] = games.slice(0, 12).reverse().map((sample) => {
+      const pct = Math.max(8, Math.round((sample.value / chartBase) * 100));
+      const tone: ChartBarTone = sample.value > line ? 'hit' : sample.value === line ? 'tie' : 'miss';
+      const date = sample.date ? new Date(sample.date) : null;
+      const label = date ? `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}` : '—';
+      return { ...sample, tone, heightPct: pct, label };
+    });
+    const linePct = Math.min(96, Math.max(4, (line / chartBase) * 100));
+    const windows = [5, 10, 20, 30].map((size) => {
+      const window = games.slice(0, size);
+      if (!window.length) return { label: `L${size}`, value: '—', note: 'Sem dados' };
+      const hits = window.filter((sample) => sample.value >= line).length;
+      const pct = Math.round((hits / window.length) * 100);
+      return { label: `L${size}`, value: `${pct}%`, note: `${hits}/${window.length}` };
+    });
+    const edge = average === null ? null : Number((average - line).toFixed(1));
+    const edgeLabel = edge === null ? 'N/D' : edge >= 0 ? 'Over lean' : 'Under lean';
+    return { games, line, average, bars, linePct, windows, edge, edgeLabel, metrics: payload?.metrics ?? null };
+  }, [selectedMetricsResource, selectedPlayer]);
 
   return (
     <AppShell
@@ -474,21 +628,73 @@ export function DashboardView() {
                 ) : null}
 
                 {selectedPlayer ? (
-                  <Surface className={styles.playerDetailPreview}>
+                  <Surface className={styles.playerDetailPanel}>
                     <div className={styles.playerDetailHeader}>
                       <div>
                         <p className={styles.playerDetailTitle}>{selectedPlayer.name}</p>
                         <p className={styles.playerMeta}>{selectedPlayer.position} · {selectedPlayer.team}</p>
                       </div>
-                      <Badge variant="default">Entrada React</Badge>
+                      <div className={styles.playerDetailActions}>
+                        <Badge variant="default">{selectedStat}</Badge>
+                        <Button size="sm" variant="ghost" onClick={() => setSelectedPlayerId(null)}>Voltar</Button>
+                      </div>
                     </div>
-                    <p className={styles.stateText}>
-                      Fluxo de entrada pronto: seleção de jogador preservada em estado/URL. O painel premium completo ainda será migrado em etapa dedicada.
-                    </p>
-                    <div className={styles.playerDetailActions}>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedPlayerId(null)}>Voltar para lista</Button>
-                      <Button size="sm" variant="secondary" onClick={() => window.location.assign('/app.html')}>Abrir detalhe legado</Button>
-                    </div>
+
+                    {selectedMetricsStatus === 'loading' ? <p className={styles.stateText}>Carregando métricas e histórico...</p> : null}
+                    {selectedMetricsStatus === 'error' ? (
+                      <EmptyState
+                        heading="Não foi possível carregar o detalhe do jogador"
+                        description={selectedMetricsError || 'Tente novamente em instantes.'}
+                        action={selectedPlayerId ? (
+                          <Button size="sm" variant="secondary" onClick={() => loadMetricsForPlayer(selectedPlayerId, selectedStat, { force: true })}>
+                            <RefreshCw size={14} /> Recarregar
+                          </Button>
+                        ) : null}
+                      />
+                    ) : null}
+                    {selectedMetricsStatus === 'empty' ? <p className={styles.stateText}>Sem histórico suficiente para este mercado.</p> : null}
+
+                    {playerDetailModel && selectedMetricsStatus === 'ready' ? (
+                      <>
+                        <div className={styles.summaryStrip}>
+                          {playerDetailModel.windows.map((window) => (
+                            <div key={window.label} className={styles.summaryCard}>
+                              <span>{window.label}</span>
+                              <strong>{window.value}</strong>
+                              <small>{window.note}</small>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className={styles.chartCard}>
+                          <div className={styles.chartHeader}>
+                            <p className={styles.chartTitle}>{selectedStat} · Últimos jogos</p>
+                            <div className={styles.chartHeaderBadges}>
+                              <Badge variant="muted">Linha {playerDetailModel.line}</Badge>
+                              <Badge variant="muted">Média {playerDetailModel.average ?? '—'}</Badge>
+                              <Badge variant={playerDetailModel.edge !== null && playerDetailModel.edge >= 0 ? 'success' : 'default'}>
+                                {playerDetailModel.edgeLabel}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className={styles.chartCanvas}>
+                            <div className={styles.chartReference} style={{ bottom: `${playerDetailModel.linePct}%` }}>
+                              <span>Linha {playerDetailModel.line}</span>
+                            </div>
+                            {playerDetailModel.bars.length ? playerDetailModel.bars.map((bar, index) => (
+                              <div key={`${bar.label}-${index}`} className={styles.chartColumn}>
+                                <div className={getChartBarClassName(bar.tone)} style={{ height: `${bar.heightPct}%` }}>
+                                  <span>{bar.value}</span>
+                                </div>
+                                <small>{bar.label}</small>
+                              </div>
+                            )) : (
+                              <p className={styles.stateText}>Dados recentes indisponíveis para o gráfico.</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
                   </Surface>
                 ) : null}
               </TabsContent>
