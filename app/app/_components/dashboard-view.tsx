@@ -191,6 +191,7 @@ export function DashboardView() {
   const selectedMetricsResource = selectedPlayerId ? metricsByPlayer[selectedPlayerId]?.[selectedStat] : null;
   const selectedMetricsStatus = selectedPlayerId ? metricsStatusByPlayer[selectedPlayerId]?.[selectedStat] ?? 'idle' : 'idle';
   const selectedMetricsError = selectedPlayerId ? metricsErrorByPlayer[selectedPlayerId]?.[selectedStat] ?? null : null;
+  const marketLocked = isLockedStat(selectedStat, plan);
 
   const syncQueryString = useCallback(
     (nextState: { gameId: number | null; stat: Stat; playerId: number | null }) => {
@@ -419,7 +420,6 @@ export function DashboardView() {
   }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString]);
 
   const authTokenMissing = typeof window !== 'undefined' && !getAuthToken();
-  const marketLocked = isLockedStat(selectedStat, plan);
 
   const handleStatChange = useCallback((value: string) => {
     const nextStat = resolveInitialStat(value);
