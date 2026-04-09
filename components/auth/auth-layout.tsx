@@ -1,18 +1,18 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { BarChart3 } from 'lucide-react';
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
     <main className="lc-auth-page">
       <section className="lc-auth-card lc-surface lc-surface-elevated">
         <Link href="/" className="lc-auth-brand" aria-label="Voltar para a página inicial">
-          <Image src="/logo.png" alt="LinhaCash" width={56} height={56} priority />
+          <span className="lc-auth-brand-icon"><BarChart3 size={28} /></span>
           <h1>
             Linha<span>Cash</span>
           </h1>
         </Link>
-        <p className="lc-auth-kicker">Análise premium de props da NBA</p>
+        <p className="lc-auth-kicker">Análise de props da NBA</p>
         <h2>{title}</h2>
         <p className="lc-auth-subtitle">{subtitle}</p>
         {children}

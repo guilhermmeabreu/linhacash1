@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowRight, CheckCircle2, Target, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PublicNav } from '@/app/_components/public-nav';
 
@@ -7,19 +7,42 @@ const plans = [
   {
     name: 'Free',
     price: 'R$0',
-    description: 'Perfeito para testar o fluxo e conhecer a leitura de props.',
-    features: ['Todos os jogos visíveis na rodada', '1 jogo liberado por dia', '1 jogador por time', 'Acesso parcial às estatísticas'],
-    cta: 'Começar no Free',
+    period: '',
+    description: 'Ideal para testar o fluxo e sentir a experiência do LinhaCash.',
+    features: ['Todos os jogos visíveis', '1 jogo liberado por dia', '1 jogador por time', 'Métricas PTS + 3PM'],
+    cta: 'Começar grátis',
     href: '/signup',
   },
   {
     name: 'Pro',
-    price: 'R$24,90/mês',
-    description: 'Leitura completa para quem acompanha NBA todos os dias.',
-    features: ['Todos os jogos da rodada', 'Todos os jogadores', 'Todas as estatísticas liberadas', 'Contexto avançado para decisões rápidas'],
+    price: 'R$24,90',
+    period: '/mês',
+    description: 'Para quem acompanha NBA todos os dias e quer leitura completa de props.',
+    features: ['Todos os jogos da rodada', 'Todos os jogadores liberados', 'Props e estatísticas completas', 'Contexto avançado (H2H, L20)'],
     cta: 'Assinar Pro',
     href: '/signup',
     highlight: true,
+  },
+];
+
+const steps = [
+  {
+    step: '01',
+    title: 'Escolha o Jogo',
+    description: 'Abra os confrontos do dia e entre direto no duelo que quer analisar.',
+    icon: Zap,
+  },
+  {
+    step: '02',
+    title: 'Analise o Jogador',
+    description: 'Veja os props principais com os dados que realmente importam.',
+    icon: Target,
+  },
+  {
+    step: '03',
+    title: 'Tome sua Decisão',
+    description: 'Compare linha, fase recente e contexto antes de apostar.',
+    icon: CheckCircle2,
   },
 ];
 
@@ -29,48 +52,51 @@ export default function LandingPage() {
       <PublicNav />
 
       <section className="lc-hero lc-public-container">
-        <p className="lc-kicker">NBA props intelligence</p>
-        <h1>Decida mais rápido com contexto real, não com achismo.</h1>
+        <h1>
+          Veja o que os <span>números</span> mostram
+        </h1>
         <p>
-          O LinhaCash organiza tendências, linhas e desempenho recente em uma experiência premium para você analisar melhor antes de entrar em uma aposta.
+          Tendências, desempenho recente e contexto real dos jogadores da NBA. Organizados para você decidir com mais confiança e velocidade.
         </p>
         <div className="lc-hero-cta">
           <Link href="/signup">
-            <Button size="lg">Criar conta grátis</Button>
+            <Button size="lg">Começar agora <ArrowRight size={18} /></Button>
           </Link>
-          <Link href="/login">
-            <Button size="lg" variant="secondary">Entrar</Button>
-          </Link>
+          <a href="#planos">
+            <Button size="lg" variant="secondary">Ver planos</Button>
+          </a>
         </div>
         <small>Sem cartão de crédito · plano gratuito disponível</small>
       </section>
 
-      <section className="lc-public-container lc-feature-grid">
-        <article className="lc-surface">
-          <h2>Leitura focada em decisão</h2>
-          <p>Navegue por jogos e jogadores com menos ruído e mais sinal para o seu processo.</p>
-        </article>
-        <article className="lc-surface">
-          <h2>Contexto rápido por jogador</h2>
-          <p>Compare linha, fase recente e desempenho em poucos cliques com visual direto.</p>
-        </article>
-        <article className="lc-surface">
-          <h2>Fluxo consistente no mobile</h2>
-          <p>Interface otimizada para desktop e celular, seguindo o mesmo design do novo app shell.</p>
-        </article>
+      <section id="como-funciona" className="lc-public-container lc-step-section">
+        <header>
+          <h2>Como funciona</h2>
+          <p>Três passos simples para transformar dados em decisões inteligentes.</p>
+        </header>
+        <div className="lc-step-grid">
+          {steps.map((item) => (
+            <article key={item.step} className="lc-surface">
+              <span>{item.step}</span>
+              <item.icon size={32} />
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="lc-public-container lc-plan-section" id="planos">
         <header>
-          <p className="lc-kicker">Planos</p>
-          <h2>Escolha seu nível de profundidade</h2>
-          <p>Comece grátis e evolua para o Pro quando quiser mais cobertura e mais contexto por jogador.</p>
+          <h2>Planos</h2>
+          <p>Escolha o nível de análise que faz sentido para você.</p>
         </header>
         <div className="lc-plan-grid">
           {plans.map((plan) => (
             <article key={plan.name} className={`lc-surface ${plan.highlight ? 'lc-plan-highlight' : ''}`}>
+              {plan.highlight ? <div className="lc-plan-pill">Recomendado</div> : null}
               <h3>{plan.name}</h3>
-              <strong>{plan.price}</strong>
+              <strong>{plan.price}{plan.period ? <small>{plan.period}</small> : null}</strong>
               <p>{plan.description}</p>
               <ul>
                 {plan.features.map((feature) => (
@@ -85,30 +111,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="lc-public-container lc-final-cta">
-        <h2>Comece com o essencial. Desbloqueie a visão completa.</h2>
-        <p>Seu fluxo de análise continua o mesmo. Agora com uma experiência mais polida e premium.</p>
-        <div className="lc-hero-cta">
-          <Link href="/signup">
-            <Button size="lg">Começar agora</Button>
-          </Link>
-          <Link href="/app">
-            <Button size="lg" variant="secondary">Abrir dashboard</Button>
-          </Link>
-        </div>
-      </section>
-
       <footer className="lc-public-footer">
         <div className="lc-public-container">
-          <Link href="/" className="lc-brand">
-            <Image src="/logo.png" alt="LinhaCash" width={24} height={24} />
-            <span>
-              Linha<span>Cash</span>
-            </span>
-          </Link>
-          <p>Uso responsável: LinhaCash é uma plataforma informativa e não intermedia apostas.</p>
+          <p>Uso responsável: o LinhaCash não é casa de apostas e não intermedia apostas.</p>
           <p>
-            <Link href="/termos">Termos</Link> · <Link href="/privacidade">Privacidade</Link>
+            <Link href="/termos">Termos</Link> · <Link href="/privacidade">Privacidade</Link> · <a href="mailto:contato@linhacash.com">Contato</a>
           </p>
         </div>
       </footer>

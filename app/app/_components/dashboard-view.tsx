@@ -2,14 +2,22 @@
 
 import {
   AlertCircle,
+  ArrowLeft,
   BarChart3,
   CalendarDays,
+  ChevronRight,
   Crown,
   LayoutDashboard,
   Lock,
+  LogOut,
+  Minus,
+  Plus,
   RefreshCw,
+  Search,
+  Shield,
   UserRound,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -37,6 +45,7 @@ const FREE_STATS = ['PTS', '3PM'] as const;
 type Stat = (typeof STATS)[number];
 
 type Plan = 'free' | 'pro';
+type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
 
 type Game = {
   id: number;
@@ -98,7 +107,7 @@ const sidebarItems = [
   { key: 'dashboard', label: 'Jogos do dia', href: '/app', icon: LayoutDashboard },
   { key: 'calendario', label: 'Calendário', href: '/app', icon: CalendarDays, disabled: true },
   { key: 'stats', label: 'Classificação', href: '/app', icon: BarChart3, disabled: true },
-  { key: 'perfil', label: 'Meu perfil', href: '/app', icon: UserRound, disabled: true },
+  { key: 'perfil', label: 'Meu perfil', href: '/app?view=profile', icon: UserRound },
 ];
 
 function getAuthToken() {
@@ -160,6 +169,10 @@ export function DashboardView() {
     return Number.isFinite(parsed) ? parsed : null;
   }, [searchParams]);
 
+  const [view, setView] = useState<DashboardViewMode>(() => (searchParams.get('view') === 'profile' ? 'profile' : 'games'));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [lineAdjustment, setLineAdjustment] = useState(0);
+
   const [games, setGames] = useState<Game[]>([]);
   const [playersByGame, setPlayersByGame] = useState<Record<number, Player[]>>({});
   const [playersStatusByGame, setPlayersStatusByGame] = useState<Record<number, ResourceStatus>>({});
@@ -192,6 +205,12 @@ export function DashboardView() {
     () => (selectedGameId ? playersByGame[selectedGameId] ?? [] : []),
     [playersByGame, selectedGameId],
   );
+  const filteredPlayers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return players;
+    return players.filter((player) => `${player.name} ${player.team} ${player.position}`.toLowerCase().includes(term));
+  }, [players, searchTerm]);
+
   const selectedPlayer = useMemo(
     () => players.find((player) => player.id === selectedPlayerId) ?? null,
     [players, selectedPlayerId],
@@ -203,6 +222,7 @@ export function DashboardView() {
   const selectedMetricsStatus = selectedPlayerId ? metricsStatusByPlayer[selectedPlayerId]?.[selectedStat] ?? 'idle' : 'idle';
   const selectedMetricsError = selectedPlayerId ? metricsErrorByPlayer[selectedPlayerId]?.[selectedStat] ?? null : null;
   const marketLocked = isLockedStat(selectedStat, plan);
+
   const checkoutNotice = useMemo(() => {
     const checkoutStatus = (searchParams.get('status') || '').toLowerCase();
     if (checkoutStatus === 'success') return 'Pagamento confirmado! Seu plano Pro será liberado em instantes.';
@@ -210,13 +230,14 @@ export function DashboardView() {
     if (checkoutStatus === 'failure') return 'Pagamento não concluído. Você pode tentar novamente quando quiser.';
     return null;
   }, [searchParams]);
+
   const oauthQueryError = useMemo(() => {
     const error = searchParams.get('error_description') || searchParams.get('error');
     return error ? 'Não foi possível concluir o login com Google. Tente novamente.' : null;
   }, [searchParams]);
 
   const syncQueryString = useCallback(
-    (nextState: { gameId: number | null; stat: Stat; playerId: number | null }) => {
+    (nextState: { gameId: number | null; stat: Stat; playerId: number | null; mode: DashboardViewMode }) => {
       const params = new URLSearchParams(searchParams.toString());
       ['status', 'oauth', 'access_token', 'refresh_token', 'token_type', 'expires_in', 'expires_at', 'code', 'error', 'error_description', 'type'].forEach((key) => {
         params.delete(key);
@@ -229,6 +250,9 @@ export function DashboardView() {
 
       if (nextState.playerId) params.set('p', String(nextState.playerId));
       else params.delete('p');
+
+      if (nextState.mode === 'profile') params.set('view', 'profile');
+      else params.delete('view');
 
       const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
       router.replace(nextUrl, { scroll: false });
@@ -462,8 +486,8 @@ export function DashboardView() {
   }, [loadMetricsForPlayer, plan, selectedPlayerId, selectedStat]);
 
   useEffect(() => {
-    syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null });
-  }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString]);
+    syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null, mode: view });
+  }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString, view]);
 
   const authTokenMissing = typeof window !== 'undefined' && !getAuthToken();
 
@@ -472,11 +496,6 @@ export function DashboardView() {
     if (isLockedStat(nextStat, plan)) return;
     setSelectedStat(nextStat);
   }, [plan]);
-
-  const handleSelectGame = useCallback((gameId: number) => {
-    setSelectedGameId(gameId);
-    setSelectedPlayerId(null);
-  }, []);
 
   const getChartBarClassName = useCallback((tone: ChartBarTone) => {
     if (tone === 'hit') return `${styles.chartBar} ${styles.chartBarHit}`;
@@ -494,7 +513,8 @@ export function DashboardView() {
     }));
     const values = games.map((sample) => sample.value);
     const lineBase = Number(payload?.metrics?.line ?? payload?.metrics?.avg_l10 ?? 0);
-    const line = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
+    const apiLine = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
+    const line = Math.max(0, apiLine + lineAdjustment);
     const average = values.length ? Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1)) : null;
     const chartBase = Math.max(line, ...values, 1);
     const bars: PlayerDetailChartBar[] = games.slice(0, 12).reverse().map((sample) => {
@@ -515,23 +535,37 @@ export function DashboardView() {
     const edge = average === null ? null : Number((average - line).toFixed(1));
     const edgeLabel = edge === null ? 'N/D' : edge >= 0 ? 'Over lean' : 'Under lean';
     return { games, line, average, bars, linePct, windows, edge, edgeLabel, metrics: payload?.metrics ?? null };
-  }, [selectedMetricsResource, selectedPlayer]);
+  }, [lineAdjustment, selectedMetricsResource, selectedPlayer]);
+
+  const topTitle = useMemo(() => {
+    if (view === 'profile') return 'Meu Perfil';
+    if (view === 'detail') return selectedPlayer?.name || 'Detalhe';
+    if (view === 'players') return selectedGame ? `${selectedGame.away_team} vs ${selectedGame.home_team}` : 'Jogadores';
+    return 'Jogos de Hoje';
+  }, [selectedGame, selectedPlayer, view]);
+
+  const canGoBack = view === 'players' || view === 'detail';
+  const activeSidebarKey = view === 'profile' ? 'perfil' : 'dashboard';
 
   return (
     <AppShell
-      sidebar={<Sidebar items={sidebarItems} activeKey="dashboard" footer={<Badge variant="success">Beta React UI</Badge>} />}
-      mobileSidebar={<MobileSidebar items={sidebarItems} activeKey="dashboard" footer={<Badge variant="success">Beta React UI</Badge>} />}
+      sidebar={<Sidebar items={sidebarItems} activeKey={activeSidebarKey} footer={<Badge variant="success">Live data active</Badge>} />}
+      mobileSidebar={<MobileSidebar items={sidebarItems} activeKey={activeSidebarKey} footer={<Badge variant="success">Live data active</Badge>} />}
       topbar={
         <TopBar
-          title="Dashboard"
-          context={selectedGame ? `${selectedGame.away_team} vs ${selectedGame.home_team}` : 'Selecione um jogo'}
+          title={topTitle}
+          context={view === 'games' ? `Hoje · ${formatTodayLabel()}` : null}
           actions={
             <div className={styles.topbarBadges}>
-              <Badge variant="muted">Hoje · {formatTodayLabel()}</Badge>
               {planLoaded ? (
                 <Badge variant={plan === 'pro' ? 'success' : 'default'}>
                   {plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}
                 </Badge>
+              ) : null}
+              {canGoBack ? (
+                <Button size="sm" variant="ghost" onClick={() => setView(view === 'detail' ? 'players' : 'games')}>
+                  <ArrowLeft size={14} /> Voltar
+                </Button>
               ) : null}
             </div>
           }
@@ -539,235 +573,302 @@ export function DashboardView() {
       }
     >
       <ContentContainer width="content">
-        <div className={styles.dashboardGrid}>
-          <Surface elevated className={styles.gamesColumn}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Jogos</h2>
-              <Badge variant="default">{games.length}</Badge>
-            </div>
+        <div className={styles.dashboardCanvas}>
+          {view === 'games' ? (
+            <section className={styles.gamesView}>
+              {gamesStatus === 'loading' ? (
+                <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogos...</p></Surface>
+              ) : null}
+              {gamesStatus === 'error' ? (
+                <EmptyState
+                  heading="Não foi possível carregar os jogos"
+                  description={errorMessage || 'Tente novamente em instantes.'}
+                  action={<Button variant="secondary" size="sm" onClick={loadGames}>Tentar novamente</Button>}
+                />
+              ) : null}
+              {gamesStatus === 'empty' ? (
+                <EmptyState
+                  heading="Sem jogos disponíveis"
+                  description="Estamos aguardando a próxima atualização automática."
+                />
+              ) : null}
 
-            {gamesStatus === 'loading' ? (
-              <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogos...</p></Surface>
-            ) : null}
-            {gamesStatus === 'error' ? (
-              <EmptyState
-                heading="Não foi possível carregar os jogos"
-                description={errorMessage || 'Tente novamente em instantes.'}
-                action={<Button variant="secondary" size="sm" onClick={loadGames}>Tentar novamente</Button>}
-              />
-            ) : null}
-            {gamesStatus === 'empty' ? (
-              <EmptyState
-                heading="Sem jogos disponíveis"
-                description="Estamos aguardando a próxima atualização automática."
-              />
-            ) : null}
-
-            <div className={styles.gameList}>
-              {games.map((game) => {
-                const isActive = game.id === selectedGameId;
-                return (
+              <div className={styles.gameGrid}>
+                {games.map((game) => (
                   <button
                     key={game.id}
                     type="button"
-                    className={`${styles.gameCard} ${isActive ? styles.gameCardActive : ''}`}
-                    onClick={() => handleSelectGame(game.id)}
+                    className={styles.gameCard}
+                    onClick={() => {
+                      setSelectedGameId(game.id);
+                      setSelectedPlayerId(null);
+                      setSearchTerm('');
+                      setView('players');
+                    }}
                   >
-                    <div className={styles.gameCardTop}>
-                      <span>{formatTipoff(game.game_time)}</span>
-                      {isActive ? <Badge variant="success">Selecionado</Badge> : null}
+                    <div className={styles.gameCardTime}>{formatTipoff(game.game_time)}</div>
+                    <div className={styles.gameCardTeams}>
+                      <div className={styles.teamBadge}>{game.away_team.slice(0, 2).toUpperCase()}</div>
+                      <div className={styles.gameVs}>VS</div>
+                      <div className={styles.teamBadge}>{game.home_team.slice(0, 2).toUpperCase()}</div>
                     </div>
-                    <p className={styles.matchup}>{game.away_team} vs {game.home_team}</p>
+                    <p className={styles.gameMatchup}>{game.away_team} vs {game.home_team}</p>
+                    <div className={styles.gameCta}>Ver jogadores <ChevronRight size={14} /></div>
                   </button>
-                );
-              })}
-            </div>
-          </Surface>
-
-          <Surface elevated className={styles.playersColumn}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Jogadores</h2>
-              <div className={styles.playersHeaderBadges}>
-                <Badge variant="default">{players.length}</Badge>
-                {plan === 'pro' ? (
-                  <Badge variant="success"><Crown size={12} /> Pro liberado</Badge>
-                ) : (
-                  <Badge variant="muted">Gratuito · Mercado completo no Pro</Badge>
-                )}
+                ))}
               </div>
-            </div>
+            </section>
+          ) : null}
 
-            <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
-              <TabsList className={styles.statsTabs}>
-                {STATS.map((stat) => {
-                  const locked = isLockedStat(stat, plan);
-                  return (
-                    <TabsTrigger
-                      key={stat}
-                      value={stat}
-                      className={locked ? styles.lockedTab : undefined}
-                      title={locked ? 'Disponível no plano Pro' : undefined}
-                    >
-                      {stat}
-                      {locked ? <Lock size={11} /> : null}
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-
-              <TabsContent value={selectedStat} className={styles.playersTabContent}>
-                {selectedGame ? (
-                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Mercado ativo: {selectedStat}</p></Surface>
-                ) : (
-                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Selecione um jogo para ver os jogadores.</p></Surface>
-                )}
-
-                {marketLocked ? (
-                  <Surface className={styles.lockedStateBox}>
-                    <div className={styles.lockedTitle}><Lock size={14} /> Este mercado está no plano Pro</div>
-                    <p className={styles.stateText}>No fluxo React, mercados gratuitos: {FREE_STATS.join(' · ')}.</p>
-                    <Button size="sm" variant="secondary" onClick={() => setSelectedStat('PTS')}>Voltar para PTS</Button>
-                  </Surface>
-                ) : null}
-
-                {selectedGamePlayersStatus === 'loading' ? (
-                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogadores...</p></Surface>
-                ) : null}
-                {selectedGamePlayersStatus === 'error' ? (
-                  <EmptyState
-                    heading="Falha ao carregar jogadores"
-                    description={selectedGamePlayersError || 'Tente novamente.'}
-                    action={selectedGame ? (
-                      <Button size="sm" variant="secondary" onClick={() => loadPlayersForGame(selectedGame, { force: true })}>
-                        <RefreshCw size={14} /> Recarregar
-                      </Button>
-                    ) : null}
+          {view === 'players' ? (
+            <section className={styles.playersView}>
+              <div className={styles.playersTopbar}>
+                <h2>Jogadores</h2>
+                <div className={styles.searchField}>
+                  <Search size={14} />
+                  <input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Buscar jogador..."
+                    aria-label="Buscar jogador"
                   />
-                ) : null}
-                {selectedGamePlayersStatus === 'empty' ? (
-                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Nenhum jogador disponível para este jogo.</p></Surface>
-                ) : null}
+                </div>
+              </div>
 
-                {!marketLocked ? (
-                  <div className={styles.playerList}>
-                    {players.map((player) => (
-                      <div key={player.id} className={styles.playerRow}>
-                        <div>
-                          <p className={styles.playerName}>{player.name}</p>
-                          <p className={styles.playerMeta}>{player.position} · {player.team}</p>
-                        </div>
-
-                        <div className={styles.playerActions}>
-                          {player.jersey ? <Badge variant="muted">#{player.jersey}</Badge> : null}
-                          <Button size="sm" variant="secondary" onClick={() => setSelectedPlayerId(player.id)}>
-                            Ver detalhe
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                {selectedPlayer ? (
-                  <Surface className={styles.playerDetailPanel}>
-                    <div className={styles.playerDetailHeader}>
-                      <div>
-                        <p className={styles.playerDetailTitle}>{selectedPlayer.name}</p>
-                        <p className={styles.playerMeta}>{selectedPlayer.position} · {selectedPlayer.team}</p>
-                      </div>
-                      <div className={styles.playerDetailActions}>
-                        <Badge variant="default">{selectedStat}</Badge>
-                        <Button size="sm" variant="ghost" onClick={() => setSelectedPlayerId(null)}>Voltar</Button>
-                      </div>
-                    </div>
-
-                    {selectedMetricsStatus === 'loading' ? (
-                      <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando métricas e histórico...</p></Surface>
+              <div className={styles.statsTabsWrap}>
+                <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
+                  <TabsList className={styles.statsTabs}>
+                    {STATS.map((stat) => {
+                      const locked = isLockedStat(stat, plan);
+                      return (
+                        <TabsTrigger
+                          key={stat}
+                          value={stat}
+                          className={locked ? styles.lockedTab : undefined}
+                          title={locked ? 'Disponível no plano Pro' : undefined}
+                        >
+                          {stat}
+                          {locked ? <Lock size={11} /> : null}
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                  <TabsContent value={selectedStat} className={styles.playersTabContent}>
+                    {marketLocked ? (
+                      <Surface className={styles.lockedStateBox}>
+                        <div className={styles.lockedTitle}><Lock size={14} /> Este mercado está no plano Pro</div>
+                        <p className={styles.stateText}>No fluxo gratuito, mercados ativos: {FREE_STATS.join(' · ')}.</p>
+                        <Button size="sm" variant="secondary" onClick={() => setSelectedStat('PTS')}>Voltar para PTS</Button>
+                      </Surface>
                     ) : null}
-                    {selectedMetricsStatus === 'error' ? (
+
+                    {selectedGamePlayersStatus === 'loading' ? (
+                      <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogadores...</p></Surface>
+                    ) : null}
+                    {selectedGamePlayersStatus === 'error' ? (
                       <EmptyState
-                        heading="Não foi possível carregar o detalhe do jogador"
-                        description={selectedMetricsError || 'Tente novamente em instantes.'}
-                        action={selectedPlayerId ? (
-                          <Button size="sm" variant="secondary" onClick={() => loadMetricsForPlayer(selectedPlayerId, selectedStat, { force: true })}>
+                        heading="Falha ao carregar jogadores"
+                        description={selectedGamePlayersError || 'Tente novamente.'}
+                        action={selectedGame ? (
+                          <Button size="sm" variant="secondary" onClick={() => loadPlayersForGame(selectedGame, { force: true })}>
                             <RefreshCw size={14} /> Recarregar
                           </Button>
                         ) : null}
                       />
                     ) : null}
-                    {selectedMetricsStatus === 'empty' ? (
-                      <Surface className={styles.statePanelInline}><p className={styles.stateText}>Sem histórico suficiente para este mercado.</p></Surface>
-                    ) : null}
 
-                    {playerDetailModel && selectedMetricsStatus === 'ready' ? (
-                      <>
-                        <div className={styles.summaryStrip}>
-                          {playerDetailModel.windows.map((window) => (
-                            <div key={window.label} className={styles.summaryCard}>
-                              <span>{window.label}</span>
-                              <strong>{window.value}</strong>
-                              <small>{window.note}</small>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className={styles.chartCard}>
-                          <div className={styles.chartHeader}>
-                            <p className={styles.chartTitle}>{selectedStat} · Últimos jogos</p>
-                            <div className={styles.chartHeaderBadges}>
-                              <Badge variant="muted">Linha {playerDetailModel.line}</Badge>
-                              <Badge variant="muted">Média {playerDetailModel.average ?? '—'}</Badge>
-                              <Badge variant={playerDetailModel.edge !== null && playerDetailModel.edge >= 0 ? 'success' : 'default'}>
-                                {playerDetailModel.edgeLabel}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className={styles.chartCanvas}>
-                            <div className={styles.chartReference} style={{ bottom: `${playerDetailModel.linePct}%` }}>
-                              <span>Linha {playerDetailModel.line}</span>
-                            </div>
-                            {playerDetailModel.bars.length ? playerDetailModel.bars.map((bar, index) => (
-                              <div key={`${bar.label}-${index}`} className={styles.chartColumn}>
-                                <div className={getChartBarClassName(bar.tone)} style={{ height: `${bar.heightPct}%` }}>
-                                  <span>{bar.value}</span>
+                    {!marketLocked ? (
+                      <div className={styles.playerList}>
+                        {filteredPlayers.map((player) => {
+                          const line = metricsByPlayer[player.id]?.[selectedStat]?.metrics?.line;
+                          return (
+                            <button
+                              key={player.id}
+                              className={styles.playerRow}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPlayerId(player.id);
+                                setLineAdjustment(0);
+                                setView('detail');
+                              }}
+                            >
+                              <div className={styles.playerMain}>
+                                <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
+                                <div>
+                                  <p className={styles.playerName}>{player.name}</p>
+                                  <p className={styles.playerMeta}>{player.position} • {player.team}</p>
                                 </div>
-                                <small>{bar.label}</small>
                               </div>
-                            )) : (
-                              <p className={styles.stateText}>Dados recentes indisponíveis para o gráfico.</p>
-                            )}
-                          </div>
-                        </div>
-                      </>
+                              <div className={styles.playerLineBlock}>
+                                <small>Line</small>
+                                <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     ) : null}
-                  </Surface>
-                ) : null}
-              </TabsContent>
-            </TabsRoot>
-          </Surface>
-        </div>
+                  </TabsContent>
+                </TabsRoot>
+              </div>
+            </section>
+          ) : null}
 
-        {(errorMessage || oauthQueryError) ? (
-          <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
-            <div className={styles.errorContent}>
-              <AlertCircle size={16} />
-              <p>{errorMessage || oauthQueryError}</p>
-            </div>
-            {authTokenMissing ? (
-              <Button variant="secondary" size="sm" onClick={() => window.location.assign('/login')}>
-                Ir para login
-              </Button>
-            ) : null}
-          </Surface>
-        ) : null}
-        {checkoutNotice ? (
-          <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
-            <div className={styles.errorContent}>
-              <Crown size={16} />
-              <p>{checkoutNotice}</p>
-            </div>
-          </Surface>
-        ) : null}
+          {view === 'detail' && selectedPlayer ? (
+            <section className={styles.detailView}>
+              <div className={styles.detailTabsRow}>
+                <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
+                  <TabsList className={styles.statsTabs}>
+                    {STATS.map((stat) => {
+                      const locked = isLockedStat(stat, plan);
+                      return (
+                        <TabsTrigger key={stat} value={stat} className={locked ? styles.lockedTab : undefined}>
+                          {stat}
+                          {locked ? <Lock size={11} /> : null}
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                </TabsRoot>
+              </div>
+
+              <div className={styles.playerHero}>
+                <div>
+                  <p className={styles.playerHeroMeta}>{selectedPlayer.team} • {selectedPlayer.position}</p>
+                  <h2 className={styles.playerHeroName}>{selectedPlayer.name}</h2>
+                </div>
+                <div className={styles.lineAdjustBox}>
+                  <p>Ajustar linha</p>
+                  <div>
+                    <button type="button" onClick={() => setLineAdjustment((value) => Number((value - 0.5).toFixed(1)))}><Minus size={16} /></button>
+                    <strong>{playerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
+                    <button type="button" onClick={() => setLineAdjustment((value) => Number((value + 0.5).toFixed(1)))}><Plus size={16} /></button>
+                  </div>
+                </div>
+              </div>
+
+              {selectedMetricsStatus === 'loading' ? (
+                <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando métricas e histórico...</p></Surface>
+              ) : null}
+              {selectedMetricsStatus === 'error' ? (
+                <EmptyState
+                  heading="Não foi possível carregar o detalhe do jogador"
+                  description={selectedMetricsError || 'Tente novamente em instantes.'}
+                  action={selectedPlayerId ? (
+                    <Button size="sm" variant="secondary" onClick={() => loadMetricsForPlayer(selectedPlayerId, selectedStat, { force: true })}>
+                      <RefreshCw size={14} /> Recarregar
+                    </Button>
+                  ) : null}
+                />
+              ) : null}
+              {selectedMetricsStatus === 'empty' ? (
+                <Surface className={styles.statePanelInline}><p className={styles.stateText}>Sem histórico suficiente para este mercado.</p></Surface>
+              ) : null}
+
+              {playerDetailModel && selectedMetricsStatus === 'ready' ? (
+                <>
+                  <div className={styles.quickStatsGrid}>
+                    {playerDetailModel.windows.map((window) => (
+                      <div key={window.label}>
+                        <span>{window.label}</span>
+                        <strong>{window.value}</strong>
+                        <small>{window.note}</small>
+                      </div>
+                    ))}
+                    <div>
+                      <span>Média</span>
+                      <strong>{playerDetailModel.average ?? '—'}</strong>
+                      <small>{selectedStat}</small>
+                    </div>
+                    <div>
+                      <span>Edge</span>
+                      <strong>{playerDetailModel.edge !== null ? `${playerDetailModel.edge > 0 ? '+' : ''}${playerDetailModel.edge}` : '—'}</strong>
+                      <small>{playerDetailModel.edgeLabel}</small>
+                    </div>
+                  </div>
+
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartHeader}>
+                      <p className={styles.chartTitle}>{selectedStat} · últimos jogos</p>
+                      <div className={styles.chartHeaderBadges}>
+                        <Badge variant="muted">Linha {playerDetailModel.line}</Badge>
+                        <Badge variant="muted">Média {playerDetailModel.average ?? '—'}</Badge>
+                      </div>
+                    </div>
+                    <div className={styles.chartCanvas}>
+                      <div className={styles.chartReference} style={{ bottom: `${playerDetailModel.linePct}%` }}>
+                        <span>LINE {playerDetailModel.line}</span>
+                      </div>
+                      {playerDetailModel.bars.length ? playerDetailModel.bars.map((bar, index) => (
+                        <div key={`${bar.label}-${index}`} className={styles.chartColumn}>
+                          <div className={getChartBarClassName(bar.tone)} style={{ height: `${bar.heightPct}%` }}>
+                            <span>{bar.value}</span>
+                          </div>
+                          <small>{bar.label}</small>
+                        </div>
+                      )) : (
+                        <p className={styles.stateText}>Dados recentes indisponíveis para o gráfico.</p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </section>
+          ) : null}
+
+          {view === 'profile' ? (
+            <section className={styles.profileView}>
+              <Surface className={styles.profileHero}>
+                <div className={styles.profileAvatar}>LC</div>
+                <h2>Minha conta</h2>
+                <p>Gerencie plano, segurança e suporte sem sair da experiência principal.</p>
+                <Badge variant={plan === 'pro' ? 'success' : 'default'}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</Badge>
+              </Surface>
+
+              <div className={styles.profileGrid}>
+                <Surface className={styles.profileCard}>
+                  <h3>Plano e cobrança</h3>
+                  <p>{plan === 'pro' ? 'Você está no Pro com recursos completos.' : 'Atualize para liberar todos os jogos e mercados.'}</p>
+                  <div className={styles.profileActions}>
+                    {plan !== 'pro' ? <Link href="/app?open=checkout"><Button size="sm">Assinar Pro</Button></Link> : null}
+                    <Link href="/app?view=games"><Button size="sm" variant="secondary">Ver dashboard</Button></Link>
+                  </div>
+                </Surface>
+
+                <Surface className={styles.profileCard}>
+                  <h3>Conta e suporte</h3>
+                  <div className={styles.profileLinks}>
+                    <Link href="/termos"><Shield size={14} /> Termos de uso</Link>
+                    <Link href="/privacidade"><Lock size={14} /> Política de privacidade</Link>
+                    <button type="button" onClick={() => window.location.assign('/login')}><LogOut size={14} /> Sair da conta</button>
+                  </div>
+                </Surface>
+              </div>
+            </section>
+          ) : null}
+
+          {(errorMessage || oauthQueryError) ? (
+            <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
+              <div className={styles.errorContent}>
+                <AlertCircle size={16} />
+                <p>{errorMessage || oauthQueryError}</p>
+              </div>
+              {authTokenMissing ? (
+                <Button variant="secondary" size="sm" onClick={() => window.location.assign('/login')}>
+                  Ir para login
+                </Button>
+              ) : null}
+            </Surface>
+          ) : null}
+          {checkoutNotice ? (
+            <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
+              <div className={styles.errorContent}>
+                <Crown size={16} />
+                <p>{checkoutNotice}</p>
+              </div>
+            </Surface>
+          ) : null}
+        </div>
       </ContentContainer>
     </AppShell>
   );

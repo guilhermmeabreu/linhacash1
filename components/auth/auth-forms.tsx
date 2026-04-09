@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useMemo, useState } from 'react';
+import { Lock, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -75,15 +76,16 @@ export function LoginForm() {
     <form className="lc-auth-form" onSubmit={onSubmit}>
       <label>
         Email
-        <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
+        <div className="lc-auth-input"><Mail size={14} /><Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required /></div>
       </label>
       <label>
         Senha
-        <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+        <div className="lc-auth-input"><Lock size={14} /><Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required /></div>
       </label>
       {error ? <p className="lc-auth-error">{error}</p> : null}
       {message ? <p className="lc-auth-success">{message}</p> : null}
       <Button type="submit" size="lg" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</Button>
+      <div className="lc-auth-divider"><span>ou</span></div>
       <div className="lc-auth-row">
         <button type="button" className="lc-link-btn" onClick={onForgot} disabled={loading}>Enviar recuperação</button>
         <Link href={recoveryHref}>Abrir página de recuperação</Link>
@@ -138,15 +140,15 @@ export function SignupForm() {
     <form className="lc-auth-form" onSubmit={onSubmit}>
       <label>
         Nome
-        <Input type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" required />
+        <div className="lc-auth-input"><User size={14} /><Input type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" required /></div>
       </label>
       <label>
         Email
-        <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
+        <div className="lc-auth-input"><Mail size={14} /><Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required /></div>
       </label>
       <label>
         Senha
-        <Input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} required />
+        <div className="lc-auth-input"><Lock size={14} /><Input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} required /></div>
       </label>
       {error ? <p className="lc-auth-error">{error}</p> : null}
       {message ? <p className="lc-auth-success">{message}</p> : null}
@@ -181,7 +183,7 @@ export function ForgotPasswordForm({ defaultEmail = '' }: { defaultEmail?: strin
     >
       <label>
         Email
-        <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
+        <div className="lc-auth-input"><Mail size={14} /><Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required /></div>
       </label>
       {error ? <p className="lc-auth-error">{error}</p> : null}
       {message ? <p className="lc-auth-success">{message}</p> : null}

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { LucideIcon } from 'lucide-react';
+import { BarChart3, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/ui/cn';
 
 export interface SidebarItem {
@@ -20,6 +20,11 @@ interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
 export function Sidebar({ className, items = [], activeKey, footer, ...props }: SidebarProps) {
   return (
     <nav className={cn('lc-sidebar', className)} {...props}>
+      <Link href="/" className="lc-sidebar-brand" aria-label="LinhaCash">
+        <span className="lc-sidebar-brand-icon"><BarChart3 size={16} /></span>
+        <span className="lc-sidebar-brand-text">Linha<span>Cash</span></span>
+      </Link>
+
       <div className="lc-sidebar-nav">
         {items.map((item) => {
           const Icon = item.icon;
@@ -28,8 +33,11 @@ export function Sidebar({ className, items = [], activeKey, footer, ...props }: 
           if (item.disabled) {
             return (
               <span key={item.key} className={cn('lc-sidebar-item', 'is-disabled')} aria-disabled="true">
-                <Icon size={16} aria-hidden="true" />
-                <span>{item.label}</span>
+                <span className="lc-sidebar-item-main">
+                  <Icon size={16} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </span>
+                <span className="lc-sidebar-badge">EM BREVE</span>
               </span>
             );
           }
