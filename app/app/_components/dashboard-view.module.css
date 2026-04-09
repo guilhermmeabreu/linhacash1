@@ -10,10 +10,26 @@
   align-content: start;
 }
 
+.topbarBadges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.playersHeaderBadges {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .sectionTitle {
@@ -70,9 +86,29 @@
   white-space: nowrap;
 }
 
+.lockedTab {
+  opacity: 0.72;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .playersTabContent {
   display: grid;
   gap: 0.75rem;
+}
+
+.lockedStateBox {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.lockedTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .playerRow {
@@ -95,12 +131,48 @@
   font-size: 0.8rem;
 }
 
+.playerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.playerDetailPreview {
+  display: grid;
+  gap: 0.7rem;
+  border-style: dashed;
+}
+
+.playerDetailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.playerDetailTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.playerDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .errorBox {
   margin-top: 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.errorContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 @media (min-width: 1080px) {
