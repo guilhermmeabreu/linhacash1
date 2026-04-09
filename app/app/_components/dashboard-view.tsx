@@ -201,6 +201,7 @@ export function DashboardView() {
   const [playersByGame, setPlayersByGame] = useState<Record<number, Player[]>>({});
   const [playersStatusByGame, setPlayersStatusByGame] = useState<Record<number, ResourceStatus>>({});
   const [playersErrorByGame, setPlayersErrorByGame] = useState<Record<number, string | null>>({});
+  const [playersRateLimitedByGame, setPlayersRateLimitedByGame] = useState<Record<number, boolean>>({});
   const [selectedGameId, setSelectedGameId] = useState<number | null>(initialGameId);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(() => {
     const value = searchParams.get('p');
@@ -224,6 +225,9 @@ export function DashboardView() {
   const gamesRequestRef = useRef(0);
   const playersRequestRef = useRef<Record<number, number>>({});
   const metricsRequestRef = useRef<Record<string, number>>({});
+  const playersStatusRef = useRef<Record<number, ResourceStatus>>({});
+  const playersCacheRef = useRef<Record<number, Player[]>>({});
+  const playersInFlightRef = useRef<Record<number, Promise<void> | null>>({});
 
   const selectedGame = useMemo(
     () => games.find((game) => game.id === selectedGameId) ?? null,
@@ -291,46 +295,69 @@ export function DashboardView() {
 
   const loadPlayersForGame = useCallback(
     async (game: Game, options?: { force?: boolean }) => {
-      const existingStatus = playersStatusByGame[game.id];
-      if (!options?.force && (existingStatus === 'ready' || existingStatus === 'loading')) return;
+      const existingStatus = playersStatusRef.current[game.id] ?? 'idle';
+      const hasCachedPayload = Object.prototype.hasOwnProperty.call(playersCacheRef.current, game.id);
+
+      if (!options?.force) {
+        if (hasCachedPayload || existingStatus === 'loading' || existingStatus === 'ready' || existingStatus === 'empty' || existingStatus === 'error') {
+          return;
+        }
+        if (playersInFlightRef.current[game.id]) return;
+      }
 
       const requestId = (playersRequestRef.current[game.id] ?? 0) + 1;
       playersRequestRef.current[game.id] = requestId;
 
+      playersStatusRef.current[game.id] = 'loading';
       setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: 'loading' }));
       setPlayersErrorByGame((prev) => ({ ...prev, [game.id]: null }));
+      setPlayersRateLimitedByGame((prev) => ({ ...prev, [game.id]: false }));
 
-      const result = await apiFetch<{ players: Array<{ id: number; name: string; team_id: number; position: string; jersey: string | number | null }> }>(
-        `/api/players?gameId=${game.id}`,
-      );
+      const request = (async () => {
+        const result = await apiFetch<{ players: Array<{ id: number; name: string; team_id: number; position: string; jersey: string | number | null }> }>(
+          `/api/players?gameId=${game.id}`,
+        );
 
-      if (playersRequestRef.current[game.id] !== requestId) return;
+        if (playersRequestRef.current[game.id] !== requestId) return;
 
-      if (!result.ok) {
-        setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: 'error' }));
-        setPlayersErrorByGame((prev) => ({ ...prev, [game.id]: result.message }));
-        setErrorMessage(result.message);
-        return;
+        if (!result.ok) {
+          playersStatusRef.current[game.id] = 'error';
+          setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: 'error' }));
+          setPlayersErrorByGame((prev) => ({ ...prev, [game.id]: result.message }));
+          setPlayersRateLimitedByGame((prev) => ({ ...prev, [game.id]: result.status === 429 }));
+          setErrorMessage(result.message);
+          return;
+        }
+
+        const mappedPlayers = (result.data.players || []).map((player) => ({
+          id: player.id,
+          name: player.name || 'Jogador',
+          team_id: Number(player.team_id || 0),
+          team:
+            Number(player.team_id) === game.home_team_id
+              ? game.home_team
+              : Number(player.team_id) === game.away_team_id
+                ? game.away_team
+                : 'Time não informado',
+          position: player.position || 'N/A',
+          jersey: player.jersey || null,
+        }));
+
+        playersCacheRef.current[game.id] = mappedPlayers;
+        const nextStatus = mappedPlayers.length ? 'ready' : 'empty';
+        playersStatusRef.current[game.id] = nextStatus;
+        setPlayersByGame((prev) => ({ ...prev, [game.id]: mappedPlayers }));
+        setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: nextStatus }));
+      })();
+
+      playersInFlightRef.current[game.id] = request;
+      try {
+        await request;
+      } finally {
+        playersInFlightRef.current[game.id] = null;
       }
-
-      const mappedPlayers = (result.data.players || []).map((player) => ({
-        id: player.id,
-        name: player.name || 'Jogador',
-        team_id: Number(player.team_id || 0),
-        team:
-          Number(player.team_id) === game.home_team_id
-            ? game.home_team
-            : Number(player.team_id) === game.away_team_id
-              ? game.away_team
-              : 'Time não informado',
-        position: player.position || 'N/A',
-        jersey: player.jersey || null,
-      }));
-
-      setPlayersByGame((prev) => ({ ...prev, [game.id]: mappedPlayers }));
-      setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: mappedPlayers.length ? 'ready' : 'empty' }));
     },
-    [playersStatusByGame],
+    [],
   );
 
   const loadMetricsForPlayer = useCallback(
@@ -479,12 +506,14 @@ export function DashboardView() {
   }, []);
 
   useEffect(() => {
-    if (!selectedGame) return;
+    if (!selectedGameId) return;
+    const game = games.find((item) => item.id === selectedGameId);
+    if (!game) return;
     const timer = window.setTimeout(() => {
-      void loadPlayersForGame(selectedGame);
+      void loadPlayersForGame(game);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadPlayersForGame, selectedGame]);
+  }, [games, loadPlayersForGame, selectedGameId]);
 
   useEffect(() => {
     if (!selectedPlayerId || marketLocked) return;
@@ -778,7 +807,11 @@ export function DashboardView() {
                     {selectedGamePlayersStatus === 'error' ? (
                       <EmptyState
                         heading="Falha ao carregar jogadores"
-                        description={selectedGamePlayersError || 'Tente novamente.'}
+                        description={
+                          playersRateLimitedByGame[selectedGameId ?? -1]
+                            ? 'Muitas tentativas em pouco tempo (429). Aguarde alguns segundos e tente novamente.'
+                            : selectedGamePlayersError || 'Tente novamente.'
+                        }
                         action={selectedGame ? (
                           <Button size="sm" variant="secondary" onClick={() => loadPlayersForGame(selectedGame, { force: true })}>
                             <RefreshCw size={14} /> Recarregar
