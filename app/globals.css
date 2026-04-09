@@ -27,8 +27,8 @@
 :root {
   /* Core colors */
   --lc-bg: #000000;
-  --lc-surface: #0a0a0a;
-  --lc-surface-elevated: #111111;
+  --lc-surface: #040404;
+  --lc-surface-elevated: #070707;
   --lc-text: #ffffff;
   --lc-muted: #888888;
   --lc-accent: #22c55e;
@@ -36,8 +36,8 @@
   --lc-danger: #ef4444;
 
   /* Border + effects */
-  --lc-border: #1f1f1f;
-  --lc-border-strong: #2b2b2b;
+  --lc-border: #141414;
+  --lc-border-strong: #1d1d1d;
   --lc-shadow-subtle: 0 8px 24px rgba(0, 0, 0, 0.28);
 
   /* Radius */
@@ -336,8 +336,8 @@ textarea {
   top: 0;
   z-index: var(--lc-z-topbar);
   min-height: 3.75rem;
-  border-bottom: 1px solid var(--lc-border);
-  background: color-mix(in srgb, var(--lc-bg) 94%, transparent);
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--lc-bg) 97%, transparent);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -368,8 +368,8 @@ textarea {
   flex-direction: column;
   gap: var(--lc-space-4);
   padding: var(--lc-space-4);
-  border-right: 1px solid var(--lc-border);
-  background: var(--lc-surface);
+  border-right: 1px solid color-mix(in srgb, var(--lc-border) 65%, transparent);
+  background: color-mix(in srgb, var(--lc-bg) 94%, var(--lc-surface) 6%);
 }
 
 .lc-sidebar-nav {
@@ -396,13 +396,13 @@ textarea {
 }
 .lc-sidebar-item.is-secondary {
   opacity: 0.76;
-  margin-left: 0.4rem;
+  margin-left: 0;
 }
 .lc-sidebar-item.is-disabled { opacity: .45; pointer-events: none; }
 
 .lc-sidebar-footer {
-  border-top: 1px solid var(--lc-border);
-  padding-top: var(--lc-space-3);
+  border-top: 0;
+  padding-top: var(--lc-space-2);
 }
 
 .lc-topbar {
@@ -563,8 +563,9 @@ textarea {
 .lc-brand-text,
 .lc-sidebar-brand-text { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.03em; }
 .lc-sidebar-brand-text span { color: var(--lc-accent); }
-.lc-sidebar-item { justify-content: space-between; }
-.lc-sidebar-item-main { display: inline-flex; align-items: center; gap: var(--lc-space-2); }
+.lc-sidebar-item { justify-content: flex-start; align-items: center; padding-left: 0.45rem; padding-right: 0.45rem; }
+.lc-sidebar-item-main { display: inline-flex; align-items: center; gap: var(--lc-space-2); flex: 1; justify-content: flex-start; }
+.lc-sidebar-item-meta { display: inline-flex; align-items: center; justify-content: flex-end; min-width: 3.2rem; }
 .lc-sidebar-badge { font-size: .52rem; color: var(--lc-muted); letter-spacing: .08em; }
 
 .lc-brand-icon {

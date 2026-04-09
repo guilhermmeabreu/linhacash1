@@ -11,18 +11,42 @@
   justify-content: flex-end;
 }
 
-.sidebarFooterInfo {
+.accountSummary {
+  border: 1px solid var(--lc-border);
+  background: color-mix(in srgb, var(--lc-surface) 78%, var(--lc-surface-elevated) 22%);
+  padding: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.accountAvatar {
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 35%, var(--lc-border) 65%);
+  background: color-mix(in srgb, var(--lc-accent) 15%, var(--lc-surface) 85%);
   display: grid;
-  gap: 0.45rem;
+  place-items: center;
+  color: var(--lc-accent);
+  font-weight: 900;
+  font-size: 0.7rem;
 }
 
-.sidebarFooterInfo strong {
-  font-size: 0.78rem;
+.accountMeta {
+  display: grid;
+  gap: 0.1rem;
 }
 
-.sidebarFooterInfo span {
+.accountMeta strong {
+  font-size: 0.76rem;
+  line-height: 1.1;
+}
+
+.accountMeta span {
   color: var(--lc-muted);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .stateText {
@@ -44,19 +68,32 @@
   margin: 0 auto;
 }
 
+.gamesDateLine {
+  color: var(--lc-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.55rem;
+}
+
 .gameGrid {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.9rem;
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
 
 .gameCard {
-  text-align: left;
+  position: relative;
+  text-align: center;
   border-radius: 0;
   border: 1px solid var(--lc-border);
   background: var(--lc-surface);
-  padding: 1rem;
+  padding: 0.9rem;
   transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  cursor: pointer;
 }
 
 .gameCard:hover {
@@ -65,58 +102,121 @@
   transform: translateY(-1px);
 }
 
+.gameCardLocked {
+  opacity: 0.56;
+}
+
+.gameLockBadge {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  display: grid;
+  place-items: center;
+  color: var(--lc-muted);
+}
+
 .gameCardTime {
   color: var(--lc-muted);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
   font-weight: 800;
-  letter-spacing: 0.11em;
-  margin-bottom: 0.8rem;
+  letter-spacing: 0.1em;
 }
 
 .gameCardTeams {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
+  justify-content: center;
+  gap: 0.9rem;
 }
 
 .teamBadge {
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
   display: grid;
   place-items: center;
-  border: 1px solid #242424;
-  background: #111;
-  font-size: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--lc-border) 75%, var(--lc-accent) 25%);
+  background: color-mix(in srgb, var(--lc-surface-elevated) 84%, #060606 16%);
+  font-size: 0.72rem;
   font-weight: 900;
+  overflow: hidden;
+}
+
+.teamBadge img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
 }
 
 .gameVs {
   color: var(--lc-muted);
-  font-size: 0.64rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
 
 .gameMatchup {
-  margin-top: 0.8rem;
-  font-size: 0.84rem;
+  font-size: 0.72rem;
   font-weight: 700;
+  color: color-mix(in srgb, var(--lc-text) 86%, var(--lc-muted) 14%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
 
-.gameCta {
-  margin-top: 0.8rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--lc-border);
+.gameMatchup span {
+  min-width: 0;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.gameMatchup span:first-child {
+  text-align: right;
+}
+
+.gameMatchup span:last-child {
+  text-align: left;
+}
+
+.gameCardLocked .gameMatchup span {
+  color: var(--lc-muted);
+}
+
+.gameCardDivider {
+  border-top: 1px solid color-mix(in srgb, var(--lc-border) 75%, transparent);
+}
+
+.gameCtaButton {
+  min-height: 2rem;
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 28%, transparent);
+  background: transparent;
   color: var(--lc-accent);
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.1em;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  justify-content: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.gameCtaLocked {
+  border-color: color-mix(in srgb, var(--lc-border) 60%, transparent);
+  background: transparent;
+  color: var(--lc-muted);
+}
+
+.gameCard:hover .gameCtaButton {
+  border-color: color-mix(in srgb, var(--lc-accent) 70%, var(--lc-border) 30%);
 }
 
 .playersTopbar {
@@ -494,84 +594,103 @@
 }
 
 .profileHero {
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: 0.45rem;
-  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.95rem;
 }
 
-.profileAvatar {
-  width: 4rem;
-  height: 4rem;
+.profileHeaderAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
   display: grid;
   place-items: center;
-  background: var(--lc-accent);
-  color: #07160d;
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 35%, var(--lc-border) 65%);
+  background: color-mix(in srgb, var(--lc-accent) 15%, var(--lc-surface) 85%);
+  color: var(--lc-accent);
   font-weight: 900;
 }
 
-.profileHero h2 {
+.profileHeaderMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.profileHeaderMeta h2 {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
-  font-size: 1.2rem;
 }
 
-.profileHero p {
+.profileHeaderMeta p {
   color: var(--lc-muted);
-  max-width: 48ch;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
+  margin-top: 0.12rem;
 }
 
-.profileGrid {
+.profileStack {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.8rem;
 }
 
-.profileCard {
+.profileSection {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
-.profileCard h3 {
-  font-size: 0.76rem;
+.profileSection h3 {
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.profileCard p {
-  color: var(--lc-muted);
-  font-size: 0.84rem;
-}
-
-.profileMetaList {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.profileActions {
+.profileSectionHeader {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-.profileLinks {
+.profileRows {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
-.profileLinks a,
-.profileLinks button {
+.profileRow {
+  width: 100%;
   text-decoration: none;
   border: 1px solid var(--lc-border);
-  min-height: 2.2rem;
+  min-height: 2.45rem;
+  background: color-mix(in srgb, var(--lc-surface) 82%, var(--lc-surface-elevated) 18%);
+  color: var(--lc-text);
+  padding: 0.5rem 0.65rem;
+  display: grid;
+  text-align: left;
+  gap: 0.14rem;
+}
+
+.profileRow span {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  background: var(--lc-surface);
-  color: var(--lc-text);
-  padding: 0 0.65rem;
-  font-size: 0.78rem;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+}
+
+.profileRow small {
+  color: var(--lc-muted);
+  font-size: 0.66rem;
+}
+
+.profileRowActive {
+  border-color: color-mix(in srgb, var(--lc-accent) 48%, var(--lc-border) 52%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 20%, transparent);
+}
+
+.profileRowControl {
+  justify-self: start;
 }
 
 .upgradeOverlay {
@@ -723,15 +842,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .profileGrid {
-    grid-template-columns: 1fr;
-  }
-
   .chartCanvas {
     min-height: 180px;
   }
 
   .upgradeModal {
     width: 100%;
+  }
+
+  .profileHero {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

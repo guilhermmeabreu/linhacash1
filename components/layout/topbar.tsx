@@ -7,13 +7,15 @@ interface TopBarProps extends React.HTMLAttributes<HTMLElement> {
   context?: React.ReactNode;
   actions?: React.ReactNode;
   showBrand?: boolean;
+  leading?: React.ReactNode;
 }
 
-export function TopBar({ className, title, context, actions, children, showBrand = true, ...props }: TopBarProps) {
+export function TopBar({ className, title, context, actions, children, showBrand = true, leading, ...props }: TopBarProps) {
   return (
     <div className={cn('lc-topbar', className)} {...props}>
       <div className="lc-topbar-start">
         {showBrand ? <LinhaCashLogo href="/app" className="lc-topbar-brand" ariaLabel="LinhaCash dashboard" /> : null}
+        {leading}
         <div className="lc-topbar-context">
           {title ? <p className="lc-topbar-title">{title}</p> : null}
           {context ? <div className="lc-topbar-subtitle">{context}</div> : null}

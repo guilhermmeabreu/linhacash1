@@ -37,15 +37,20 @@ export function Sidebar({ className, items = [], activeKey, footer, onItemClick,
                   <Icon size={16} aria-hidden="true" />
                   <span>{item.label}</span>
                 </span>
-                <span className="lc-sidebar-badge">EM BREVE</span>
+                <span className="lc-sidebar-item-meta">
+                  <span className="lc-sidebar-badge">EM BREVE</span>
+                </span>
               </span>
             );
           }
 
           return (
             <Link key={item.key} href={item.href} className={cn('lc-sidebar-item', item.secondary && 'is-secondary', active && 'is-active')} onClick={() => onItemClick?.(item)}>
-              <Icon size={16} aria-hidden="true" />
-              <span>{item.label}</span>
+              <span className="lc-sidebar-item-main">
+                <Icon size={16} aria-hidden="true" />
+                <span>{item.label}</span>
+              </span>
+              <span className="lc-sidebar-item-meta" aria-hidden="true" />
             </Link>
           );
         })}
