@@ -1,7 +1,17 @@
 'use client';
 
-import { BarChart3, CalendarDays, LayoutDashboard, UserRound } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  BarChart3,
+  CalendarDays,
+  Crown,
+  LayoutDashboard,
+  Lock,
+  RefreshCw,
+  UserRound,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   AppShell,
   ContentContainer,
@@ -12,6 +22,7 @@ import {
 import {
   Badge,
   Button,
+  EmptyState,
   Surface,
   TabsContent,
   TabsList,
@@ -21,8 +32,11 @@ import {
 import styles from './dashboard-view.module.css';
 
 const STATS = ['PTS', 'AST', 'REB', '3PM', 'PA', 'PR', 'PRA', 'AR', 'DD', 'TD', 'STEAL', 'BLOCKS', 'SB', 'FG2A', 'FG3A'] as const;
+const FREE_STATS = ['PTS', '3PM'] as const;
 
 type Stat = (typeof STATS)[number];
+
+type Plan = 'free' | 'pro';
 
 type Game = {
   id: number;
@@ -47,6 +61,8 @@ type Player = {
 type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; message: string };
+
+type ResourceStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
 const sidebarItems = [
   { key: 'dashboard', label: 'Jogos do dia', href: '/app', icon: LayoutDashboard },
@@ -94,32 +110,101 @@ function formatTodayLabel() {
   });
 }
 
+function resolveInitialStat(value: string | null): Stat {
+  return STATS.includes(value as Stat) ? (value as Stat) : 'PTS';
+}
+
+function isLockedStat(stat: Stat, plan: Plan) {
+  return plan !== 'pro' && !FREE_STATS.includes(stat as (typeof FREE_STATS)[number]);
+}
+
 export function DashboardView() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const initialGameId = useMemo(() => {
+    const value = searchParams.get('g');
+    if (!value) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [searchParams]);
+
   const [games, setGames] = useState<Game[]>([]);
   const [playersByGame, setPlayersByGame] = useState<Record<number, Player[]>>({});
-  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
-  const [selectedStat, setSelectedStat] = useState<Stat>('PTS');
-  const [isLoadingGames, setIsLoadingGames] = useState(true);
-  const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
+  const [playersStatusByGame, setPlayersStatusByGame] = useState<Record<number, ResourceStatus>>({});
+  const [playersErrorByGame, setPlayersErrorByGame] = useState<Record<number, string | null>>({});
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(initialGameId);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(() => {
+    const value = searchParams.get('p');
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  });
+  const [selectedStat, setSelectedStat] = useState<Stat>(() => resolveInitialStat(searchParams.get('s')));
+  const [gamesStatus, setGamesStatus] = useState<ResourceStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [plan, setPlan] = useState<Plan>('free');
+  const [planLoaded, setPlanLoaded] = useState(false);
+
+  const gamesRequestRef = useRef(0);
+  const playersRequestRef = useRef<Record<number, number>>({});
 
   const selectedGame = useMemo(
     () => games.find((game) => game.id === selectedGameId) ?? null,
     [games, selectedGameId],
   );
 
-  const players = selectedGameId ? playersByGame[selectedGameId] ?? [] : [];
+  const players = useMemo(
+    () => (selectedGameId ? playersByGame[selectedGameId] ?? [] : []),
+    [playersByGame, selectedGameId],
+  );
+  const selectedPlayer = useMemo(
+    () => players.find((player) => player.id === selectedPlayerId) ?? null,
+    [players, selectedPlayerId],
+  );
+
+  const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
+  const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
+
+  const syncQueryString = useCallback(
+    (nextState: { gameId: number | null; stat: Stat; playerId: number | null }) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (nextState.gameId) params.set('g', String(nextState.gameId));
+      else params.delete('g');
+
+      params.set('s', nextState.stat);
+
+      if (nextState.playerId) params.set('p', String(nextState.playerId));
+      else params.delete('p');
+
+      const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.replace(nextUrl, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   const loadPlayersForGame = useCallback(
-    async (game: Game) => {
-      if (playersByGame[game.id]) return;
-      setIsLoadingPlayers(true);
+    async (game: Game, options?: { force?: boolean }) => {
+      const existingStatus = playersStatusByGame[game.id];
+      if (!options?.force && (existingStatus === 'ready' || existingStatus === 'loading')) return;
+
+      const requestId = (playersRequestRef.current[game.id] ?? 0) + 1;
+      playersRequestRef.current[game.id] = requestId;
+
+      setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: 'loading' }));
+      setPlayersErrorByGame((prev) => ({ ...prev, [game.id]: null }));
+
       const result = await apiFetch<{ players: Array<{ id: number; name: string; team_id: number; position: string; jersey: string | number | null }> }>(
         `/api/players?gameId=${game.id}`,
       );
+
+      if (playersRequestRef.current[game.id] !== requestId) return;
+
       if (!result.ok) {
+        setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: 'error' }));
+        setPlayersErrorByGame((prev) => ({ ...prev, [game.id]: result.message }));
         setErrorMessage(result.message);
-        setIsLoadingPlayers(false);
         return;
       }
 
@@ -138,39 +223,78 @@ export function DashboardView() {
       }));
 
       setPlayersByGame((prev) => ({ ...prev, [game.id]: mappedPlayers }));
-      setIsLoadingPlayers(false);
+      setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: mappedPlayers.length ? 'ready' : 'empty' }));
     },
-    [playersByGame],
+    [playersStatusByGame],
   );
+
+  const loadGames = useCallback(async () => {
+    gamesRequestRef.current += 1;
+    const requestId = gamesRequestRef.current;
+
+    setGamesStatus('loading');
+    setErrorMessage(null);
+
+    const result = await apiFetch<{ games: Game[] }>('/api/games');
+    if (gamesRequestRef.current !== requestId) return;
+
+    if (!result.ok) {
+      setGamesStatus('error');
+      setErrorMessage(result.message);
+      return;
+    }
+
+    const nextGames = Array.isArray(result.data.games) ? result.data.games : [];
+    setGames(nextGames);
+
+    if (!nextGames.length) {
+      setSelectedGameId(null);
+      setSelectedPlayerId(null);
+      setGamesStatus('empty');
+      return;
+    }
+
+    setSelectedGameId((current) => {
+      if (current && nextGames.some((game) => game.id === current)) return current;
+      if (initialGameId && nextGames.some((game) => game.id === initialGameId)) return initialGameId;
+      return nextGames[0].id;
+    });
+
+    setGamesStatus('ready');
+  }, [initialGameId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadGames();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadGames]);
 
   useEffect(() => {
     let canceled = false;
 
-    async function loadGames() {
-      setIsLoadingGames(true);
-      setErrorMessage(null);
-
-      const result = await apiFetch<{ games: Game[] }>('/api/games');
-      if (canceled) return;
-
-      if (!result.ok) {
-        setErrorMessage(result.message);
-        setIsLoadingGames(false);
+    async function loadPlan() {
+      const token = getAuthToken();
+      if (!token) {
+        if (!canceled) {
+          setPlan('free');
+          setPlanLoaded(true);
+        }
         return;
       }
 
-      const nextGames = Array.isArray(result.data.games) ? result.data.games : [];
-      setGames(nextGames);
+      const result = await apiFetch<{ profile?: { plan?: Plan } }>('/api/profile');
+      if (canceled) return;
 
-      if (nextGames.length > 0) {
-        const nextId = nextGames[0].id;
-        setSelectedGameId((current) => current ?? nextId);
+      if (result.ok) {
+        const resolvedPlan = result.data.profile?.plan === 'pro' ? 'pro' : 'free';
+        setPlan(resolvedPlan);
       }
 
-      setIsLoadingGames(false);
+      setPlanLoaded(true);
     }
 
-    loadGames();
+    loadPlan();
 
     return () => {
       canceled = true;
@@ -179,10 +303,30 @@ export function DashboardView() {
 
   useEffect(() => {
     if (!selectedGame) return;
-    loadPlayersForGame(selectedGame);
+    const timer = window.setTimeout(() => {
+      void loadPlayersForGame(selectedGame);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadPlayersForGame, selectedGame]);
 
+  useEffect(() => {
+    syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null });
+  }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString]);
+
   const authTokenMissing = typeof window !== 'undefined' && !getAuthToken();
+  const marketLocked = isLockedStat(selectedStat, plan);
+
+  const handleStatChange = useCallback((value: string) => {
+    const nextStat = resolveInitialStat(value);
+    if (isLockedStat(nextStat, plan)) return;
+    setSelectedStat(nextStat);
+    setSelectedPlayerId(null);
+  }, [plan]);
+
+  const handleSelectGame = useCallback((gameId: number) => {
+    setSelectedGameId(gameId);
+    setSelectedPlayerId(null);
+  }, []);
 
   return (
     <AppShell
@@ -192,7 +336,16 @@ export function DashboardView() {
         <TopBar
           title="Dashboard"
           context={selectedGame ? `${selectedGame.away_team} vs ${selectedGame.home_team}` : 'Selecione um jogo'}
-          actions={<Badge variant="muted">Hoje · {formatTodayLabel()}</Badge>}
+          actions={
+            <div className={styles.topbarBadges}>
+              <Badge variant="muted">Hoje · {formatTodayLabel()}</Badge>
+              {planLoaded ? (
+                <Badge variant={plan === 'pro' ? 'success' : 'default'}>
+                  {plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}
+                </Badge>
+              ) : null}
+            </div>
+          }
         />
       }
     >
@@ -204,8 +357,20 @@ export function DashboardView() {
               <Badge variant="default">{games.length}</Badge>
             </div>
 
-            {isLoadingGames ? <p className={styles.stateText}>Carregando jogos...</p> : null}
-            {!isLoadingGames && !games.length ? <p className={styles.stateText}>Sem jogos disponíveis no momento.</p> : null}
+            {gamesStatus === 'loading' ? <p className={styles.stateText}>Carregando jogos...</p> : null}
+            {gamesStatus === 'error' ? (
+              <EmptyState
+                heading="Não foi possível carregar os jogos"
+                description={errorMessage || 'Tente novamente em instantes.'}
+                action={<Button variant="secondary" size="sm" onClick={loadGames}>Tentar novamente</Button>}
+              />
+            ) : null}
+            {gamesStatus === 'empty' ? (
+              <EmptyState
+                heading="Sem jogos disponíveis"
+                description="Estamos aguardando a próxima atualização automática."
+              />
+            ) : null}
 
             <div className={styles.gameList}>
               {games.map((game) => {
@@ -215,7 +380,7 @@ export function DashboardView() {
                     key={game.id}
                     type="button"
                     className={`${styles.gameCard} ${isActive ? styles.gameCardActive : ''}`}
-                    onClick={() => setSelectedGameId(game.id)}
+                    onClick={() => handleSelectGame(game.id)}
                   >
                     <div className={styles.gameCardTop}>
                       <span>{formatTipoff(game.game_time)}</span>
@@ -231,16 +396,32 @@ export function DashboardView() {
           <Surface elevated className={styles.playersColumn}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Jogadores</h2>
-              <Badge variant="default">{players.length}</Badge>
+              <div className={styles.playersHeaderBadges}>
+                <Badge variant="default">{players.length}</Badge>
+                {plan === 'pro' ? (
+                  <Badge variant="success"><Crown size={12} /> Pro liberado</Badge>
+                ) : (
+                  <Badge variant="muted">Gratuito · Mercado completo no Pro</Badge>
+                )}
+              </div>
             </div>
 
-            <TabsRoot value={selectedStat} onValueChange={(value) => setSelectedStat(value as Stat)}>
+            <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
               <TabsList className={styles.statsTabs}>
-                {STATS.map((stat) => (
-                  <TabsTrigger key={stat} value={stat}>
-                    {stat}
-                  </TabsTrigger>
-                ))}
+                {STATS.map((stat) => {
+                  const locked = isLockedStat(stat, plan);
+                  return (
+                    <TabsTrigger
+                      key={stat}
+                      value={stat}
+                      className={locked ? styles.lockedTab : undefined}
+                      title={locked ? 'Disponível no plano Pro' : undefined}
+                    >
+                      {stat}
+                      {locked ? <Lock size={11} /> : null}
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
 
               <TabsContent value={selectedStat} className={styles.playersTabContent}>
@@ -250,20 +431,66 @@ export function DashboardView() {
                   <p className={styles.stateText}>Selecione um jogo para ver os jogadores.</p>
                 )}
 
-                {isLoadingPlayers ? <p className={styles.stateText}>Carregando jogadores...</p> : null}
-                {!isLoadingPlayers && selectedGame && !players.length ? <p className={styles.stateText}>Nenhum jogador disponível para este jogo.</p> : null}
+                {marketLocked ? (
+                  <Surface className={styles.lockedStateBox}>
+                    <div className={styles.lockedTitle}><Lock size={14} /> Este mercado está no plano Pro</div>
+                    <p className={styles.stateText}>No fluxo React, mercados gratuitos: {FREE_STATS.join(' · ')}.</p>
+                    <Button size="sm" variant="secondary" onClick={() => setSelectedStat('PTS')}>Voltar para PTS</Button>
+                  </Surface>
+                ) : null}
 
-                <div className={styles.playerList}>
-                  {players.map((player) => (
-                    <div key={player.id} className={styles.playerRow}>
-                      <div>
-                        <p className={styles.playerName}>{player.name}</p>
-                        <p className={styles.playerMeta}>{player.position} · {player.team}</p>
+                {selectedGamePlayersStatus === 'loading' ? <p className={styles.stateText}>Carregando jogadores...</p> : null}
+                {selectedGamePlayersStatus === 'error' ? (
+                  <EmptyState
+                    heading="Falha ao carregar jogadores"
+                    description={selectedGamePlayersError || 'Tente novamente.'}
+                    action={selectedGame ? (
+                      <Button size="sm" variant="secondary" onClick={() => loadPlayersForGame(selectedGame, { force: true })}>
+                        <RefreshCw size={14} /> Recarregar
+                      </Button>
+                    ) : null}
+                  />
+                ) : null}
+                {selectedGamePlayersStatus === 'empty' ? <p className={styles.stateText}>Nenhum jogador disponível para este jogo.</p> : null}
+
+                {!marketLocked ? (
+                  <div className={styles.playerList}>
+                    {players.map((player) => (
+                      <div key={player.id} className={styles.playerRow}>
+                        <div>
+                          <p className={styles.playerName}>{player.name}</p>
+                          <p className={styles.playerMeta}>{player.position} · {player.team}</p>
+                        </div>
+
+                        <div className={styles.playerActions}>
+                          {player.jersey ? <Badge variant="muted">#{player.jersey}</Badge> : null}
+                          <Button size="sm" variant="secondary" onClick={() => setSelectedPlayerId(player.id)}>
+                            Ver detalhe
+                          </Button>
+                        </div>
                       </div>
-                      {player.jersey ? <Badge variant="muted">#{player.jersey}</Badge> : null}
+                    ))}
+                  </div>
+                ) : null}
+
+                {selectedPlayer ? (
+                  <Surface className={styles.playerDetailPreview}>
+                    <div className={styles.playerDetailHeader}>
+                      <div>
+                        <p className={styles.playerDetailTitle}>{selectedPlayer.name}</p>
+                        <p className={styles.playerMeta}>{selectedPlayer.position} · {selectedPlayer.team}</p>
+                      </div>
+                      <Badge variant="default">Entrada React</Badge>
                     </div>
-                  ))}
-                </div>
+                    <p className={styles.stateText}>
+                      Fluxo de entrada pronto: seleção de jogador preservada em estado/URL. O painel premium completo ainda será migrado em etapa dedicada.
+                    </p>
+                    <div className={styles.playerDetailActions}>
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedPlayerId(null)}>Voltar para lista</Button>
+                      <Button size="sm" variant="secondary" onClick={() => window.location.assign('/app.html')}>Abrir detalhe legado</Button>
+                    </div>
+                  </Surface>
+                ) : null}
               </TabsContent>
             </TabsRoot>
           </Surface>
@@ -271,7 +498,10 @@ export function DashboardView() {
 
         {errorMessage ? (
           <Surface className={styles.errorBox}>
-            <p>{errorMessage}</p>
+            <div className={styles.errorContent}>
+              <AlertCircle size={16} />
+              <p>{errorMessage}</p>
+            </div>
             {authTokenMissing ? (
               <Button variant="secondary" size="sm" onClick={() => window.location.assign('/app.html')}>
                 Abrir fluxo legado
