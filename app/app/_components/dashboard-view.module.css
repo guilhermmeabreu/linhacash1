@@ -1,0 +1,111 @@
+.dashboardGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.gamesColumn,
+.playersColumn {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+}
+
+.stateText {
+  color: var(--lc-muted);
+  font-size: 0.85rem;
+}
+
+.gameList,
+.playerList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.gameCard {
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface);
+  padding: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gameCard:hover {
+  border-color: var(--lc-border-strong);
+}
+
+.gameCardActive {
+  border-color: color-mix(in srgb, var(--lc-accent) 45%, var(--lc-border) 55%);
+  background: color-mix(in srgb, var(--lc-accent) 8%, var(--lc-surface) 92%);
+}
+
+.gameCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+  color: var(--lc-muted);
+  font-family: var(--lc-font-mono);
+  font-size: 0.75rem;
+}
+
+.matchup {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.statsTabs {
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 0.35rem;
+  white-space: nowrap;
+}
+
+.playersTabContent {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.playerRow {
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface);
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.playerName {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.playerMeta {
+  color: var(--lc-muted);
+  font-size: 0.8rem;
+}
+
+.errorBox {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+@media (min-width: 1080px) {
+  .dashboardGrid {
+    grid-template-columns: 360px minmax(0, 1fr);
+    align-items: start;
+  }
+}
