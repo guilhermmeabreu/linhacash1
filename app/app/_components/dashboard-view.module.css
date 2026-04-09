@@ -84,6 +84,8 @@
   transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
   display: grid;
   gap: 0.75rem;
+  width: 100%;
+  cursor: pointer;
 }
 
 .gameCard:hover {
@@ -152,15 +154,28 @@
 }
 
 .gameMatchup {
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: color-mix(in srgb, var(--lc-text) 87%, var(--lc-muted) 13%);
   display: grid;
-  gap: 0.12rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.gameMatchup span {
+  min-width: 0;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.gameMatchup span:first-child {
+  text-align: right;
 }
 
 .gameMatchup span:last-child {
   color: var(--lc-muted);
+  text-align: left;
 }
 
 .gameCardDivider {
@@ -169,8 +184,8 @@
 
 .gameCtaButton {
   min-height: 2rem;
-  border: 1px solid color-mix(in srgb, var(--lc-accent) 45%, var(--lc-border) 55%);
-  background: color-mix(in srgb, var(--lc-accent) 16%, var(--lc-surface) 84%);
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 28%, transparent);
+  background: transparent;
   color: var(--lc-accent);
   font-size: 0.62rem;
   text-transform: uppercase;
@@ -184,12 +199,12 @@
 }
 
 .gameCtaLocked {
-  border-color: var(--lc-border);
-  background: var(--lc-surface-elevated);
+  border-color: color-mix(in srgb, var(--lc-border) 60%, transparent);
+  background: transparent;
   color: var(--lc-muted);
 }
 
-.gameCtaButton:hover {
+.gameCard:hover .gameCtaButton {
   border-color: color-mix(in srgb, var(--lc-accent) 70%, var(--lc-border) 30%);
 }
 

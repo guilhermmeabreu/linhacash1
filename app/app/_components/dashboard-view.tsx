@@ -14,7 +14,6 @@ import {
   Minus,
   Plus,
   RefreshCw,
-  Search,
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -196,7 +195,6 @@ export function DashboardView() {
     if (Number.isFinite(gameIdFromQuery) && gameIdFromQuery > 0) return 'players';
     return 'games';
   });
-  const [searchTerm, setSearchTerm] = useState('');
   const [lineAdjustment, setLineAdjustment] = useState(0);
 
   const [games, setGames] = useState<Game[]>([]);
@@ -236,12 +234,6 @@ export function DashboardView() {
     () => (selectedGameId ? playersByGame[selectedGameId] ?? [] : []),
     [playersByGame, selectedGameId],
   );
-  const filteredPlayers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return players;
-    return players.filter((player) => `${player.name} ${player.team} ${player.position}`.toLowerCase().includes(term));
-  }, [players, searchTerm]);
-
   const selectedPlayer = useMemo(
     () => players.find((player) => player.id === selectedPlayerId) ?? null,
     [players, selectedPlayerId],
@@ -664,7 +656,7 @@ export function DashboardView() {
               <ThemeToggle compact />
               {canGoBack ? (
                 <Button size="sm" variant="ghost" onClick={() => setView(view === 'detail' ? 'players' : 'games')}>
-                  <ArrowLeft size={14} /> Voltar
+                  <ArrowLeft size={14} />
                 </Button>
               ) : null}
             </div>
@@ -697,10 +689,20 @@ export function DashboardView() {
                 {games.map((game, index) => {
                   const locked = plan !== 'pro' && index > 0;
                   return (
-                    <article
+                    <button
                       key={game.id}
+                      type="button"
                       className={`${styles.gameCard} technical-item ${locked ? styles.gameCardLocked : ''}`}
                       aria-label={`${game.away_team} versus ${game.home_team}`}
+                      onClick={() => {
+                        if (locked) {
+                          openUpgradeSurface();
+                          return;
+                        }
+                        setSelectedGameId(game.id);
+                        setSelectedPlayerId(null);
+                        setView('players');
+                      }}
                     >
                       {locked ? (
                         <div className={styles.gameLockBadge}>
@@ -717,29 +719,16 @@ export function DashboardView() {
                           {game.home_logo ? <img src={game.home_logo} alt={game.home_team} loading="lazy" /> : shortTeamName(game.home_team)}
                         </div>
                       </div>
-                      <p className={styles.gameMatchup}>
+                      <div className={styles.gameMatchup}>
                         <span>{game.away_team}</span>
                         <span>{game.home_team}</span>
-                      </p>
+                      </div>
                       <div className={styles.gameCardDivider} />
-                      <button
-                        type="button"
-                        className={`${styles.gameCtaButton} ${locked ? styles.gameCtaLocked : ''}`}
-                        onClick={() => {
-                          if (locked) {
-                            openUpgradeSurface();
-                            return;
-                          }
-                          setSelectedGameId(game.id);
-                          setSelectedPlayerId(null);
-                          setSearchTerm('');
-                          setView('players');
-                        }}
-                      >
+                      <div className={`${styles.gameCtaButton} ${locked ? styles.gameCtaLocked : ''}`}>
                         {locked ? 'DESBLOQUEAR NO PRO' : 'VER JOGADORES'}
                         {!locked ? <ChevronRight size={14} /> : <Lock size={12} />}
-                      </button>
-                    </article>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
@@ -750,15 +739,6 @@ export function DashboardView() {
             <section className={styles.playersView}>
               <div className={styles.playersTopbar}>
                 <h2>Jogadores</h2>
-                <div className={styles.searchField}>
-                  <Search size={14} />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Buscar jogador..."
-                    aria-label="Buscar jogador"
-                  />
-                </div>
               </div>
 
               <div className={styles.statsTabsWrap}>
@@ -808,7 +788,7 @@ export function DashboardView() {
 
                     {!marketLocked ? (
                       <div className={`${styles.playerList} technical-grid`}>
-                        {filteredPlayers.map((player) => {
+                        {players.map((player) => {
                           const line = metricsByPlayer[player.id]?.[selectedStat]?.metrics?.line;
                           return (
                             <button
