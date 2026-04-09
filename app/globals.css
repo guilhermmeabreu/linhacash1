@@ -5,8 +5,8 @@
   --color-accent: #22c55e;
   --color-muted: #888888;
   --color-border: #1f1f1f;
-  --font-sans: var(--font-inter), sans-serif;
-  --font-mono: var(--font-jetbrains-mono), monospace;
+  --font-sans: var(--lc-font-sans);
+  --font-mono: var(--lc-font-mono);
 }
 
 @layer base {
@@ -58,8 +58,8 @@
   --lc-space-12: 3rem;
 
   /* Typography */
-  --lc-font-sans: var(--font-inter), sans-serif;
-  --lc-font-mono: var(--font-jetbrains-mono), monospace;
+  --lc-font-sans: Inter, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --lc-font-mono: 'JetBrains Mono', 'SF Mono', 'Roboto Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
   --lc-text-display: clamp(1.875rem, 3vw, 2.5rem);
   --lc-text-h1: clamp(1.5rem, 2.4vw, 2rem);
   --lc-text-h2: clamp(1.25rem, 1.8vw, 1.5rem);
@@ -175,7 +175,7 @@ textarea {
 }
 
 .numeric-data {
-  font-family: var(--font-mono);
+  font-family: var(--lc-font-mono);
   letter-spacing: 0.01em;
 }
 

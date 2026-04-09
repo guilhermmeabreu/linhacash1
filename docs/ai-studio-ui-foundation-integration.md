@@ -1,11 +1,11 @@
 # AI Studio UI Foundation Integration (Safe Port Plan)
 
 ## Summary
-This phase ports only foundational UI/design-system pieces from the AI Studio React/Vite frontend into LinhaCash's existing Next.js architecture. No page migrations were performed, and no backend/auth/admin/billing/API logic was touched.
+This phase ports only foundational UI/design-system pieces from the AI Studio React/Vite frontend into LinhaCash's existing Next.js architecture. No backend/auth/admin/billing/API logic was touched.
 
 ## Current frontend audit (LinhaCash)
 - Runtime/framework: Next.js App Router (`app/`) with route handlers in `app/api/*`.
-- Existing live flows still rely on static entrypoints (`public/landing.html`, `public/app.html`) and must remain intact.
+- Live flows run on App Router entrypoints (`/`, `/app`).
 - Existing UI primitives/layout abstractions already exist under:
   - `components/ui/*`
   - `components/layout/*`
@@ -18,11 +18,10 @@ This phase ports only foundational UI/design-system pieces from the AI Studio Re
 2. Keep all business logic and API routes untouched.
 3. Port UI foundation into existing primitive components only.
 4. Normalize primitives so they consume shared tokenized CSS classes (`lc-*`) instead of page-specific utility styling.
-5. Improve font loading safely using `next/font/google` (self-hosted via Next.js optimization), while preserving existing token names used by current UI.
+5. Use deterministic local/system font stacks to avoid network-coupled builds.
 
 ## Exact implementation in this phase
-- Fonts migrated from CSS `@import` to `next/font/google` in root layout.
-- Token references in global CSS now map to font CSS variables provided by Next.js font loader.
+- Root layout now uses local/system font stacks defined in global tokens.
 - Primitive components aligned to tokenized base classes:
   - `Button` → `lc-btn*`
   - `Badge` → `lc-badge*`
@@ -34,7 +33,6 @@ This phase ports only foundational UI/design-system pieces from the AI Studio Re
 - Next.js app architecture and bootstrapping.
 - Existing route handlers and server-side/business logic.
 - Existing auth/admin/billing/support/API route paths and behavior.
-- Existing page flows and static HTML entrypoints.
 - Existing design token naming for backward compatibility (`--bg`, `--s1`, etc.).
 
 ## What was intentionally NOT imported from AI Studio project

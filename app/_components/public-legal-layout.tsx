@@ -15,7 +15,7 @@ export function PublicLegalLayout({
     <main style={{ minHeight: '100vh', background: '#070908', color: '#ecf5f1', fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }}>
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '32px 20px 54px' }}>
         <header style={{ borderBottom: '1px solid #24312b', paddingBottom: 16, marginBottom: 26, display: 'flex', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-          <Link href="/landing.html" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: '#ecf5f1', fontWeight: 800, letterSpacing: '-.02em' }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: '#ecf5f1', fontWeight: 800, letterSpacing: '-.02em' }}>
             <Image src="/logo.png" alt="LinhaCash" width={24} height={24} />
             <span>Linha<span style={{ color: '#00e676' }}>Cash</span></span>
           </Link>

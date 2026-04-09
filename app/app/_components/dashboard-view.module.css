@@ -53,10 +53,12 @@
   padding: 0.75rem;
   text-align: left;
   cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
 .gameCard:hover {
   border-color: var(--lc-border-strong);
+  transform: translateY(-1px);
 }
 
 .gameCardActive {
@@ -283,6 +285,17 @@
   background: linear-gradient(180deg, #f78e51 0%, #d4663d 100%);
 }
 
+
+.statePanelInline {
+  border: 1px dashed var(--lc-border-strong);
+  background: color-mix(in srgb, var(--lc-surface) 88%, #111921 12%);
+  padding: 0.65rem 0.75rem;
+}
+
+.infoBanner {
+  background: color-mix(in srgb, var(--lc-surface) 83%, #0d151f 17%);
+}
+
 .errorBox {
   margin-top: 1rem;
   display: flex;
@@ -295,6 +308,47 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+
+@media (max-width: 720px) {
+  .dashboardGrid,
+  .gamesColumn,
+  .playersColumn,
+  .playersTabContent {
+    gap: 0.7rem;
+  }
+
+  .topbarBadges,
+  .playersHeaderBadges {
+    justify-content: flex-start;
+  }
+
+  .sectionHeader,
+  .playerDetailHeader,
+  .errorBox {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .playerRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .playerActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .chartCanvas {
+    min-height: 180px;
+    padding-top: 1.2rem;
+  }
+
+  .chartHeaderBadges {
+    justify-content: flex-start;
+  }
 }
 
 @media (min-width: 1080px) {

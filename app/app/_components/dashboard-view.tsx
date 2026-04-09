@@ -546,7 +546,9 @@ export function DashboardView() {
               <Badge variant="default">{games.length}</Badge>
             </div>
 
-            {gamesStatus === 'loading' ? <p className={styles.stateText}>Carregando jogos...</p> : null}
+            {gamesStatus === 'loading' ? (
+              <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogos...</p></Surface>
+            ) : null}
             {gamesStatus === 'error' ? (
               <EmptyState
                 heading="Não foi possível carregar os jogos"
@@ -615,9 +617,9 @@ export function DashboardView() {
 
               <TabsContent value={selectedStat} className={styles.playersTabContent}>
                 {selectedGame ? (
-                  <p className={styles.stateText}>Mercado ativo: {selectedStat}</p>
+                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Mercado ativo: {selectedStat}</p></Surface>
                 ) : (
-                  <p className={styles.stateText}>Selecione um jogo para ver os jogadores.</p>
+                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Selecione um jogo para ver os jogadores.</p></Surface>
                 )}
 
                 {marketLocked ? (
@@ -628,7 +630,9 @@ export function DashboardView() {
                   </Surface>
                 ) : null}
 
-                {selectedGamePlayersStatus === 'loading' ? <p className={styles.stateText}>Carregando jogadores...</p> : null}
+                {selectedGamePlayersStatus === 'loading' ? (
+                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogadores...</p></Surface>
+                ) : null}
                 {selectedGamePlayersStatus === 'error' ? (
                   <EmptyState
                     heading="Falha ao carregar jogadores"
@@ -640,7 +644,9 @@ export function DashboardView() {
                     ) : null}
                   />
                 ) : null}
-                {selectedGamePlayersStatus === 'empty' ? <p className={styles.stateText}>Nenhum jogador disponível para este jogo.</p> : null}
+                {selectedGamePlayersStatus === 'empty' ? (
+                  <Surface className={styles.statePanelInline}><p className={styles.stateText}>Nenhum jogador disponível para este jogo.</p></Surface>
+                ) : null}
 
                 {!marketLocked ? (
                   <div className={styles.playerList}>
@@ -675,7 +681,9 @@ export function DashboardView() {
                       </div>
                     </div>
 
-                    {selectedMetricsStatus === 'loading' ? <p className={styles.stateText}>Carregando métricas e histórico...</p> : null}
+                    {selectedMetricsStatus === 'loading' ? (
+                      <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando métricas e histórico...</p></Surface>
+                    ) : null}
                     {selectedMetricsStatus === 'error' ? (
                       <EmptyState
                         heading="Não foi possível carregar o detalhe do jogador"
@@ -687,7 +695,9 @@ export function DashboardView() {
                         ) : null}
                       />
                     ) : null}
-                    {selectedMetricsStatus === 'empty' ? <p className={styles.stateText}>Sem histórico suficiente para este mercado.</p> : null}
+                    {selectedMetricsStatus === 'empty' ? (
+                      <Surface className={styles.statePanelInline}><p className={styles.stateText}>Sem histórico suficiente para este mercado.</p></Surface>
+                    ) : null}
 
                     {playerDetailModel && selectedMetricsStatus === 'ready' ? (
                       <>
@@ -738,7 +748,7 @@ export function DashboardView() {
         </div>
 
         {(errorMessage || oauthQueryError) ? (
-          <Surface className={styles.errorBox}>
+          <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
             <div className={styles.errorContent}>
               <AlertCircle size={16} />
               <p>{errorMessage || oauthQueryError}</p>
@@ -751,7 +761,7 @@ export function DashboardView() {
           </Surface>
         ) : null}
         {checkoutNotice ? (
-          <Surface className={styles.errorBox}>
+          <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
             <div className={styles.errorContent}>
               <Crown size={16} />
               <p>{checkoutNotice}</p>
