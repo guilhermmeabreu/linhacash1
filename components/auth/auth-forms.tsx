@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useMemo, useState } from 'react';
-import { Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+import { Lock, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -70,8 +70,6 @@ export function LoginForm() {
     setMessage('Se o email existir, enviamos um link de recuperação.');
   }
 
-  const recoveryHref = useMemo(() => (email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : '/forgot-password'), [email]);
-
   return (
     <form className="lc-auth-form" onSubmit={onSubmit}>
       <label>
@@ -112,11 +110,9 @@ export function LoginForm() {
       </button>
 
       <div className="lc-auth-recovery">
-        <div className="lc-auth-row">
-          <button type="button" className="lc-link-btn" onClick={onForgot} disabled={loading}>Enviar recuperação</button>
-          <Link href={recoveryHref}>Abrir página de recuperação</Link>
-        </div>
-        <p className="lc-auth-legal-copy"><ShieldCheck size={14} /> Ao continuar, você concorda com os <Link href="/termos">Termos</Link> e a <Link href="/privacidade">Política de Privacidade</Link>.</p>
+        <button type="button" className="lc-link-btn lc-auth-recovery-link" onClick={onForgot} disabled={loading}>
+          Esqueceu a senha? <span>Recuperar</span>
+        </button>
       </div>
 
       <p className="lc-auth-help">Novo por aqui? <Link href="/signup">Criar conta grátis</Link></p>
@@ -164,7 +160,7 @@ export function SignupForm() {
       </label>
       {error ? <p className="lc-auth-error">{error}</p> : null}
       {message ? <p className="lc-auth-success">{message}</p> : null}
-      <Button type="submit" size="lg" disabled={loading}>{loading ? 'Criando...' : 'Criar conta grátis'}</Button>
+      <Button type="submit" size="lg" disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</Button>
       <p className="lc-auth-help">Já tem conta? <Link href="/login">Entrar</Link></p>
     </form>
   );

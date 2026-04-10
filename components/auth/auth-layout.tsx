@@ -2,7 +2,9 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { LinhaCashLogo, ThemeToggle } from '@/components/layout';
 
-export function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+export function AuthLayout({ title, subtitle, children, mode = 'login' }: { title: string; subtitle: string; children: ReactNode; mode?: 'login' | 'signup' | 'recovery' }) {
+  const isSignup = mode === 'signup';
+
   return (
     <main className="lc-auth-page">
       <section className="lc-auth-card lc-surface lc-surface-elevated">
@@ -16,9 +18,14 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           textClassName="lc-auth-brand-text"
           ariaLabel="Voltar para a página inicial"
         />
-        <p className="lc-auth-kicker">Análise de props da NBA</p>
         <h2>{title}</h2>
         <p className="lc-auth-subtitle">{subtitle}</p>
+        {mode !== 'recovery' ? (
+          <nav className="lc-auth-tabs" aria-label="Navegação de autenticação">
+            <Link href="/login" aria-current={!isSignup ? 'page' : undefined}>Entrar</Link>
+            <Link href="/signup" aria-current={isSignup ? 'page' : undefined}>Criar conta</Link>
+          </nav>
+        ) : null}
         {children}
         <footer className="lc-auth-footer">
           <Link href="/termos">Termos</Link>

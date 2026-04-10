@@ -8,7 +8,7 @@ function ResetPasswordFallback() {
 
 export default function ResetPasswordPage() {
   return (
-    <AuthLayout title="Defina sua nova senha" subtitle="Finalize sua recuperação criando uma senha forte para sua conta.">
+    <AuthLayout mode="recovery" title="Defina sua nova senha" subtitle="Finalize sua recuperação criando uma senha forte para sua conta.">
       <Suspense fallback={<ResetPasswordFallback />}>
         <ResetPasswordForm />
       </Suspense>

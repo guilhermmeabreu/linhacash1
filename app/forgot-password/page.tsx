@@ -8,7 +8,7 @@ export default async function ForgotPasswordPage({
 }) {
   const params = await searchParams;
   return (
-    <AuthLayout title="Recuperar acesso" subtitle="Informe seu email para receber o link de redefinição de senha.">
+    <AuthLayout mode="recovery" title="Recuperar acesso" subtitle="Informe seu email para receber o link de redefinição de senha.">
       <ForgotPasswordForm defaultEmail={params.email ?? ''} />
     </AuthLayout>
   );
