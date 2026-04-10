@@ -36,7 +36,7 @@ export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(params.get('registered') ? 'Conta criada. Faça login para continuar.' : null);
+  const message = params.get('registered') ? 'Conta criada. Faça login para continuar.' : null;
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent) {
@@ -53,23 +53,6 @@ export function LoginForm() {
     window.location.assign('/app');
   }
 
-  async function onForgot() {
-    setError(null);
-    setMessage(null);
-    if (!email.trim()) {
-      setError('Digite seu email para receber o link de recuperação.');
-      return;
-    }
-    setLoading(true);
-    const { data } = await authRequest({ action: 'forgot', email: email.trim() });
-    setLoading(false);
-    if (data.error) {
-      setError(data.error);
-      return;
-    }
-    setMessage('Se o email existir, enviamos um link de recuperação.');
-  }
-
   return (
     <form className="lc-auth-form" onSubmit={onSubmit}>
       <label>
@@ -84,6 +67,10 @@ export function LoginForm() {
       {message ? <p className="lc-auth-success">{message}</p> : null}
 
       <Button type="submit" size="lg" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</Button>
+
+      <div className="lc-auth-divider" aria-hidden="true">
+        <span>OU</span>
+      </div>
 
       <button
         type="button"
@@ -110,12 +97,17 @@ export function LoginForm() {
       </button>
 
       <div className="lc-auth-recovery">
-        <button type="button" className="lc-link-btn lc-auth-recovery-link" onClick={onForgot} disabled={loading}>
+        <Link
+          href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : '/forgot-password'}
+          className="lc-link-btn lc-auth-recovery-link"
+          aria-disabled={loading ? 'true' : undefined}
+          onClick={(event) => {
+            if (loading) event.preventDefault();
+          }}
+        >
           Esqueceu a senha? <span>Recuperar</span>
-        </button>
+        </Link>
       </div>
-
-      <p className="lc-auth-help">Novo por aqui? <Link href="/signup">Criar conta grátis</Link></p>
     </form>
   );
 }

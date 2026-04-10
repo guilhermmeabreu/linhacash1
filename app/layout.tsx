@@ -6,10 +6,10 @@ export const metadata: Metadata = {
   description: 'Análise de props da NBA',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
       { url: '/logo.png', type: 'image/png', sizes: '192x192' },
+      { url: '/favicon.ico', sizes: 'any' },
     ],
-    shortcut: '/favicon.ico',
+    shortcut: '/logo.png',
     apple: [{ url: '/logo.png', sizes: '180x180' }],
   },
 };
