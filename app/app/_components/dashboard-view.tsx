@@ -55,6 +55,7 @@ type Stat = (typeof STATS)[number];
 type Plan = 'free' | 'pro';
 type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
 type Theme = 'dark' | 'light';
+type SupportSurface = 'faq' | 'support' | 'bug' | null;
 
 type Game = {
   id: number;
@@ -229,6 +230,11 @@ export function DashboardView() {
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [supportSurface, setSupportSurface] = useState<SupportSurface>(null);
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportFeedback, setSupportFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const gamesRequestRef = useRef(0);
   const playersRequestRef = useRef<Record<number, number>>({});
@@ -571,6 +577,60 @@ export function DashboardView() {
     setUpgradeOpen(true);
   }, []);
 
+  const openSupportSurface = useCallback((surface: Exclude<SupportSurface, null>) => {
+    setSupportFeedback(null);
+    if (surface === 'support') {
+      setSupportSubject('Suporte LinhaCash');
+      setSupportMessage('');
+    }
+    if (surface === 'bug') {
+      setSupportSubject('Relato de problema');
+      setSupportMessage('');
+    }
+    setSupportSurface(surface);
+  }, []);
+
+  const submitSupport = useCallback(async () => {
+    if (!supportSurface || supportSurface === 'faq') return;
+    setSupportSubmitting(true);
+    setSupportFeedback(null);
+    try {
+      const token = getAuthToken();
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          type: supportSurface === 'bug' ? 'bug' : 'support',
+          subject: supportSubject.trim(),
+          message: supportMessage.trim(),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setSupportFeedback({
+          tone: 'error',
+          text: payload?.error || 'Não foi possível enviar agora. Tente novamente em instantes.',
+        });
+        return;
+      }
+      setSupportFeedback({
+        tone: 'success',
+        text: 'Mensagem enviada com sucesso. Nosso time vai retornar pelo canal cadastrado.',
+      });
+      setSupportMessage('');
+    } catch {
+      setSupportFeedback({
+        tone: 'error',
+        text: 'Falha de conexão no envio. Verifique a internet e tente novamente.',
+      });
+    } finally {
+      setSupportSubmitting(false);
+    }
+  }, [supportMessage, supportSubject, supportSurface]);
+
   const startCheckout = useCallback(async () => {
     setUpgradeLoading(true);
     setUpgradeError(null);
@@ -715,7 +775,7 @@ export function DashboardView() {
       <ContentContainer width="content">
         <div className={styles.dashboardCanvas}>
           {view === 'games' ? (
-            <section className={styles.gamesView}>
+            <section className={`${styles.gamesView} ${styles.viewPanel}`}>
               <p className={styles.gamesDateLine}>Hoje · {formatTodayLabel()}</p>
               {gamesStatus === 'loading' ? (
                 <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogos...</p></Surface>
@@ -785,7 +845,7 @@ export function DashboardView() {
           ) : null}
 
           {view === 'players' ? (
-            <section className={styles.playersView}>
+            <section className={`${styles.playersView} ${styles.viewPanel}`}>
               <div className={styles.playersTopbar}>
                 <h2>Jogadores</h2>
               </div>
@@ -877,7 +937,7 @@ export function DashboardView() {
           ) : null}
 
           {view === 'detail' && selectedPlayer ? (
-            <section className={styles.detailView}>
+            <section className={`${styles.detailView} ${styles.viewPanel}`}>
               <div className={styles.detailTabsRow}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
                   <TabsList className={styles.statsTabs}>
@@ -989,12 +1049,16 @@ export function DashboardView() {
           ) : null}
 
           {view === 'profile' ? (
-            <section className={styles.profileView}>
+            <section className={`${styles.profileView} ${styles.viewPanel}`}>
+              <div className={styles.profileBackRow}>
+                <Button size="sm" variant="ghost" className={styles.profileBackButton} onClick={() => setView('games')} aria-label="Voltar para jogos do dia">
+                  <ArrowLeft size={16} />
+                </Button>
+              </div>
               <Surface className={styles.profileHero}>
                 <div className={styles.profileHeroGlow} aria-hidden />
                 <div className={styles.profileHeaderAvatar}>{profileInitial}</div>
                 <div className={styles.profileHeaderMeta}>
-                  <p className={styles.profileHeaderLabel}>Conta LinhaCash</p>
                   <h2>{profileName}</h2>
                   <p>{profileEmail}</p>
                   {profileSince ? <small>Membro desde {profileSince}</small> : null}
@@ -1056,27 +1120,27 @@ export function DashboardView() {
               <Surface className={styles.profileSection}>
                 <h3>Suporte</h3>
                 <div className={`${styles.profileRows} technical-grid`}>
-                  <a className={`${styles.profileRow} technical-item`} href="mailto:suporte@linhacash.com.br?subject=FAQ%20LinhaCash">
+                  <button type="button" className={`${styles.profileRow} technical-item`} onClick={() => openSupportSurface('faq')}>
                     <div className={styles.profileRowContent}>
                       <span><HelpCircle size={14} /> Perguntas frequentes</span>
                       <small>Respostas rápidas sobre uso da plataforma</small>
                     </div>
                     <ChevronRight size={14} />
-                  </a>
-                  <a className={`${styles.profileRow} technical-item`} href="mailto:suporte@linhacash.com.br">
+                  </button>
+                  <button type="button" className={`${styles.profileRow} technical-item`} onClick={() => openSupportSurface('support')}>
                     <div className={styles.profileRowContent}>
                       <span><MessageSquare size={14} /> Falar com suporte</span>
                       <small>suporte@linhacash.com.br</small>
                     </div>
                     <ChevronRight size={14} />
-                  </a>
-                  <a className={`${styles.profileRow} technical-item`} href="mailto:suporte@linhacash.com.br?subject=Relatar%20problema">
+                  </button>
+                  <button type="button" className={`${styles.profileRow} technical-item`} onClick={() => openSupportSurface('bug')}>
                     <div className={styles.profileRowContent}>
                       <span><AlertTriangle size={14} /> Reportar um problema</span>
                       <small>Enviar detalhes técnicos para investigação</small>
                     </div>
                     <ChevronRight size={14} />
-                  </a>
+                  </button>
                   <Link className={`${styles.profileRow} technical-item`} href="/termos">
                     <div className={styles.profileRowContent}>
                       <span><FileText size={14} /> Termos de uso</span>
@@ -1173,6 +1237,68 @@ export function DashboardView() {
                 <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
                   {upgradeLoading ? 'Abrindo checkout...' : 'Continuar para pagamento'}
                 </Button>
+              </Surface>
+            </div>
+          ) : null}
+
+          {supportSurface ? (
+            <div className={styles.supportOverlay} role="dialog" aria-modal="true" aria-label="Central de suporte LinhaCash">
+              <Surface className={styles.supportModal}>
+                <button type="button" className={styles.supportClose} onClick={() => setSupportSurface(null)} aria-label="Fechar">
+                  <X size={16} />
+                </button>
+
+                {supportSurface === 'faq' ? (
+                  <>
+                    <p className={styles.supportKicker}>Central de ajuda</p>
+                    <h3>Perguntas frequentes</h3>
+                    <div className={styles.faqList}>
+                      <article>
+                        <strong>Como desbloquear o plano Pro?</strong>
+                        <p>No item Planos, selecione Pro e conclua o checkout com o ciclo mensal ou anual.</p>
+                      </article>
+                      <article>
+                        <strong>Como alterar minha senha?</strong>
+                        <p>Acesse a seção Conta {'>'} Segurança para iniciar o fluxo de recuperação de acesso.</p>
+                      </article>
+                      <article>
+                        <strong>Como solicitar exclusão da conta?</strong>
+                        <p>Use a opção “Excluir minha conta e dados” na seção Suporte para iniciar a solicitação.</p>
+                      </article>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className={styles.supportKicker}>{supportSurface === 'bug' ? 'Relatório técnico' : 'Atendimento'}</p>
+                    <h3>{supportSurface === 'bug' ? 'Reportar um problema' : 'Falar com suporte'}</h3>
+                    <p className={styles.supportSubtitle}>As mensagens são enviadas para suporte@linhacash.com.br via fluxo interno da plataforma.</p>
+                    <label className={styles.upgradeField}>
+                      Assunto
+                      <input
+                        value={supportSubject}
+                        onChange={(event) => setSupportSubject(event.target.value)}
+                        placeholder="Descreva o assunto"
+                        maxLength={160}
+                      />
+                    </label>
+                    <label className={styles.upgradeField}>
+                      Mensagem
+                      <textarea
+                        className={styles.supportTextarea}
+                        value={supportMessage}
+                        onChange={(event) => setSupportMessage(event.target.value)}
+                        placeholder={supportSurface === 'bug' ? 'Descreva etapas, horário e comportamento esperado.' : 'Conte para nosso time como podemos ajudar.'}
+                        maxLength={2000}
+                      />
+                    </label>
+                    {supportFeedback ? (
+                      <p className={supportFeedback.tone === 'success' ? styles.supportSuccess : styles.upgradeError}>{supportFeedback.text}</p>
+                    ) : null}
+                    <Button size="lg" onClick={submitSupport} disabled={supportSubmitting}>
+                      {supportSubmitting ? 'Enviando...' : 'Enviar mensagem'}
+                    </Button>
+                  </>
+                )}
               </Surface>
             </div>
           ) : null}

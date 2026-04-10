@@ -68,6 +68,21 @@
   margin: 0 auto;
 }
 
+.viewPanel {
+  animation: view-enter 220ms ease;
+}
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .gamesDateLine {
   color: var(--lc-muted);
   font-size: 0.72rem;
@@ -593,6 +608,17 @@
   gap: 1rem;
 }
 
+.profileBackRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.profileBackButton {
+  min-width: 2.1rem;
+  padding-inline: 0.35rem;
+  color: var(--lc-text);
+}
+
 .profileHero {
   position: relative;
   isolation: isolate;
@@ -633,17 +659,11 @@
   z-index: 1;
 }
 
-.profileHeaderLabel {
-  color: var(--lc-muted);
-  font-size: 0.58rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
 .profileHeaderMeta h2 {
   font-size: clamp(1.15rem, 3.5vw, 1.7rem);
   letter-spacing: -0.03em;
   text-transform: uppercase;
+  line-height: 0.95;
 }
 
 .profileHeaderMeta p {
@@ -883,6 +903,88 @@
   font-size: 0.82rem;
 }
 
+.supportSuccess {
+  color: var(--lc-accent);
+  font-size: 0.82rem;
+}
+
+.supportOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background: color-mix(in srgb, var(--lc-bg) 74%, black 26%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.supportModal {
+  width: min(100%, 35rem);
+  display: grid;
+  gap: 0.8rem;
+  position: relative;
+}
+
+.supportClose {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  display: grid;
+  place-items: center;
+}
+
+.supportKicker {
+  color: var(--lc-accent);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 800;
+}
+
+.supportSubtitle {
+  color: var(--lc-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.supportTextarea {
+  min-height: 9rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  color: var(--lc-text);
+  padding: 0.6rem 0.65rem;
+  resize: vertical;
+}
+
+.faqList {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.faqList article {
+  border: 1px solid var(--lc-border);
+  background: color-mix(in srgb, var(--lc-surface) 84%, var(--lc-surface-elevated) 16%);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.faqList article strong {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.faqList article p {
+  color: var(--lc-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
 .infoBanner { background: color-mix(in srgb, var(--lc-surface) 83%, #0d151f 17%); }
 
 .errorBox {
@@ -934,6 +1036,10 @@
   }
 
   .upgradeModal {
+    width: 100%;
+  }
+
+  .supportModal {
     width: 100%;
   }
 
