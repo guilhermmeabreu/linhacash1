@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowDown, ArrowRight, CheckCircle2, Target, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PublicNav } from '@/app/_components/public-nav';
+import { LinhaCashLogo } from '@/components/layout';
 
 const plans = [
   {
@@ -55,7 +56,6 @@ export default function LandingPage() {
 
       <section className="lc-hero lc-public-container" id="hero">
         <div className="lc-hero-content">
-          <p className="lc-kicker">Plataforma de análise NBA</p>
           <h1>
             Decida com vantagem.<br />
             <span>Dados acionáveis em segundos.</span>
@@ -104,12 +104,12 @@ export default function LandingPage() {
         <div className="lc-plan-grid">
           {plans.map((plan) => (
             <article key={plan.name} className={`lc-surface ${plan.highlight ? 'lc-plan-highlight' : ''}`}>
-              {plan.highlight ? <div className="lc-plan-pill">Recomendado</div> : null}
+              {plan.highlight ? <div className="lc-plan-pill">Melhor escolha</div> : null}
               <h3>{plan.name}</h3>
               <strong>{plan.price}{plan.period ? <small>{plan.period}</small> : null}</strong>
               {'annualPrice' in plan ? (
                 <p className="lc-plan-annual-highlight">
-                  Plano anual: <strong>{plan.annualPrice}</strong> · com desconto vs plano mensal.
+                  Plano anual: <strong>{plan.annualPrice}</strong> · <span>R$ 16,41/mês no anual</span>.
                 </p>
               ) : null}
               <p>{plan.description}</p>
@@ -129,10 +129,18 @@ export default function LandingPage() {
 
       <footer className="lc-public-footer">
         <div className="lc-public-container">
-          <p>Uso responsável: o LinhaCash não é casa de apostas e não intermedia apostas.</p>
-          <p>
-            <Link href="/termos">Termos</Link> · <Link href="/privacidade">Privacidade</Link> · <a href="mailto:suporte@linhacash.com.br">suporte@linhacash.com.br</a>
-          </p>
+          <div className="lc-public-footer-brand">
+            <LinhaCashLogo href="/" ariaLabel="LinhaCash home" />
+            <p>Plataforma premium de leitura objetiva para props da NBA.</p>
+          </div>
+          <div className="lc-public-footer-links">
+            <a href="mailto:suporte@linhacash.com.br">suporte@linhacash.com.br</a>
+            <span aria-hidden>•</span>
+            <Link href="/termos">Termos</Link>
+            <span aria-hidden>•</span>
+            <Link href="/privacidade">Privacidade</Link>
+          </div>
+          <p className="lc-public-footer-note">Uso responsável: o LinhaCash não é casa de apostas e não intermedia apostas.</p>
         </div>
       </footer>
     </main>
