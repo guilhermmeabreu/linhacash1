@@ -133,7 +133,7 @@ body {
 }
 
 body {
-  min-height: 100dvh;
+  min-height: 100svh;
   line-height: 1.5;
 }
 
@@ -239,6 +239,7 @@ textarea {
   width: 100%;
   min-height: 2.625rem;
   padding: 0 var(--lc-space-3);
+  font-size: 1rem;
   background: var(--lc-surface);
   border: 1px solid var(--lc-border);
   color: var(--lc-text);
@@ -282,7 +283,7 @@ textarea {
 
 /* Layout foundation */
 .lc-shell {
-  min-height: 100dvh;
+  min-height: 100svh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   background: var(--lc-bg);
@@ -292,7 +293,7 @@ textarea {
   display: none;
   position: sticky;
   top: 0;
-  height: 100dvh;
+  height: 100svh;
   z-index: var(--lc-z-sidebar);
 }
 
@@ -316,7 +317,7 @@ textarea {
   top: 0;
   left: 0;
   width: min(86vw, 18rem);
-  height: 100dvh;
+  height: 100svh;
   background: var(--lc-surface);
   border-right: 1px solid var(--lc-border);
   transform: translateX(-100%);
@@ -480,9 +481,9 @@ textarea {
 .lc-brand span span { color: var(--lc-accent); }
 .lc-public-actions { display: flex; align-items: center; gap: .5rem; }
 
-.lc-landing { background: radial-gradient(circle at top, color-mix(in srgb, var(--lc-accent) 14%, transparent), transparent 34%), var(--lc-bg); }
+.lc-landing { background: radial-gradient(circle at top, color-mix(in srgb, var(--lc-accent) 9%, transparent), transparent 44%), var(--lc-bg); }
 .lc-hero {
-  min-height: calc(100dvh - 4.25rem);
+  min-height: calc(100svh - 4.25rem);
   padding: clamp(4.9rem, 7vw, 6.2rem) 0 clamp(1.4rem, 3vw, 2.2rem);
   display: grid;
   place-items: center;
@@ -496,8 +497,8 @@ textarea {
   transform: translateY(clamp(-1rem, -1.8vw, -0.35rem));
 }
 .lc-kicker { color: var(--lc-accent); text-transform: uppercase; letter-spacing: .14em; font-size: .66rem; font-weight: 800; }
-.lc-hero h1 { font-size: clamp(2rem, 5.5vw, 4.6rem); line-height: 0.96; margin: 0 auto; max-width: 14ch; text-wrap: balance; letter-spacing: -0.04em; }
-.lc-hero p { color: color-mix(in srgb, var(--lc-text) 80%, var(--lc-muted) 20%); max-width: 54ch; margin: 0 auto; text-wrap: pretty; line-height: 1.65; }
+.lc-hero h1 { font-size: clamp(2rem, 5.5vw, 4.6rem); line-height: 0.96; margin: 0 auto; max-width: 14ch; text-wrap: balance; letter-spacing: -0.04em; color: color-mix(in srgb, var(--lc-text) 96%, #fff 4%); text-shadow: 0 2px 20px rgba(0, 0, 0, 0.48); }
+.lc-hero p { color: color-mix(in srgb, var(--lc-text) 64%, var(--lc-muted) 36%); max-width: 54ch; margin: 0 auto; text-wrap: pretty; line-height: 1.6; font-size: clamp(0.95rem, 1.7vw, 1.05rem); }
 .lc-hero small { color: var(--lc-muted); font-size: 0.75rem; }
 .lc-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; margin-top: .55rem; }
 .lc-hero-secondary-cta { text-decoration: none; }
@@ -639,10 +640,10 @@ textarea {
 }
 .lc-public-actions a:hover { color: var(--lc-text); }
 .lc-hero h1 span {
-  color: var(--lc-accent);
+  color: color-mix(in srgb, var(--lc-accent) 68%, var(--lc-text) 32%);
   text-decoration: underline;
-  text-decoration-thickness: 3px;
-  text-underline-offset: 8px;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 }
 .lc-step-section { padding: clamp(4rem, 8vw, 6.2rem) 0 clamp(4.2rem, 7vw, 5.8rem); border-top: 1px solid color-mix(in srgb, var(--lc-border) 68%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--lc-border) 68%, transparent); }
 .lc-step-section > header { margin: 0 auto 1.8rem; max-width: 42rem; text-align: center; display: grid; gap: 0.7rem; }
@@ -775,7 +776,7 @@ textarea {
 @media (max-width: 920px) {
   .lc-step-grid,
   .lc-plan-grid { grid-template-columns: 1fr; }
-  .lc-hero { min-height: calc(100dvh - 4.25rem); padding-top: 4.5rem; }
+  .lc-hero { min-height: calc(100svh - 4.25rem); padding-top: 4.5rem; }
   .lc-scroll-hint span { display: none; }
   .lc-hero h1 { max-width: 10.5ch; }
   .lc-step-section { padding: 3.4rem 0 3.8rem; }
@@ -785,6 +786,12 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
   .lc-hero { padding-top: 3.8rem; }
   .lc-hero-cta { width: min(100%, 21rem); display: grid; gap: 0.55rem; }
   .lc-hero-cta > * { width: 100%; }
