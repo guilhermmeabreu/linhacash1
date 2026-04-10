@@ -474,13 +474,13 @@ textarea {
 
 /* Public/auth migration phase */
 .lc-public-container { width: min(100% - 2rem, 70rem); margin: 0 auto; }
-.lc-public-nav { position: sticky; top: 0; z-index: var(--lc-z-topbar); border-bottom: 1px solid color-mix(in srgb, var(--lc-border) 60%, transparent); background: color-mix(in srgb, #000 80%, transparent); backdrop-filter: blur(8px); }
+.lc-public-nav { position: sticky; top: 0; z-index: var(--lc-z-topbar); border-bottom: 1px solid color-mix(in srgb, var(--lc-border) 60%, transparent); background: color-mix(in srgb, var(--lc-bg) 82%, transparent); backdrop-filter: blur(8px); }
 .lc-public-nav .lc-public-container { min-height: 4.25rem; display: flex; align-items: center; justify-content: space-between; gap: var(--lc-space-3); }
 .lc-brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 800; color: var(--lc-text); text-decoration: none; }
 .lc-brand span span { color: var(--lc-accent); }
 .lc-public-actions { display: flex; align-items: center; gap: .5rem; }
 
-.lc-landing { background: radial-gradient(circle at top, rgba(34, 197, 94, 0.11), transparent 34%), #000; }
+.lc-landing { background: radial-gradient(circle at top, color-mix(in srgb, var(--lc-accent) 14%, transparent), transparent 34%), var(--lc-bg); }
 .lc-hero {
   min-height: calc(100dvh - 4.25rem);
   padding: clamp(4.9rem, 7vw, 6.2rem) 0 clamp(1.4rem, 3vw, 2.2rem);
@@ -532,7 +532,7 @@ textarea {
 .lc-plan-grid { margin-top: 1.4rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
 .lc-plan-grid article { display: grid; gap: .8rem; }
 .lc-plan-grid strong { font-size: 1.75rem; letter-spacing: -0.02em; }
-.lc-plan-grid ul { padding-left: 1.15rem; color: #c5c5c5; display: grid; gap: .35rem; }
+.lc-plan-grid ul { padding-left: 0; list-style: none; color: color-mix(in srgb, var(--lc-text) 76%, var(--lc-muted) 24%); display: grid; gap: .35rem; }
 .lc-plan-annual-highlight { border: 1px solid color-mix(in srgb, var(--lc-accent) 42%, var(--lc-border) 58%); background: color-mix(in srgb, var(--lc-accent) 10%, var(--lc-surface) 90%); padding: 0.5rem 0.65rem; font-size: 0.78rem; color: var(--lc-text); }
 .lc-plan-annual-note { color: var(--lc-muted); font-size: 0.78rem; }
 .lc-plan-highlight { border-color: color-mix(in srgb, var(--lc-accent) 48%, var(--lc-border) 52%); box-shadow: inset 0 0 0 1px var(--lc-accent-dim); }
@@ -674,7 +674,9 @@ textarea {
 .lc-plan-section > header p { margin: 0 auto; max-width: 34rem; }
 .lc-plan-grid { margin-top: 1.8rem; gap: 1rem; align-items: stretch; }
 .lc-plan-grid article { display: flex; flex-direction: column; justify-content: space-between; height: 100%; background: var(--lc-surface); padding: clamp(1.2rem, 2.4vw, 1.6rem); min-height: 100%; border-color: color-mix(in srgb, var(--lc-border) 80%, var(--lc-surface-elevated) 20%); gap: 0.75rem; }
-.lc-plan-grid ul { margin-top: 0.2rem; margin-bottom: 0.4rem; }
+.lc-plan-grid article > p { color: color-mix(in srgb, var(--lc-text) 74%, var(--lc-muted) 26%); }
+.lc-plan-grid ul { padding-left: 0; margin-top: 0.2rem; margin-bottom: 0.4rem; list-style: none; }
+.lc-plan-grid li { margin: 0; padding: 0; }
 .lc-plan-grid .lc-btn { width: 100%; margin-top: 0.35rem; }
 .lc-plan-annual-inline { display: grid; gap: 0.1rem; font-size: 0.78rem; color: var(--lc-muted); }
 .lc-plan-annual-inline span { color: color-mix(in srgb, var(--lc-text) 80%, var(--lc-muted) 20%); font-weight: 700; }
