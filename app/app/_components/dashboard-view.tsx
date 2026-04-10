@@ -188,6 +188,8 @@ function isLockedStat(stat: Stat, plan: Plan) {
 export function DashboardView() {
   const router = useRouter();
   const pathname = usePathname();
+  const termsHref = pathname.startsWith('/dashboard') ? '/dashboard/termos' : '/app/termos';
+  const privacyHref = pathname.startsWith('/dashboard') ? '/dashboard/privacidade' : '/app/privacidade';
   const searchParams = useSearchParams();
 
   const initialGameId = useMemo(() => {
@@ -1184,13 +1186,13 @@ export function DashboardView() {
                     </div>
                     <ChevronRight size={14} />
                   </button>
-                  <Link className={`${styles.profileRow} technical-item`} href="/termos">
+                  <Link className={`${styles.profileRow} technical-item`} href={termsHref}>
                     <div className={styles.profileRowContent}>
                       <span><FileText size={14} /> Termos de uso</span>
                     </div>
                     <ChevronRight size={14} />
                   </Link>
-                  <Link className={`${styles.profileRow} technical-item`} href="/privacidade">
+                  <Link className={`${styles.profileRow} technical-item`} href={privacyHref}>
                     <div className={styles.profileRowContent}>
                       <span><Lock size={14} /> Política de privacidade</span>
                     </div>

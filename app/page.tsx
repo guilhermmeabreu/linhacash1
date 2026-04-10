@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight, CheckCircle2, Target, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PublicNav } from '@/app/_components/public-nav';
 import { LinhaCashLogo } from '@/components/layout';
+import { ContextualLegalLinks } from '@/app/_components/contextual-legal-links';
 
 const plans = [
   {
@@ -20,7 +21,6 @@ const plans = [
     period: '/mês',
     annualPrice: 'R$197/ano',
     description: 'Para quem acompanha NBA todos os dias e quer leitura completa de props.',
-    annualDescription: 'Economia anual ativa: plano anual por R$197 com desconto real vs mensal.',
     features: ['Todos os jogos da rodada', 'Todos os jogadores liberados', 'Props e estatísticas completas', 'Contexto avançado (H2H, L20)'],
     cta: 'Assinar Pro',
     href: '/signup',
@@ -108,12 +108,9 @@ export default function LandingPage() {
               <h3>{plan.name}</h3>
               <strong>{plan.price}{plan.period ? <small>{plan.period}</small> : null}</strong>
               {'annualPrice' in plan ? (
-                <p className="lc-plan-annual-highlight">
-                  Plano anual: <strong>{plan.annualPrice}</strong> · <span>R$ 16,41/mês no anual</span>.
-                </p>
+                <p className="lc-plan-annual-inline">R$ 197/ano <span>· R$ 16,41/mês no anual</span></p>
               ) : null}
               <p>{plan.description}</p>
-              {'annualDescription' in plan ? <p className="lc-plan-annual-note">{plan.annualDescription}</p> : null}
               <ul>
                 {plan.features.map((feature) => (
                   <li key={feature}>{feature}</li>
@@ -133,13 +130,7 @@ export default function LandingPage() {
             <LinhaCashLogo href="/" ariaLabel="LinhaCash home" />
             <p>Plataforma premium de leitura objetiva para props da NBA.</p>
           </div>
-          <div className="lc-public-footer-links">
-            <a href="mailto:suporte@linhacash.com.br">suporte@linhacash.com.br</a>
-            <span aria-hidden>•</span>
-            <Link href="/termos">Termos</Link>
-            <span aria-hidden>•</span>
-            <Link href="/privacidade">Privacidade</Link>
-          </div>
+          <ContextualLegalLinks className="lc-public-footer-links" includeSupport />
           <p className="lc-public-footer-note">Uso responsável: o LinhaCash não é casa de apostas e não intermedia apostas.</p>
         </div>
       </footer>
