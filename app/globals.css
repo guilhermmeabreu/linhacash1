@@ -115,8 +115,8 @@ html.light {
   --lc-surface-elevated: #f1f5f9;
   --lc-text: #0f172a;
   --lc-muted: #475569;
-  --lc-accent: #16a34a;
-  --lc-accent-dim: rgba(22, 163, 74, 0.14);
+  --lc-accent: #22c55e;
+  --lc-accent-dim: rgba(34, 197, 94, 0.14);
   --lc-border: #cfd8e3;
   --lc-border-strong: #b9c7d9;
   --lc-shadow-subtle: 0 8px 24px rgba(15, 23, 42, 0.08);
@@ -502,7 +502,7 @@ textarea {
 .lc-hero small { color: var(--lc-muted); font-size: 0.75rem; }
 .lc-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; margin-top: .55rem; }
 .lc-hero-secondary-cta { text-decoration: none; }
-.lc-hero-secondary-cta .lc-btn-secondary { border-color: color-mix(in srgb, var(--lc-border-strong) 72%, var(--lc-accent) 28%); color: var(--lc-text); }
+.lc-hero-secondary-cta .lc-btn-secondary { border-color: var(--lc-accent); color: var(--lc-text); }
 .lc-scroll-hint {
   margin-top: clamp(1rem, 2.7vw, 1.8rem);
   justify-self: center;
@@ -640,7 +640,7 @@ textarea {
 }
 .lc-public-actions a:hover { color: var(--lc-text); }
 .lc-hero h1 span {
-  color: color-mix(in srgb, var(--lc-accent) 68%, var(--lc-text) 32%);
+  color: var(--lc-accent);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
@@ -792,12 +792,13 @@ textarea {
     font-size: 16px;
   }
 
-  .lc-hero { padding-top: 3.8rem; }
+  .lc-hero { padding-top: 3.7rem; }
+  .lc-hero-content { gap: 0.65rem; transform: translateY(-0.12rem); }
+  .lc-hero h1 { max-width: 10ch; font-size: clamp(2.35rem, 11.2vw, 3.15rem); }
+  .lc-hero p { max-width: 30ch; font-size: 0.87rem; line-height: 1.45; color: color-mix(in srgb, var(--lc-text) 56%, var(--lc-muted) 44%); }
   .lc-hero-cta { width: min(100%, 21rem); display: grid; gap: 0.55rem; }
   .lc-hero-cta > * { width: 100%; }
-  .lc-hero-cta .lc-btn { width: 100%; }
-  .lc-hero-content { transform: translateY(-0.25rem); }
-  .lc-hero p { max-width: 31ch; }
+  .lc-hero-cta .lc-btn { width: 100%; min-height: 2.55rem; font-size: 0.82rem; }
   .lc-step-section { padding: 2.8rem 0 3.2rem; }
   .lc-step-section > header { margin-bottom: 1.15rem; }
   .lc-step-grid article { min-height: 0; }

@@ -5,9 +5,12 @@ export const metadata: Metadata = {
   title: 'LinhaCash',
   description: 'Análise de props da NBA',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/logo.png', type: 'image/png', sizes: '192x192' },
+    ],
     shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    apple: [{ url: '/logo.png', sizes: '180x180' }],
   },
 };
 
