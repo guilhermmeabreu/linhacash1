@@ -50,6 +50,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -1162,25 +1163,28 @@ export function DashboardView() {
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={playerDetailModel.bars}
-                            margin={{ top: 8, right: 10, left: 6, bottom: 4 }}
-                            barCategoryGap={playerDetailModel.bars.length <= 5 ? '18%' : playerDetailModel.bars.length <= 10 ? '12%' : playerDetailModel.bars.length <= 20 ? '10%' : '8%'}
+                            margin={{ top: 12, right: 8, left: 2, bottom: 2 }}
+                            barCategoryGap={playerDetailModel.bars.length <= 5 ? '12%' : playerDetailModel.bars.length <= 10 ? '10%' : playerDetailModel.bars.length <= 20 ? '8%' : '6%'}
                           >
-                            <CartesianGrid stroke="var(--lc-border)" strokeDasharray="2 4" vertical={false} />
+                            <CartesianGrid stroke="color-mix(in srgb, var(--lc-border) 55%, transparent)" strokeDasharray="2 4" vertical={false} />
                             <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: 'var(--lc-muted)', fontSize: 11 }} />
                             <YAxis
+                              hide
                               tickLine={false}
                               axisLine={false}
                               tick={{ fill: 'var(--lc-muted)', fontSize: 11 }}
-                              width={32}
+                              width={0}
                               domain={[0, (max: number) => Math.max(max + 1, playerDetailModel.line + 1)]}
                             />
                             <Tooltip
                               cursor={{ fill: 'color-mix(in srgb, var(--lc-accent) 8%, transparent)' }}
                               contentStyle={{
                                 border: '1px solid var(--lc-border)',
-                                background: 'var(--lc-surface)',
+                                background: 'color-mix(in srgb, var(--lc-surface) 92%, var(--lc-bg) 8%)',
                                 color: 'var(--lc-text)',
-                                borderRadius: 10,
+                                borderRadius: 8,
+                                boxShadow: '0 8px 20px rgba(0,0,0,.28)',
+                                fontSize: '12px',
                               }}
                             />
                             <ReferenceLine
@@ -1191,18 +1195,19 @@ export function DashboardView() {
                             />
                             <Bar
                               dataKey="value"
-                              radius={[8, 8, 0, 0]}
+                              radius={[2, 2, 0, 0]}
                               isAnimationActive={false}
                               maxBarSize={
                                 playerDetailModel.bars.length <= 5
-                                  ? 56
+                                  ? 62
                                   : playerDetailModel.bars.length <= 10
-                                    ? 38
+                                    ? 48
                                     : playerDetailModel.bars.length <= 20
-                                      ? 24
-                                      : 18
+                                      ? 32
+                                      : 26
                               }
                             >
+                              <LabelList dataKey="value" position="top" fill="var(--lc-text)" fontSize={10} />
                               {playerDetailModel.bars.map((bar, index) => (
                                 <Cell
                                   key={`${bar.label}-${index}`}
