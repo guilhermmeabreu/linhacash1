@@ -12,7 +12,7 @@ const plans = [
     description: 'Ideal para testar o fluxo e sentir a experiência do LinhaCash.',
     features: ['Todos os jogos visíveis', '1 jogo liberado por dia', '1 jogador por time', 'Métricas PTS + 3PM'],
     cta: 'Começar grátis',
-    href: '/signup',
+    href: '/login',
   },
   {
     name: 'Pro',
@@ -22,7 +22,7 @@ const plans = [
     description: 'Para quem acompanha NBA todos os dias e quer leitura completa de props.',
     features: ['Todos os jogos da rodada', 'Todos os jogadores liberados', 'Props e estatísticas completas', 'Contexto avançado (H2H, L20)'],
     cta: 'Assinar Pro',
-    href: '/signup',
+    href: '/login',
     highlight: true,
   },
 ];
@@ -63,7 +63,7 @@ export default function LandingPage() {
             Tendências, desempenho recente e contexto real dos jogadores da NBA em uma leitura objetiva para agir com mais confiança.
           </p>
           <div className="lc-hero-cta">
-            <Link href="/signup">
+            <Link href="/login">
               <Button size="lg">Começar grátis <ArrowRight size={18} /></Button>
             </Link>
             <a href="#planos" className="lc-hero-secondary-cta">

@@ -8,7 +8,7 @@ function LoginFallback() {
 
 export default function LoginPage() {
   return (
-    <AuthLayout title="Acesse sua conta" subtitle="Entre para ver os jogos, jogadores e métricas do dia.">
+    <AuthLayout mode="login" title="Acesse sua conta" subtitle="Entre para ver os jogos, jogadores e métricas do dia.">
       <Suspense fallback={<LoginFallback />}>
         <LoginForm />
       </Suspense>

@@ -549,19 +549,21 @@ textarea {
 .lc-public-footer-note { grid-column: 1 / -1; border-top: 1px solid color-mix(in srgb, var(--lc-border) 68%, transparent); padding-top: 0.95rem; font-size: 0.79rem; color: var(--lc-muted); }
 
 .lc-auth-page { min-height: 100dvh; display: grid; place-items: center; padding: clamp(1rem, 3vw, 2rem); background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--lc-accent) 20%, transparent) 0%, transparent 52%), var(--lc-bg); }
-.lc-auth-card { width: min(100%, 30rem); display: grid; gap: .75rem; padding: clamp(1rem, 4vw, 1.65rem); }
-.lc-auth-brand { display: inline-grid; justify-items: center; text-decoration: none; color: var(--lc-text); gap: .5rem; margin-bottom: .25rem; }
+.lc-auth-card { width: min(100%, 31rem); display: grid; gap: .85rem; padding: clamp(1.15rem, 4vw, 1.8rem); }
+.lc-auth-brand { display: inline-grid; justify-items: center; text-decoration: none; color: var(--lc-text); gap: .4rem; margin-bottom: .2rem; }
 .lc-auth-brand .lc-brand-text { font-size: clamp(1.8rem, 4vw, 2.2rem); }
 .lc-auth-brand .lc-brand-text span { color: var(--lc-accent); }
-.lc-auth-kicker { color: var(--lc-muted); text-align: center; font-size: .85rem; }
 .lc-auth-card h2 { text-align: center; font-size: clamp(1.4rem, 3vw, 1.8rem); }
-.lc-auth-subtitle { color: #bebebe; text-align: center; margin-bottom: .25rem; }
+.lc-auth-subtitle { color: #bebebe; text-align: center; margin-bottom: .15rem; }
+.lc-auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; border: 1px solid var(--lc-border); padding: .28rem; background: color-mix(in srgb, var(--lc-surface) 85%, black); }
+.lc-auth-tabs a { text-decoration: none; color: var(--lc-muted); text-align: center; padding: .56rem .7rem; font-size: .69rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; transition: background var(--lc-transition-fast), color var(--lc-transition-fast); }
+.lc-auth-tabs a[aria-current='page'] { color: #08140c; background: var(--lc-accent); }
 .lc-auth-form { display: grid; gap: .75rem; }
 .lc-auth-form label { display: grid; gap: .35rem; font-size: .85rem; color: #c6c6c6; }
 .lc-auth-help { text-align: center; font-size: .85rem; color: #b9b9b9; }
 .lc-auth-help a, .lc-auth-row a { color: var(--lc-accent); }
 .lc-auth-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; font-size: .83rem; color: #b5b5b5; }
-.lc-auth-recovery { border-top: 1px solid var(--lc-border); padding-top: 0.7rem; display: grid; gap: 0.55rem; }
+.lc-auth-recovery { border-top: 1px solid var(--lc-border); padding-top: 0.75rem; display: grid; gap: 0.55rem; }
 .lc-auth-legal-copy { display: inline-flex; align-items: flex-start; gap: 0.35rem; color: var(--lc-muted); font-size: 0.76rem; line-height: 1.45; }
 .lc-auth-legal-copy a { color: var(--lc-text); }
 .lc-link-btn { background: none; border: 0; color: var(--lc-accent); cursor: pointer; font: inherit; }
@@ -688,8 +690,8 @@ textarea {
 .lc-auth-card { width: min(100%, 31rem); }
 .lc-auth-theme-toggle { justify-self: end; }
 .lc-auth-brand-icon {
-  width: 3.6rem;
-  height: 3.6rem;
+  width: 2.25rem;
+  height: 2.25rem;
   display: grid;
   place-items: center;
 }
@@ -867,4 +869,9 @@ textarea {
 
 .lc-auth-divider {
   margin: 0.45rem 0 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .lc-auth-card { gap: 0.8rem; padding: 1rem; }
+  .lc-auth-tabs a { font-size: 0.66rem; padding: 0.52rem 0.55rem; }
 }
