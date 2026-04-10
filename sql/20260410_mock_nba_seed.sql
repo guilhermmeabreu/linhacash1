@@ -3,6 +3,28 @@
 
 BEGIN;
 
+-- 0) Clean only this seed's own mock rows (rerunnable safely)
+-- Remove stats linked to this seed's players
+DELETE FROM player_stats
+WHERE player_id IN (
+  SELECT id
+  FROM players
+  WHERE api_id BETWEEN 910001 AND 910012
+);
+
+-- Remove this seed's players
+DELETE FROM players
+WHERE api_id BETWEEN 910001 AND 910012;
+
+-- Remove only this seed's two games for today
+DELETE FROM games
+WHERE game_date = (now() AT TIME ZONE 'America/Sao_Paulo')::date
+  AND (
+    (home_team = 'Los Angeles Lakers' AND away_team = 'Golden State Warriors')
+    OR
+    (home_team = 'Boston Celtics' AND away_team = 'Milwaukee Bucks')
+  );
+
 -- 1) Two games for today (BRT)
 INSERT INTO games (
   game_date,
