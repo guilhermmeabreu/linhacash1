@@ -800,24 +800,22 @@ export function DashboardView() {
           )}
         />
       )}
-      topbar={
+      topbar={view === 'profile' ? null : (
         <TopBar
           showBrand={false}
-          context={view === 'games' || view === 'profile' ? null : topTitle}
+          context={view === 'games' ? null : topTitle}
           leading={canGoBack ? (
             <Button size="sm" variant="ghost" onClick={() => setView(view === 'detail' ? 'players' : 'games')}>
               <ArrowLeft size={14} />
             </Button>
           ) : null}
           actions={
-            view === 'profile' ? null : (
-              <div className={styles.topbarBadges}>
-                <ThemeToggle compact />
-              </div>
-            )
+            <div className={styles.topbarBadges}>
+              <ThemeToggle compact />
+            </div>
           }
         />
-      }
+      )}
     >
       <ContentContainer width="content">
         <div className={styles.dashboardCanvas}>
