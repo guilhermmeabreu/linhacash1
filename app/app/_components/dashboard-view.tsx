@@ -51,6 +51,8 @@ const STATS = ['PTS', 'AST', 'REB', '3PM', 'PA', 'PR', 'PRA', 'AR', 'DD', 'TD', 
 const FREE_STATS = ['PTS', '3PM'] as const;
 
 type Stat = (typeof STATS)[number];
+const SPLITS = ['L5', 'L10', 'L20', 'L30', 'Season', '24/25', 'H2H'] as const;
+type Split = (typeof SPLITS)[number];
 
 type Plan = 'free' | 'pro';
 type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
@@ -115,6 +117,12 @@ type PlayerDetailChartBar = {
   tone: ChartBarTone;
   heightPct: number;
   label: string;
+};
+
+type PlayerDetailSplitMetric = {
+  label: string;
+  value: string;
+  note: string;
 };
 
 type ApiResult<T> =
@@ -219,6 +227,7 @@ export function DashboardView() {
     return Number.isFinite(parsed) ? parsed : null;
   });
   const [selectedStat, setSelectedStat] = useState<Stat>(() => resolveInitialStat(searchParams.get('s')));
+  const [selectedSplit, setSelectedSplit] = useState<Split>('L10');
   const [gamesStatus, setGamesStatus] = useState<ResourceStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [metricsByPlayer, setMetricsByPlayer] = useState<Record<number, Partial<Record<Stat, { metrics: PlayerMetrics | null; games: PlayerGameSample[] }>>>>({});
@@ -542,6 +551,18 @@ export function DashboardView() {
   }, [loadMetricsForPlayer, marketLocked, selectedPlayerId, selectedStat]);
 
   useEffect(() => {
+    if (view !== 'players' || marketLocked) return;
+    const hotPlayers = players.slice(0, 12);
+    if (!hotPlayers.length) return;
+    const timer = window.setTimeout(() => {
+      hotPlayers.forEach((player) => {
+        void loadMetricsForPlayer(player.id, selectedStat);
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadMetricsForPlayer, marketLocked, players, selectedStat, view]);
+
+  useEffect(() => {
     if (!selectedPlayerId) return;
     const availableStats = plan === 'pro' ? STATS : FREE_STATS;
     if (typeof window === 'undefined') return;
@@ -712,11 +733,27 @@ export function DashboardView() {
   const playerDetailModel = useMemo(() => {
     if (!selectedPlayer) return null;
     const payload = selectedMetricsResource;
-    const games = (payload?.games ?? []).map((sample) => ({
+    const allGames = (payload?.games ?? []).map((sample) => ({
       date: sample.date,
       value: Number(sample.value ?? 0),
       minutes: Number(sample.minutes ?? 0),
     }));
+    const splitGames = (() => {
+      if (selectedSplit === 'Season') return allGames;
+      if (selectedSplit === '24/25') {
+        return allGames.filter((sample) => {
+          if (!sample.date) return false;
+          const date = new Date(sample.date);
+          const start = new Date('2024-07-01');
+          const end = new Date('2025-06-30');
+          return date >= start && date <= end;
+        });
+      }
+      if (selectedSplit === 'H2H') return allGames.slice(0, 4);
+      const sampleSizeMap: Record<Extract<Split, 'L5' | 'L10' | 'L20' | 'L30'>, number> = { L5: 5, L10: 10, L20: 20, L30: 30 };
+      return allGames.slice(0, sampleSizeMap[selectedSplit as Extract<Split, 'L5' | 'L10' | 'L20' | 'L30'>]);
+    })();
+    const games = splitGames.length ? splitGames : allGames;
     const values = games.map((sample) => sample.value);
     const lineBase = Number(payload?.metrics?.line ?? payload?.metrics?.avg_l10 ?? 0);
     const apiLine = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
@@ -731,8 +768,22 @@ export function DashboardView() {
       return { ...sample, tone, heightPct: pct, label };
     });
     const linePct = Math.min(96, Math.max(4, (line / chartBase) * 100));
+    const splitMetrics: PlayerDetailSplitMetric[] = SPLITS.map((split) => {
+      const scopedGames = split === 'Season'
+        ? allGames
+        : split === '24/25'
+          ? allGames.filter((sample) => sample.date && new Date(sample.date) >= new Date('2024-07-01') && new Date(sample.date) <= new Date('2025-06-30'))
+          : split === 'H2H'
+            ? allGames.slice(0, 4)
+            : allGames.slice(0, Number(split.slice(1)));
+      if (!scopedGames.length) return { label: split, value: '—', note: 'Sem dados' };
+      const hits = scopedGames.filter((sample) => sample.value >= line).length;
+      const pct = Math.round((hits / scopedGames.length) * 100);
+      return { label: split, value: `${pct}%`, note: `${hits}/${scopedGames.length}` };
+    });
+    const selectedSplitMetric = splitMetrics.find((metric) => metric.label === selectedSplit) ?? null;
     const windows = [5, 10, 20, 30].map((size) => {
-      const window = games.slice(0, size);
+      const window = allGames.slice(0, size);
       if (!window.length) return { label: `L${size}`, value: '—', note: 'Sem dados' };
       const hits = window.filter((sample) => sample.value >= line).length;
       const pct = Math.round((hits / window.length) * 100);
@@ -740,8 +791,21 @@ export function DashboardView() {
     });
     const edge = average === null ? null : Number((average - line).toFixed(1));
     const edgeLabel = edge === null ? 'N/D' : edge >= 0 ? 'Over lean' : 'Under lean';
-    return { games, line, average, bars, linePct, windows, edge, edgeLabel, metrics: payload?.metrics ?? null };
-  }, [lineAdjustment, selectedMetricsResource, selectedPlayer]);
+    return {
+      allGames,
+      games,
+      line,
+      average,
+      bars,
+      linePct,
+      windows,
+      edge,
+      edgeLabel,
+      metrics: payload?.metrics ?? null,
+      splitMetrics,
+      selectedSplitMetric,
+    };
+  }, [lineAdjustment, selectedMetricsResource, selectedPlayer, selectedSplit]);
 
   const topTitle = useMemo(() => {
     if (view === 'profile') return 'Meu Perfil';
@@ -966,6 +1030,10 @@ export function DashboardView() {
                                   <p className={styles.playerMeta}>{player.position} • {player.team}</p>
                                 </div>
                               </div>
+                              <div className={styles.playerQuickStats}>
+                                <span>L10 avg {metricsByPlayer[player.id]?.[selectedStat]?.metrics?.avg_l10?.toFixed(1) ?? '—'}</span>
+                                <span>Hit {metricsByPlayer[player.id]?.[selectedStat]?.metrics?.hit_rate_l10 ? `${Math.round(Number(metricsByPlayer[player.id]?.[selectedStat]?.metrics?.hit_rate_l10))}%` : '—'}</span>
+                              </div>
                               <div className={styles.playerLineBlock}>
                                 <small>Line</small>
                                 <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
@@ -998,6 +1066,13 @@ export function DashboardView() {
                   </TabsList>
                 </TabsRoot>
               </div>
+              <TabsRoot value={selectedSplit} onValueChange={(value) => setSelectedSplit((SPLITS.includes(value as Split) ? value : 'L10') as Split)}>
+                <TabsList className={styles.splitTabs}>
+                  {SPLITS.map((split) => (
+                    <TabsTrigger key={split} value={split}>{split}</TabsTrigger>
+                  ))}
+                </TabsList>
+              </TabsRoot>
 
               <div className={styles.playerHero}>
                 <div>
@@ -1010,16 +1085,6 @@ export function DashboardView() {
                     <button type="button" onClick={() => setLineAdjustment((value) => Number((value - 0.5).toFixed(1)))}><Minus size={16} /></button>
                     <strong>{playerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
                     <button type="button" onClick={() => setLineAdjustment((value) => Number((value + 0.5).toFixed(1)))}><Plus size={16} /></button>
-                  </div>
-                </div>
-                <div className={styles.oddsBox}>
-                  <div>
-                    <span>OVER</span>
-                    <strong>{playerDetailModel && playerDetailModel.edge !== null ? `${playerDetailModel.edge > 0 ? '+' : ''}${playerDetailModel.edge}` : 'N/D'}</strong>
-                  </div>
-                  <div>
-                    <span>HIT L10</span>
-                    <strong>{playerDetailModel?.windows[1]?.value ?? '—'}</strong>
                   </div>
                 </div>
               </div>
@@ -1058,15 +1123,15 @@ export function DashboardView() {
                       <small>{selectedStat}</small>
                     </div>
                     <div>
-                      <span>Edge</span>
-                      <strong>{playerDetailModel.edge !== null ? `${playerDetailModel.edge > 0 ? '+' : ''}${playerDetailModel.edge}` : '—'}</strong>
-                      <small>{playerDetailModel.edgeLabel}</small>
+                      <span>{selectedSplit}</span>
+                      <strong>{playerDetailModel.selectedSplitMetric?.value ?? '—'}</strong>
+                      <small>{playerDetailModel.selectedSplitMetric?.note ?? 'Sem dados'}</small>
                     </div>
                   </div>
 
                   <div className={styles.chartCard}>
                     <div className={styles.chartHeader}>
-                      <p className={styles.chartTitle}>{selectedStat} · últimos jogos</p>
+                      <p className={styles.chartTitle}>{selectedStat} · {selectedSplit}</p>
                       <div className={styles.chartHeaderBadges}>
                         <Badge variant="muted">Linha {playerDetailModel.line}</Badge>
                         <Badge variant="muted">Média {playerDetailModel.average ?? '—'}</Badge>
