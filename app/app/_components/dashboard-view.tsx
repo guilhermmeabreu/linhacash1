@@ -810,9 +810,11 @@ export function DashboardView() {
             </Button>
           ) : null}
           actions={
-            <div className={styles.topbarBadges}>
-              <ThemeToggle compact />
-            </div>
+            view === 'profile' ? null : (
+              <div className={styles.topbarBadges}>
+                <ThemeToggle compact />
+              </div>
+            )
           }
         />
       }
@@ -1096,10 +1098,13 @@ export function DashboardView() {
           {view === 'profile' ? (
             <section className={`${styles.profileView} ${styles.viewPanel}`}>
               <div className={styles.profileTopHeader}>
-                <Button size="sm" variant="ghost" className={styles.profileBackButton} onClick={() => setView('games')} aria-label="Voltar para jogos do dia">
-                  <ArrowLeft size={16} />
-                </Button>
-                <h1>Meu Perfil</h1>
+                <div className={styles.profileTopHeaderMain}>
+                  <Button size="sm" variant="ghost" className={styles.profileBackButton} onClick={() => setView('games')} aria-label="Voltar para jogos do dia">
+                    <ArrowLeft size={16} />
+                  </Button>
+                  <h1>Meu Perfil</h1>
+                </div>
+                <ThemeToggle compact />
               </div>
               <Surface className={styles.profileHero}>
                 <div className={styles.profileHeroGlow} aria-hidden />
@@ -1241,7 +1246,7 @@ export function DashboardView() {
                 </button>
                 <p className={styles.upgradeKicker}>Desbloquear LinhaCash Pro</p>
                 <h3>Escolha seu plano</h3>
-                <p className={styles.upgradeSubtitle}>Plano anual com desconto: <strong>R$197/ano</strong> comparado ao mensal.</p>
+                <p className={styles.upgradeSubtitle}>Acesso completo a todos os recursos, com melhor custo no ciclo anual.</p>
                 <div className={styles.upgradePlans}>
                   <button
                     type="button"
@@ -1250,19 +1255,21 @@ export function DashboardView() {
                   >
                     <span>Mensal</span>
                     <strong>R$24,90/mês</strong>
+                    <small>Flexível para começar</small>
                   </button>
                   <button
                     type="button"
                     className={`${styles.upgradePlanBtn} ${upgradePlan === 'anual' ? styles.isSelected : ''}`}
                     onClick={() => setUpgradePlan('anual')}
                   >
-                    <span>Anual · Melhor custo</span>
+                    <span>Anual · Mais vantajoso</span>
+                    <em className={styles.upgradePopular}>Mais popular</em>
                     <strong>R$197/ano</strong>
-                    <small>Desconto aplicado no ciclo anual</small>
+                    <small>Equivalente a R$16,41/mês · desconto no ciclo anual</small>
                   </button>
                 </div>
                 <label className={styles.upgradeField}>
-                  Código de indicação / cupom
+                  Código de indicação
                   <input
                     value={upgradeCode}
                     onChange={(event) => setUpgradeCode(event.target.value.toUpperCase())}
@@ -1291,20 +1298,24 @@ export function DashboardView() {
                     <h3>Perguntas frequentes</h3>
                     <div className={styles.faqList}>
                       <article>
-                        <strong>Como desbloquear o LinhaCash Pro?</strong>
-                        <p>No item Planos, selecione Pro e conclua o checkout com o ciclo mensal ou anual.</p>
+                        <strong>O que é o LinhaCash?</strong>
+                        <p>É uma plataforma de análise esportiva para apoiar leitura de jogos e desempenho.</p>
                       </article>
                       <article>
-                        <strong>O que muda do plano Gratuito para o Pro?</strong>
-                        <p>O Pro libera mercados e leituras avançadas com acesso completo ao produto.</p>
+                        <strong>O LinhaCash atualiza ao vivo?</strong>
+                        <p>As informações são atualizadas conforme os dados oficiais ficam disponíveis no sistema.</p>
                       </article>
                       <article>
-                        <strong>Como recuperar acesso da minha conta?</strong>
-                        <p>Use a opção Segurança em Conta para iniciar o fluxo oficial de recuperação.</p>
+                        <strong>O LinhaCash é uma casa de aposta?</strong>
+                        <p>Não. O produto é informativo e não intermedeia apostas.</p>
                       </article>
                       <article>
-                        <strong>Como falar com o suporte?</strong>
-                        <p>Use os formulários internos desta tela e nossa equipe recebe via suporte@linhacash.com.br.</p>
+                        <strong>O que muda do grátis para o Pro?</strong>
+                        <p>O Pro libera todos os mercados e recursos avançados da plataforma.</p>
+                      </article>
+                      <article>
+                        <strong>Como excluir minha conta?</strong>
+                        <p>Use a opção “Excluir minha conta e dados” na seção Suporte e confirme com EXCLUIR.</p>
                       </article>
                     </div>
                   </>
