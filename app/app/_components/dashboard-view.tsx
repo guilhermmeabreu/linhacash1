@@ -2,18 +2,26 @@
 
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
   BarChart3,
   CalendarDays,
   ChevronRight,
   Crown,
+  FileText,
+  HelpCircle,
+  LogOut,
   X,
   LayoutDashboard,
   Lock,
-  LogOut,
+  MessageSquare,
   Minus,
+  Moon,
   Plus,
   RefreshCw,
+  Shield,
+  Sun,
+  Trash2,
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -47,6 +55,8 @@ type Stat = (typeof STATS)[number];
 type Plan = 'free' | 'pro';
 type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
 type Theme = 'dark' | 'light';
+type SupportSurface = 'faq' | 'support' | 'bug' | 'delete' | null;
+const SUPPORT_SUBJECT_OPTIONS = ['Assinatura / cobrança', 'Acesso / conta', 'Erro técnico', 'Sugestão / melhoria', 'Outro'] as const;
 
 type Game = {
   id: number;
@@ -221,6 +231,14 @@ export function DashboardView() {
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [supportSurface, setSupportSurface] = useState<SupportSurface>(null);
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportFeedback, setSupportFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [deleteConfirmValue, setDeleteConfirmValue] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteFeedback, setDeleteFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const gamesRequestRef = useRef(0);
   const playersRequestRef = useRef<Record<number, number>>({});
@@ -563,6 +581,102 @@ export function DashboardView() {
     setUpgradeOpen(true);
   }, []);
 
+  const openSupportSurface = useCallback((surface: Exclude<SupportSurface, null>) => {
+    setSupportFeedback(null);
+    setDeleteFeedback(null);
+    if (surface === 'support') {
+      setSupportSubject(SUPPORT_SUBJECT_OPTIONS[0]);
+      setSupportMessage('');
+    }
+    if (surface === 'bug') {
+      setSupportSubject(SUPPORT_SUBJECT_OPTIONS[2]);
+      setSupportMessage('');
+    }
+    if (surface === 'delete') {
+      setDeleteConfirmValue('');
+    }
+    setSupportSurface(surface);
+  }, []);
+
+  const submitSupport = useCallback(async () => {
+    if (!supportSurface || supportSurface === 'faq' || supportSurface === 'delete') return;
+    setSupportSubmitting(true);
+    setSupportFeedback(null);
+    try {
+      const token = getAuthToken();
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          type: supportSurface === 'bug' ? 'bug' : 'support',
+          subject: supportSubject.trim(),
+          message: supportMessage.trim(),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setSupportFeedback({
+          tone: 'error',
+          text: payload?.error || 'Não foi possível enviar agora. Tente novamente em instantes.',
+        });
+        return;
+      }
+      setSupportFeedback({
+        tone: 'success',
+        text: 'Mensagem enviada com sucesso. Nosso time vai retornar pelo canal cadastrado.',
+      });
+      setSupportMessage('');
+    } catch {
+      setSupportFeedback({
+        tone: 'error',
+        text: 'Falha de conexão no envio. Verifique a internet e tente novamente.',
+      });
+    } finally {
+      setSupportSubmitting(false);
+    }
+  }, [supportMessage, supportSubject, supportSurface]);
+
+  const submitDeleteAccount = useCallback(async () => {
+    setDeleteSubmitting(true);
+    setDeleteFeedback(null);
+    try {
+      const token = getAuthToken();
+      const response = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ confirmation: deleteConfirmValue.trim() }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setDeleteFeedback({
+          tone: 'error',
+          text: payload?.error || 'Não foi possível concluir a exclusão agora.',
+        });
+        return;
+      }
+      setDeleteFeedback({
+        tone: 'success',
+        text: 'Conta excluída com sucesso. Você será redirecionado para o login.',
+      });
+      setTimeout(() => {
+        window.location.assign('/login');
+      }, 900);
+    } catch {
+      setDeleteFeedback({
+        tone: 'error',
+        text: 'Falha de conexão. Tente novamente em instantes.',
+      });
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }, [deleteConfirmValue]);
+
   const startCheckout = useCallback(async () => {
     setUpgradeLoading(true);
     setUpgradeError(null);
@@ -641,6 +755,16 @@ export function DashboardView() {
   const profileSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : null;
+  const profileName = profile?.name?.trim() || 'Usuário';
+  const profileEmail = profile?.email?.trim() || 'E-mail não disponível';
+  const profileInitial = profileName.slice(0, 1).toUpperCase();
+  const profilePlanLabel = plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito';
+
+  const handleLogout = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login');
+    }
+  }, []);
 
   return (
     <AppShell
@@ -651,10 +775,10 @@ export function DashboardView() {
           onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
             <div className={styles.accountSummary}>
-              <div className={styles.accountAvatar}>{(profile?.name || 'G').slice(0, 1).toUpperCase()}</div>
+              <div className={styles.accountAvatar}>{profileInitial}</div>
               <div className={styles.accountMeta}>
-                <strong>{profile?.name || 'Guilherme'}</strong>
-                <span>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</span>
+                <strong>{profileName}</strong>
+                <span>{profilePlanLabel}</span>
               </div>
             </div>
           )}
@@ -667,16 +791,16 @@ export function DashboardView() {
           onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
             <div className={styles.accountSummary}>
-              <div className={styles.accountAvatar}>{(profile?.name || 'G').slice(0, 1).toUpperCase()}</div>
+              <div className={styles.accountAvatar}>{profileInitial}</div>
               <div className={styles.accountMeta}>
-                <strong>{profile?.name || 'Guilherme'}</strong>
-                <span>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</span>
+                <strong>{profileName}</strong>
+                <span>{profilePlanLabel}</span>
               </div>
             </div>
           )}
         />
       )}
-      topbar={
+      topbar={view === 'profile' ? null : (
         <TopBar
           showBrand={false}
           context={view === 'games' ? null : topTitle}
@@ -691,12 +815,12 @@ export function DashboardView() {
             </div>
           }
         />
-      }
+      )}
     >
       <ContentContainer width="content">
         <div className={styles.dashboardCanvas}>
           {view === 'games' ? (
-            <section className={styles.gamesView}>
+            <section className={`${styles.gamesView} ${styles.viewPanel}`}>
               <p className={styles.gamesDateLine}>Hoje · {formatTodayLabel()}</p>
               {gamesStatus === 'loading' ? (
                 <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando jogos...</p></Surface>
@@ -766,7 +890,7 @@ export function DashboardView() {
           ) : null}
 
           {view === 'players' ? (
-            <section className={styles.playersView}>
+            <section className={`${styles.playersView} ${styles.viewPanel}`}>
               <div className={styles.playersTopbar}>
                 <h2>Jogadores</h2>
               </div>
@@ -858,7 +982,7 @@ export function DashboardView() {
           ) : null}
 
           {view === 'detail' && selectedPlayer ? (
-            <section className={styles.detailView}>
+            <section className={`${styles.detailView} ${styles.viewPanel}`}>
               <div className={styles.detailTabsRow}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
                   <TabsList className={styles.statsTabs}>
@@ -970,60 +1094,122 @@ export function DashboardView() {
           ) : null}
 
           {view === 'profile' ? (
-            <section className={styles.profileView}>
-              <Surface className={styles.profileHero}>
-                <div className={styles.profileHeaderAvatar}>{(profile?.name || 'G').slice(0, 1).toUpperCase()}</div>
-                <div className={styles.profileHeaderMeta}>
-                  <h2>{profile?.name || 'Guilherme'}</h2>
-                  <p>{profile?.email || 'email@linhacash.com.br'}</p>
+            <section className={`${styles.profileView} ${styles.viewPanel}`}>
+              <div className={styles.profileTopHeader}>
+                <div className={styles.profileTopHeaderMain}>
+                  <Button size="sm" variant="ghost" className={styles.profileBackButton} onClick={() => setView('games')} aria-label="Voltar para jogos do dia">
+                    <ArrowLeft size={16} />
+                  </Button>
+                  <h1>Meu Perfil</h1>
                 </div>
-                <Badge variant={plan === 'pro' ? 'success' : 'default'}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</Badge>
+                <ThemeToggle compact />
+              </div>
+              <Surface className={styles.profileHero}>
+                <div className={styles.profileHeroGlow} aria-hidden />
+                <div className={styles.profileHeaderAvatar}>{profileInitial}</div>
+                <div className={styles.profileHeaderMeta}>
+                  <h2>{profileName}</h2>
+                  <p>{profileEmail}</p>
+                  {profileSince ? <small>Membro desde {profileSince}</small> : null}
+                </div>
+                <Badge variant={plan === 'pro' ? 'success' : 'default'}>{profilePlanLabel}</Badge>
               </Surface>
 
-              <div className={styles.profileStack}>
+              <div className={styles.profileGrid}>
                 <Surface className={styles.profileSection}>
                   <div className={styles.profileSectionHeader}>
                     <h3>Planos</h3>
-                    {plan !== 'pro' ? <Button size="sm" onClick={openUpgradeSurface}>Fazer upgrade</Button> : null}
                   </div>
-                  <div className={styles.profileRows}>
-                    <div className={`${styles.profileRow} ${plan === 'free' ? styles.profileRowActive : ''}`}>
-                      <span>Free</span>
-                      <small>{plan === 'free' ? 'Plano ativo' : 'Disponível'}</small>
+                  <div className={`${styles.profileRows} technical-grid`}>
+                    <div className={`${styles.profileRow} technical-item ${plan === 'free' ? styles.profileRowActive : ''}`}>
+                      <div className={styles.profileRowContent}>
+                        <span>Gratuito</span>
+                        <small>Todos os jogos visíveis · Acesso parcial às estatísticas</small>
+                      </div>
+                      {plan === 'free' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
                     </div>
-                    <div className={`${styles.profileRow} ${plan === 'pro' ? styles.profileRowActive : ''}`}>
-                      <span>Pro</span>
-                      <small>{plan === 'pro' ? 'Plano ativo' : 'Inclui mercados avançados'}</small>
-                    </div>
+                    <button type="button" className={`${styles.profileRow} technical-item ${plan === 'pro' ? styles.profileRowActive : ''}`} onClick={openUpgradeSurface}>
+                      <div className={styles.profileRowContent}>
+                        <span>Pro</span>
+                        <small>{plan === 'pro' ? 'Plano ativo · cobrança gerenciada no checkout' : 'R$24,90/mês · R$197/ano com desconto'}</small>
+                      </div>
+                      {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
+                    </button>
                   </div>
                 </Surface>
 
                 <Surface className={styles.profileSection}>
                   <h3>Conta</h3>
-                  <div className={styles.profileRows}>
-                    <button type="button" className={styles.profileRow}><span>Editar perfil</span><small>{profileSince ? `Membro desde ${profileSince}` : 'Dados da conta'}</small></button>
-                    <button type="button" className={styles.profileRow}><span>Segurança</span><small>Senha e recuperação</small></button>
-                    <div className={styles.profileRow}>
-                      <span>Tema</span>
+                  <div className={`${styles.profileRows} technical-grid`}>
+                    <a className={`${styles.profileRow} technical-item`} href="mailto:suporte@linhacash.com.br?subject=Atualiza%C3%A7%C3%A3o%20de%20perfil">
+                      <div className={styles.profileRowContent}>
+                        <span><UserRound size={14} /> Editar perfil</span>
+                      </div>
+                      <ChevronRight size={14} />
+                    </a>
+                    <a className={`${styles.profileRow} technical-item`} href="/forgot-password">
+                      <div className={styles.profileRowContent}>
+                        <span><Shield size={14} /> Segurança</span>
+                      </div>
+                      <ChevronRight size={14} />
+                    </a>
+                    <div className={`${styles.profileRow} technical-item`}>
+                      <div className={styles.profileRowContent}>
+                        <span>{profile?.theme === 'light' ? <Sun size={14} /> : <Moon size={14} />} Tema</span>
+                      </div>
                       <div className={styles.profileRowControl}><ThemeToggle compact /></div>
                     </div>
                   </div>
                 </Surface>
+              </div>
 
-                <Surface className={styles.profileSection}>
-                  <h3>Suporte</h3>
-                  <div className={styles.profileRows}>
-                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br?subject=FAQ%20LinhaCash"><span>Perguntas frequentes</span><small>Respostas rápidas</small></a>
-                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br"><span>Falar com suporte</span><small>suporte@linhacash.com.br</small></a>
-                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br?subject=Relatar%20problema"><span>Reportar um problema</span><small>Enviar detalhes do erro</small></a>
-                    <Link className={styles.profileRow} href="/termos"><span>Termos de uso</span><small>Condições da plataforma</small></Link>
-                    <Link className={styles.profileRow} href="/privacidade"><span>Política de privacidade</span><small>Tratamento de dados</small></Link>
-                    <a className={styles.profileRow} href="mailto:suporte@linhacash.com.br?subject=Excluir%20conta%20e%20dados"><span>Excluir minha conta e dados</span><small>Solicitação de remoção</small></a>
-                    <button type="button" className={styles.profileRow} onClick={() => window.location.assign('/login')}>
-                      <span><LogOut size={14} /> Sair da conta</span><small>Encerrar sessão atual</small>
-                    </button>
-                  </div>
-                </Surface>
+              <Surface className={styles.profileSection}>
+                <h3>Suporte</h3>
+                <div className={`${styles.profileRows} technical-grid`}>
+                  <button type="button" className={`${styles.profileRow} technical-item`} onClick={() => openSupportSurface('faq')}>
+                    <div className={styles.profileRowContent}>
+                      <span><HelpCircle size={14} /> Perguntas frequentes</span>
+                    </div>
+                    <ChevronRight size={14} />
+                  </button>
+                  <button type="button" className={`${styles.profileRow} technical-item`} onClick={() => openSupportSurface('support')}>
+                    <div className={styles.profileRowContent}>
+                      <span><MessageSquare size={14} /> Falar com suporte</span>
+                    </div>
+                    <ChevronRight size={14} />
+                  </button>
+                  <button type="button" className={`${styles.profileRow} technical-item`} onClick={() => openSupportSurface('bug')}>
+                    <div className={styles.profileRowContent}>
+                      <span><AlertTriangle size={14} /> Reportar um problema</span>
+                    </div>
+                    <ChevronRight size={14} />
+                  </button>
+                  <Link className={`${styles.profileRow} technical-item`} href="/termos">
+                    <div className={styles.profileRowContent}>
+                      <span><FileText size={14} /> Termos de uso</span>
+                    </div>
+                    <ChevronRight size={14} />
+                  </Link>
+                  <Link className={`${styles.profileRow} technical-item`} href="/privacidade">
+                    <div className={styles.profileRowContent}>
+                      <span><Lock size={14} /> Política de privacidade</span>
+                    </div>
+                    <ChevronRight size={14} />
+                  </Link>
+                  <button type="button" className={`${styles.profileRow} ${styles.profileRowDanger} technical-item`} onClick={() => openSupportSurface('delete')}>
+                    <div className={styles.profileRowContent}>
+                      <span><Trash2 size={14} /> Excluir minha conta e dados</span>
+                    </div>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </Surface>
+
+              <div className={styles.profileLogoutWrap}>
+                <Button type="button" size="lg" variant="secondary" className={styles.profileLogoutButton} onClick={handleLogout}>
+                  <LogOut size={14} />
+                  Sair da conta
+                </Button>
               </div>
             </section>
           ) : null}
@@ -1058,7 +1244,7 @@ export function DashboardView() {
                 </button>
                 <p className={styles.upgradeKicker}>Desbloquear LinhaCash Pro</p>
                 <h3>Escolha seu plano</h3>
-                <p className={styles.upgradeSubtitle}>Plano anual com desconto: <strong>R$197/ano</strong> comparado ao mensal.</p>
+                <p className={styles.upgradeSubtitle}>Acesso completo a todos os recursos, com melhor custo no ciclo anual.</p>
                 <div className={styles.upgradePlans}>
                   <button
                     type="button"
@@ -1067,19 +1253,21 @@ export function DashboardView() {
                   >
                     <span>Mensal</span>
                     <strong>R$24,90/mês</strong>
+                    <small>Flexível para começar</small>
                   </button>
                   <button
                     type="button"
                     className={`${styles.upgradePlanBtn} ${upgradePlan === 'anual' ? styles.isSelected : ''}`}
                     onClick={() => setUpgradePlan('anual')}
                   >
-                    <span>Anual · Melhor custo</span>
+                    <span>Anual · Mais vantajoso</span>
+                    <em className={styles.upgradePopular}>Mais popular</em>
                     <strong>R$197/ano</strong>
-                    <small>Desconto aplicado no ciclo anual</small>
+                    <small>Equivalente a R$16,41/mês · desconto no ciclo anual</small>
                   </button>
                 </div>
                 <label className={styles.upgradeField}>
-                  Código de indicação / cupom
+                  Código de indicação
                   <input
                     value={upgradeCode}
                     onChange={(event) => setUpgradeCode(event.target.value.toUpperCase())}
@@ -1091,6 +1279,105 @@ export function DashboardView() {
                 <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
                   {upgradeLoading ? 'Abrindo checkout...' : 'Continuar para pagamento'}
                 </Button>
+              </Surface>
+            </div>
+          ) : null}
+
+          {supportSurface ? (
+            <div className={styles.supportOverlay} role="dialog" aria-modal="true" aria-label="Central de suporte LinhaCash">
+              <Surface className={styles.supportModal}>
+                <button type="button" className={styles.supportClose} onClick={() => setSupportSurface(null)} aria-label="Fechar">
+                  <X size={16} />
+                </button>
+
+                {supportSurface === 'faq' ? (
+                  <>
+                    <p className={styles.supportKicker}>Central de ajuda</p>
+                    <h3>Perguntas frequentes</h3>
+                    <div className={styles.faqList}>
+                      <article>
+                        <strong>O que é o LinhaCash?</strong>
+                        <p>É uma plataforma de análise esportiva para apoiar leitura de jogos e desempenho.</p>
+                      </article>
+                      <article>
+                        <strong>O LinhaCash atualiza ao vivo?</strong>
+                        <p>As informações são atualizadas conforme os dados oficiais ficam disponíveis no sistema.</p>
+                      </article>
+                      <article>
+                        <strong>O LinhaCash é uma casa de aposta?</strong>
+                        <p>Não. O produto é informativo e não intermedeia apostas.</p>
+                      </article>
+                      <article>
+                        <strong>O que muda do grátis para o Pro?</strong>
+                        <p>O Pro libera todos os mercados e recursos avançados da plataforma.</p>
+                      </article>
+                      <article>
+                        <strong>Como excluir minha conta?</strong>
+                        <p>Use a opção “Excluir minha conta e dados” na seção Suporte e confirme com EXCLUIR.</p>
+                      </article>
+                    </div>
+                  </>
+                ) : supportSurface === 'delete' ? (
+                  <>
+                    <p className={`${styles.supportKicker} ${styles.deleteKicker}`}>Ação destrutiva</p>
+                    <h3>Excluir conta e dados</h3>
+                    <p className={styles.supportSubtitle}>Esta ação remove seu acesso e dados pessoais da plataforma. Para confirmar, digite EXCLUIR no campo abaixo.</p>
+                    <label className={styles.upgradeField}>
+                      Confirmação
+                      <input
+                        value={deleteConfirmValue}
+                        onChange={(event) => setDeleteConfirmValue(event.target.value.toUpperCase())}
+                        placeholder="Digite EXCLUIR"
+                        maxLength={20}
+                      />
+                    </label>
+                    {deleteFeedback ? (
+                      <p className={deleteFeedback.tone === 'success' ? styles.supportSuccess : styles.upgradeError}>{deleteFeedback.text}</p>
+                    ) : null}
+                    <Button
+                      size="lg"
+                      variant="danger"
+                      onClick={submitDeleteAccount}
+                      disabled={deleteSubmitting || deleteConfirmValue.trim().toUpperCase() !== 'EXCLUIR'}
+                    >
+                      {deleteSubmitting ? 'Excluindo conta...' : 'Excluir permanentemente'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className={styles.supportKicker}>{supportSurface === 'bug' ? 'Relatório técnico' : 'Atendimento'}</p>
+                    <h3>{supportSurface === 'bug' ? 'Reportar um problema' : 'Falar com suporte'}</h3>
+                    <p className={styles.supportSubtitle}>As mensagens são enviadas para suporte@linhacash.com.br via fluxo interno da plataforma.</p>
+                    <label className={styles.upgradeField}>
+                      Assunto
+                      <select
+                        className={styles.supportSelect}
+                        value={supportSubject}
+                        onChange={(event) => setSupportSubject(event.target.value)}
+                      >
+                        {SUPPORT_SUBJECT_OPTIONS.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className={styles.upgradeField}>
+                      Mensagem
+                      <textarea
+                        className={styles.supportTextarea}
+                        value={supportMessage}
+                        onChange={(event) => setSupportMessage(event.target.value)}
+                        placeholder={supportSurface === 'bug' ? 'Descreva etapas, horário e comportamento esperado.' : 'Conte para nosso time como podemos ajudar.'}
+                        maxLength={2000}
+                      />
+                    </label>
+                    {supportFeedback ? (
+                      <p className={supportFeedback.tone === 'success' ? styles.supportSuccess : styles.upgradeError}>{supportFeedback.text}</p>
+                    ) : null}
+                    <Button size="lg" onClick={submitSupport} disabled={supportSubmitting}>
+                      {supportSubmitting ? 'Enviando...' : 'Enviar mensagem'}
+                    </Button>
+                  </>
+                )}
               </Surface>
             </div>
           ) : null}

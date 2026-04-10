@@ -45,7 +45,7 @@ export default function PrivacidadePage() {
       </LegalSection>
 
       <LegalSection title="8. Contato para privacidade">
-        <p>Para solicitações relacionadas à privacidade: contato@linhacash.com.</p>
+        <p>Para solicitações relacionadas à privacidade: suporte@linhacash.com.br.</p>
       </LegalSection>
     </PublicLegalLayout>
   );

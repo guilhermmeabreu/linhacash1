@@ -68,6 +68,21 @@
   margin: 0 auto;
 }
 
+.viewPanel {
+  animation: view-enter 220ms ease;
+}
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .gamesDateLine {
   color: var(--lc-muted);
   font-size: 0.72rem;
@@ -590,54 +605,104 @@
 
 .profileView {
   display: grid;
-  gap: 0.9rem;
-}
-
-.profileHero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 0.8rem;
-  padding: 0.95rem;
 }
 
-.profileHeaderAvatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--lc-accent) 35%, var(--lc-border) 65%);
-  background: color-mix(in srgb, var(--lc-accent) 15%, var(--lc-surface) 85%);
-  color: var(--lc-accent);
+.profileTopHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.profileTopHeaderMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profileTopHeader h1 {
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   font-weight: 900;
 }
 
+.profileBackButton {
+  min-width: 2.1rem;
+  padding-inline: 0.35rem;
+  color: var(--lc-text);
+}
+
+.profileHero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.85rem;
+  padding: 1.05rem;
+  overflow: hidden;
+}
+
+.profileHeroGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--lc-accent) 18%, transparent), transparent 68%);
+  z-index: 0;
+}
+
+.profileHeaderAvatar {
+  width: 4.8rem;
+  height: 4.8rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 35%, var(--lc-border) 65%);
+  background: color-mix(in srgb, var(--lc-accent) 82%, black 18%);
+  color: black;
+  font-size: 2rem;
+  font-weight: 900;
+  position: relative;
+  z-index: 1;
+}
+
 .profileHeaderMeta {
-  flex: 1;
-  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+  position: relative;
+  z-index: 1;
 }
 
 .profileHeaderMeta h2 {
-  font-size: 0.95rem;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.15rem, 3.5vw, 1.7rem);
+  letter-spacing: -0.03em;
   text-transform: uppercase;
+  line-height: 0.95;
 }
 
 .profileHeaderMeta p {
   color: var(--lc-muted);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   margin-top: 0.12rem;
+  text-transform: none;
 }
 
-.profileStack {
+.profileHeaderMeta small {
+  color: var(--lc-muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profileGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .profileSection {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.65rem;
 }
 
 .profileSection h3 {
@@ -655,33 +720,64 @@
 
 .profileRows {
   display: grid;
-  gap: 0.4rem;
+  gap: 1px;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-border);
 }
 
 .profileRow {
   width: 100%;
+  min-width: 0;
   text-decoration: none;
-  border: 1px solid var(--lc-border);
-  min-height: 2.45rem;
-  background: color-mix(in srgb, var(--lc-surface) 82%, var(--lc-surface-elevated) 18%);
+  border: 0;
+  min-height: 3.05rem;
+  background: color-mix(in srgb, var(--lc-bg) 90%, var(--lc-surface) 10%);
   color: var(--lc-text);
-  padding: 0.5rem 0.65rem;
-  display: grid;
+  padding: 0.65rem 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   text-align: left;
-  gap: 0.14rem;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+.profileRowContent {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
 }
 
 .profileRow span {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.74rem;
-  letter-spacing: 0.03em;
+  font-size: 0.73rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.profileRow :global(svg) {
+  flex-shrink: 0;
+}
+
+.profileRow > :global(svg) {
+  color: var(--lc-muted);
+  flex-shrink: 0;
+}
+
+.profileRow:hover {
+  background: color-mix(in srgb, var(--lc-surface) 90%, #000 10%);
 }
 
 .profileRow small {
   color: var(--lc-muted);
-  font-size: 0.66rem;
+  font-size: 0.63rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .profileRowActive {
@@ -689,8 +785,34 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 20%, transparent);
 }
 
+.profileRowDanger {
+  color: #ff8686;
+}
+
+.profileRowDanger span,
+.profileRowDanger small,
+.profileRowDanger > :global(svg) {
+  color: inherit;
+}
+
 .profileRowControl {
   justify-self: start;
+  flex-shrink: 0;
+}
+
+.profileLogoutWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.profileLogoutButton {
+  border-color: color-mix(in srgb, #dd5a5a 45%, var(--lc-border) 55%);
+  color: #f09e9e;
+}
+
+.profileLogoutButton:hover {
+  background: color-mix(in srgb, #401111 30%, transparent);
 }
 
 .upgradeOverlay {
@@ -750,7 +872,7 @@
   padding: 0.75rem;
   text-align: left;
   display: grid;
-  gap: 0.15rem;
+  gap: 0.25rem;
 }
 
 .upgradePlanBtn span {
@@ -765,13 +887,31 @@
 }
 
 .upgradePlanBtn small {
-  color: var(--lc-accent);
+  color: color-mix(in srgb, var(--lc-text) 70%, var(--lc-muted) 30%);
   font-size: 0.7rem;
+}
+
+.upgradePopular {
+  justify-self: start;
+  font-style: normal;
+  color: var(--lc-accent);
+  border: 1px solid color-mix(in srgb, var(--lc-accent) 50%, var(--lc-border) 50%);
+  background: color-mix(in srgb, var(--lc-accent) 14%, transparent);
+  padding: 0.1rem 0.35rem;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
 }
 
 .upgradePlanBtn.isSelected {
   border-color: color-mix(in srgb, var(--lc-accent) 44%, var(--lc-border) 56%);
-  background: color-mix(in srgb, var(--lc-accent) 10%, var(--lc-surface) 90%);
+  background: color-mix(in srgb, var(--lc-accent) 14%, var(--lc-surface) 86%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 35%, transparent);
+}
+
+.upgradePlanBtn.isSelected small {
+  color: #bdeccd;
 }
 
 .upgradeField {
@@ -794,6 +934,100 @@
 .upgradeError {
   color: #ff9e9e;
   font-size: 0.82rem;
+}
+
+.supportSuccess {
+  color: var(--lc-accent);
+  font-size: 0.82rem;
+}
+
+.supportOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background: color-mix(in srgb, var(--lc-bg) 74%, black 26%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.supportModal {
+  width: min(100%, 35rem);
+  display: grid;
+  gap: 0.8rem;
+  position: relative;
+}
+
+.supportClose {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  display: grid;
+  place-items: center;
+}
+
+.supportKicker {
+  color: var(--lc-accent);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 800;
+}
+
+.deleteKicker {
+  color: #ff9e9e;
+}
+
+.supportSubtitle {
+  color: var(--lc-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.supportTextarea {
+  min-height: 9rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  color: var(--lc-text);
+  padding: 0.6rem 0.65rem;
+  resize: vertical;
+}
+
+.supportSelect {
+  min-height: 2.5rem;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-surface-elevated);
+  color: var(--lc-text);
+  padding: 0 0.65rem;
+}
+
+.faqList {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.faqList article {
+  border: 1px solid var(--lc-border);
+  background: color-mix(in srgb, var(--lc-surface) 84%, var(--lc-surface-elevated) 16%);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.faqList article strong {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.faqList article p {
+  color: var(--lc-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .infoBanner { background: color-mix(in srgb, var(--lc-surface) 83%, #0d151f 17%); }
@@ -850,8 +1084,17 @@
     width: 100%;
   }
 
+  .supportModal {
+    width: 100%;
+  }
+
   .profileHero {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 980px) {
+  .profileGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

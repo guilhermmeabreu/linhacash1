@@ -27,11 +27,12 @@ export default function TermosPage() {
         <ul style={listStyle}>
           <li>A assinatura Pro segue o ciclo contratado até cancelamento.</li>
           <li>O processamento de pagamento é realizado pelo Mercado Pago.</li>
+          <li>O acesso ao conteúdo premium é liberado imediatamente após a confirmação do pagamento.</li>
         </ul>
       </LegalSection>
 
-      <LegalSection title="5. Cancelamento">
-        <p>O cancelamento pode ser solicitado pela área logada. O acesso Pro permanece ativo até o fim do período já pago, quando aplicável.</p>
+      <LegalSection title="5. Cancelamento e análise de reembolso">
+        <p>Pedidos de cancelamento ou reembolso são analisados conforme a legislação aplicável e estes Termos de Uso. Após a liberação imediata e uso de conteúdo premium, a elegibilidade de reembolso pode ser limitada de acordo com os critérios legais e contratuais vigentes.</p>
       </LegalSection>
 
       <LegalSection title="6. Uso aceitável e responsabilidades">
@@ -47,7 +48,7 @@ export default function TermosPage() {
       </LegalSection>
 
       <LegalSection title="8. Contato">
-        <p>Para suporte e assuntos contratuais: contato@linhacash.com.</p>
+        <p>Para suporte e assuntos contratuais: suporte@linhacash.com.br.</p>
       </LegalSection>
     </PublicLegalLayout>
   );
