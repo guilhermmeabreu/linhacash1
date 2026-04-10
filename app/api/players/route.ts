@@ -24,19 +24,22 @@ export async function GET(req: Request) {
   if (!gameId || !/^\d+$/.test(gameId)) return errorResponse('gameId inválido');
 
   const result = await getCachedValue(`players:${gameId}:${session.plan}`, 5 * 60_000, async () => {
-    const { data: game } = await supabase
+    const { data: game, error: gameError } = await supabase
       .from('games')
       .select('id, home_team_id, away_team_id, game_date')
       .eq('id', gameId)
       .single();
 
+    if (gameError) throw gameError;
     if (!game) throw new Error('Jogo não encontrado');
 
-    const { data: players } = await supabase
+    const { data: players, error: playersError } = await supabase
       .from('players')
-      .select('id, name, team_id, position, jersey, photo')
+      .select('id, name, team_id, position')
       .in('team_id', [game.home_team_id, game.away_team_id])
       .order('name');
+
+    if (playersError) throw playersError;
 
     let output = (players || []).map(sanitizePlayer);
     if (session.plan === 'free') {
