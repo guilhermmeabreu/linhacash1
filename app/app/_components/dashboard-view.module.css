@@ -1176,18 +1176,44 @@
 
 @media (max-width: 860px) {
   .playersTopbarCompact :global(.lc-topbar-title) {
-    font-size: 0.62rem;
-    line-height: 0.94;
+    font-size: 0.58rem;
+    line-height: 0.9;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: min(42vw, 8.6rem);
+    max-width: min(40vw, 7.8rem);
   }
 
   .playersView {
     overflow-x: visible;
+  }
+
+  .playersView .statsTabsWrap {
+    overflow: visible;
+  }
+
+  .playersStatsTabsScroller {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    max-width: 100%;
+    padding-bottom: 0.1rem;
+    scrollbar-width: none;
+  }
+
+  .playersStatsTabsScroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .playersStatsTabsScroller .statsTabs {
+    width: max-content;
+    min-width: max-content;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    padding-right: 1.35rem;
   }
 
   .playersTopbar h2 {
