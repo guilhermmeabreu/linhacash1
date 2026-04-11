@@ -980,22 +980,24 @@ export function DashboardView() {
 
               <div className={styles.statsTabsWrap}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
-                  <TabsList className={styles.statsTabs}>
-                    {STATS.map((stat) => {
-                      const locked = isLockedStat(stat, plan);
-                      return (
-                        <TabsTrigger
-                          key={stat}
-                          value={stat}
-                          className={locked ? styles.lockedTab : undefined}
-                          title={locked ? 'Disponível no plano Pro' : undefined}
-                        >
-                          {stat}
-                          {locked ? <Lock size={11} /> : null}
-                        </TabsTrigger>
-                      );
-                    })}
-                  </TabsList>
+                  <div className={styles.statsTabsScroller}>
+                    <TabsList className={styles.statsTabs}>
+                      {STATS.map((stat) => {
+                        const locked = isLockedStat(stat, plan);
+                        return (
+                          <TabsTrigger
+                            key={stat}
+                            value={stat}
+                            className={locked ? styles.lockedTab : undefined}
+                            title={locked ? 'Disponível no plano Pro' : undefined}
+                          >
+                            {stat}
+                            {locked ? <Lock size={11} /> : null}
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </div>
                   <TabsContent value={selectedStat} className={styles.playersTabContent}>
                     {marketLocked ? (
                       <Surface className={styles.lockedStateBox}>
@@ -1080,17 +1082,19 @@ export function DashboardView() {
             <section className={`${styles.detailView} ${styles.viewPanel}`}>
               <div className={styles.detailTabsRow}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
-                  <TabsList className={styles.statsTabs}>
-                    {STATS.map((stat) => {
-                      const locked = isLockedStat(stat, plan);
-                      return (
-                        <TabsTrigger key={stat} value={stat} className={locked ? styles.lockedTab : undefined}>
-                          {stat}
-                          {locked ? <Lock size={11} /> : null}
-                        </TabsTrigger>
-                      );
-                    })}
-                  </TabsList>
+                  <div className={styles.statsTabsScroller}>
+                    <TabsList className={styles.statsTabs}>
+                      {STATS.map((stat) => {
+                        const locked = isLockedStat(stat, plan);
+                        return (
+                          <TabsTrigger key={stat} value={stat} className={locked ? styles.lockedTab : undefined}>
+                            {stat}
+                            {locked ? <Lock size={11} /> : null}
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </div>
                 </TabsRoot>
               </div>
               <div className={styles.playerHero}>
