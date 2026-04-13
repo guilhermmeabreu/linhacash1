@@ -254,7 +254,7 @@ export function DashboardView() {
   const [plan, setPlan] = useState<Plan>('free');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [upgradePlan, setUpgradePlan] = useState<'mensal' | 'anual'>('anual');
+  const [upgradePlan, setUpgradePlan] = useState<'monthly' | 'annual'>('annual');
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
@@ -724,26 +724,27 @@ export function DashboardView() {
     setUpgradeError(null);
     try {
       const token = getAuthToken();
-      const response = await fetch('/api/checkout', {
+      const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ plan: upgradePlan, referralCode: upgradeCode.trim() || undefined }),
+        body: JSON.stringify({ plan: upgradePlan }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.url) {
-        setUpgradeError(data?.error || 'Não foi possível iniciar o checkout agora.');
+      const checkoutUrl = data?.data?.url;
+      if (!response.ok || !checkoutUrl) {
+        setUpgradeError(data?.error?.message || 'Não foi possível iniciar o checkout agora.');
         return;
       }
-      window.location.href = data.url as string;
+      window.location.href = checkoutUrl as string;
     } catch {
       setUpgradeError('Falha ao iniciar checkout. Tente novamente em instantes.');
     } finally {
       setUpgradeLoading(false);
     }
-  }, [upgradeCode, upgradePlan]);
+  }, [upgradePlan]);
 
   const getSplitPctClassName = useCallback((value: string) => {
     const pct = Number.parseInt(value.replace('%', ''), 10);
@@ -1391,8 +1392,8 @@ export function DashboardView() {
                 <div className={styles.upgradePlans}>
                   <button
                     type="button"
-                    className={`${styles.upgradePlanBtn} ${upgradePlan === 'mensal' ? styles.isSelected : ''}`}
-                    onClick={() => setUpgradePlan('mensal')}
+                    className={`${styles.upgradePlanBtn} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`}
+                    onClick={() => setUpgradePlan('monthly')}
                   >
                     <span>Mensal</span>
                     <strong>R$24,90/mês</strong>
@@ -1400,8 +1401,8 @@ export function DashboardView() {
                   </button>
                   <button
                     type="button"
-                    className={`${styles.upgradePlanBtn} ${upgradePlan === 'anual' ? styles.isSelected : ''}`}
-                    onClick={() => setUpgradePlan('anual')}
+                    className={`${styles.upgradePlanBtn} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
+                    onClick={() => setUpgradePlan('annual')}
                   >
                     <span>Anual · Mais vantajoso</span>
                     <em className={styles.upgradePopular}>Mais popular</em>
