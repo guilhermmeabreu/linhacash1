@@ -28,6 +28,9 @@ const LOCK_WINDOW_MS = 15 * 60_000;
 const SYNC_TIMEOUT_MS = 8 * 60_000;
 const DATE_WINDOW_PAST_DAYS = 2;
 const DATE_WINDOW_FUTURE_DAYS = 3;
+const MOCK_MAX_TEAMS = 4;
+const MOCK_MAX_PLAYERS_PER_TEAM = 6;
+const MOCK_MAX_PLAYER_STATS = 12;
 
 let inProcessRun = false;
 
@@ -326,6 +329,7 @@ async function upsertPlayerMetrics(supabase: SupabaseClient, playerId: number) {
 
 async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promise<Omit<SyncSummary, 'startedAt' | 'finishedAt'>> {
   const apiProvider = createApiProvider(signal);
+  const isMock = apiProvider.source === 'mock';
   const now = new Date();
   const dateTargets = Array.from({ length: DATE_WINDOW_PAST_DAYS + DATE_WINDOW_FUTURE_DAYS + 1 }, (_, index) => {
     const offset = index - DATE_WINDOW_PAST_DAYS;
@@ -366,12 +370,14 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   }
 
   const season = now.getUTCMonth() >= 8 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+  const selectedTeamIds = isMock ? [...teamIds].slice(0, MOCK_MAX_TEAMS) : [...teamIds];
   let playersSynced = 0;
   let playerStatsSynced = 0;
 
-  for (const teamId of teamIds) {
+  for (const teamId of selectedTeamIds) {
     const playersRaw = await apiProvider.getPlayersByTeam(teamId, season, signal);
     if (!playersRaw.length) continue;
+    const selectedPlayers = isMock ? playersRaw.slice(0, MOCK_MAX_PLAYERS_PER_TEAM) : playersRaw;
 
     const teamName =
       [...uniqueGameMap.values()].find((entry) => toNumber(entry.game.teams?.home?.id) === teamId)?.game.teams?.home?.name ||
@@ -379,7 +385,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       apiProvider.getTeamName?.(teamId) ||
       '';
 
-    const normalizedPlayers = playersRaw.map((player) => normalizePlayer(player, teamId, teamName));
+    const normalizedPlayers = selectedPlayers.map((player) => normalizePlayer(player, teamId, teamName));
     playersSynced += normalizedPlayers.length;
 
     const { error: playerUpsertError } = await supabase.from('players').upsert(normalizedPlayers, { onConflict: 'api_id' });
@@ -398,7 +404,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       const statsRows = (await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, season, signal))
         .map((stat) => normalizePlayerStat(internalPlayerId, stat))
         .filter((row) => row.game_id && row.game_date)
-        .slice(0, 30);
+        .slice(0, isMock ? MOCK_MAX_PLAYER_STATS : 30);
 
       if (!statsRows.length) continue;
 
@@ -428,7 +434,9 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       }
 
       playerStatsSynced += statsRows.length;
-      await upsertPlayerMetrics(supabase, internalPlayerId);
+      if (!isMock) {
+        await upsertPlayerMetrics(supabase, internalPlayerId);
+      }
     }
   }
 
@@ -439,9 +447,9 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
   return {
     status: 'success',
-    message: `Sync (${apiProvider.source}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.`,
+    message: `Sync (${apiProvider.source}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.${isMock ? ' Mock mode uses reduced team/player/stat volume and skips player_metrics writes.' : ''}`,
     gamesSynced: normalizedGames.length,
-    teamsSynced: teamIds.size,
+    teamsSynced: selectedTeamIds.length,
     playersSynced,
     playerStatsSynced,
     errors: [],
