@@ -226,10 +226,11 @@ function avg(values: number[]): number {
 }
 
 function applySplitAndOpponent(rows: RuntimeGame[], split: MetricsSplit, opponent: string | null): RuntimeGame[] {
+  const normalizedOpponent = opponent ? opponent.trim().toLowerCase() : null;
   return rows.filter((row) => {
     if (split === 'HOME' && row.is_home !== true) return false;
     if (split === 'AWAY' && row.is_home !== false) return false;
-    if (opponent && (row.opponent || '').toLowerCase() !== opponent) return false;
+    if (normalizedOpponent && !(row.opponent || '').trim().toLowerCase().includes(normalizedOpponent)) return false;
     return true;
   });
 }
