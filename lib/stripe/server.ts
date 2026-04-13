@@ -29,6 +29,17 @@ type StripeCheckoutResponse = { id: string; url: string | null };
 
 const STRIPE_API_BASE = 'https://api.stripe.com/v1';
 
+type StripeErrorPayload = {
+  error?: {
+    type?: string;
+    code?: string;
+    message?: string;
+    param?: string;
+    doc_url?: string;
+    request_log_url?: string;
+  };
+};
+
 function formEncode(data: Record<string, string | number | undefined | null>) {
   const body = new URLSearchParams();
   for (const [key, value] of Object.entries(data)) {
@@ -49,12 +60,19 @@ async function stripeRequest<T>(path: string, body: URLSearchParams): Promise<T>
     body,
   });
 
-  const data = await response.json().catch(() => null);
+  const data = (await response.json().catch(() => null)) as StripeErrorPayload | null;
   if (!response.ok || !data) {
+    const stripeError = data?.error;
     throw new ExternalIntegrationError('Stripe request failed', {
-      status: response.status,
-      statusText: response.statusText,
-      error: data,
+      stripe: {
+        httpStatus: response.status,
+        statusText: response.statusText,
+        message: stripeError?.message ?? response.statusText,
+        type: stripeError?.type,
+        code: stripeError?.code,
+        param: stripeError?.param,
+        docUrl: stripeError?.doc_url,
+      },
     });
   }
 

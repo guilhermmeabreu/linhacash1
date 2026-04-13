@@ -3,7 +3,7 @@ import { AppError, ExternalIntegrationError, ValidationError } from '@/lib/http/
 import { fail, internalError, ok, options } from '@/lib/http/responses';
 import { requireAuthenticatedUser } from '@/lib/auth/authorization';
 import { readJsonObject } from '@/lib/http/request-guards';
-import { requireEnv } from '@/lib/env';
+import { isDebugMode, requireEnv } from '@/lib/env';
 import { getStripeServerClient } from '@/lib/stripe/server';
 
 type StripePlan = 'monthly' | 'annual' | 'playoff';
@@ -100,7 +100,16 @@ export async function POST(req: Request) {
 
     return ok({ url: checkout.url, plan });
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      if (error.code === 'EXTERNAL_INTEGRATION_ERROR') {
+        console.error('[stripe-checkout] request failed', {
+          code: error.code,
+          message: error.message,
+          ...(isDebugMode() ? { details: error.details } : {}),
+        });
+      }
+      return fail(error, origin);
+    }
     return internalError(origin);
   }
 }

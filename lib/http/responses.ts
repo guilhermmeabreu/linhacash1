@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/http/errors';
+import { isDebugMode } from '@/lib/env';
 
 function normalizeOrigin(value: string): string {
   const trimmed = value.trim();
@@ -61,13 +62,15 @@ export function ok<T>(data: T, status = 200, origin?: string) {
 }
 
 export function fail(error: AppError, origin?: string) {
+  const includeDebugDetails = isDebugMode() && (error.code === 'VALIDATION_ERROR' || error.code === 'EXTERNAL_INTEGRATION_ERROR');
+
   return NextResponse.json(
     {
       ok: false,
       error: {
         code: error.code,
         message: error.message,
-        ...(error.code === 'VALIDATION_ERROR' && error.details ? { details: error.details } : {}),
+        ...(includeDebugDetails && error.details ? { details: error.details } : {}),
       },
     },
     { status: error.status, headers: buildSecurityHeaders(origin) },

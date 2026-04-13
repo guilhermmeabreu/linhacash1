@@ -29,3 +29,18 @@ export function validateCriticalEnv() {
 export function isProduction() {
   return process.env.NODE_ENV === 'production';
 }
+
+export function isDebugMode() {
+  const override = process.env.DEBUG_API_ERRORS || process.env.STRIPE_DEBUG_ERRORS;
+  if (typeof override === 'string') {
+    const normalized = override.trim().toLowerCase();
+    if (normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on') {
+      return true;
+    }
+    if (normalized === '0' || normalized === 'false' || normalized === 'no' || normalized === 'off') {
+      return false;
+    }
+  }
+
+  return !isProduction();
+}
