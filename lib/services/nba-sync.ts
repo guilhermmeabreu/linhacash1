@@ -171,6 +171,7 @@ function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: stri
 function normalizePlayerStat(playerId: number, stat: ApiSportsPlayerStat) {
   return {
     player_id: playerId,
+    game_id: toNumber(stat.game?.id) || null,
     game_date: stat.game?.date ? stat.game.date.slice(0, 10) : null,
     opponent: stat.team?.name || '',
     is_home: null,
@@ -396,14 +397,14 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
       const statsRows = (await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, season, signal))
         .map((stat) => normalizePlayerStat(internalPlayerId, stat))
-        .filter((row) => row.game_date)
+        .filter((row) => row.game_id && row.game_date)
         .slice(0, 30);
 
       if (!statsRows.length) continue;
 
       const { error: statsUpsertError } = await supabase
         .from('player_stats')
-        .upsert(statsRows, { onConflict: 'player_id,game_date,opponent' });
+        .upsert(statsRows, { onConflict: 'player_id,game_id' });
 
       if (statsUpsertError) {
         const message = statsUpsertError.message.toLowerCase();
@@ -417,8 +418,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
             .from('player_stats')
             .delete()
             .eq('player_id', row.player_id)
-            .eq('game_date', row.game_date)
-            .eq('opponent', row.opponent);
+            .eq('game_id', row.game_id);
         }
 
         const { error: statsInsertError } = await supabase.from('player_stats').insert(statsRows);

@@ -17,7 +17,7 @@ export type ApiSportsPlayer = {
 };
 
 export type ApiSportsPlayerStat = {
-  game?: { date?: string | null };
+  game?: { id?: number | null; date?: string | null };
   team?: { name?: string | null };
   points?: number | null;
   totReb?: number | null;
@@ -149,9 +149,11 @@ function createPlayerStats(playerId: number): ApiSportsPlayerStat[] {
     const gameDate = addDays(new Date(), -(gameIndex + 1) * 2);
     const date = toDateOnly(gameDate);
     const random = rng(hash(`${playerId}:${gameIndex}`));
-
-    const opponentPool = MOCK_TEAMS.filter((candidate) => candidate.id !== teamId);
-    const opponent = opponentPool[(gameIndex + Math.floor(random() * opponentPool.length)) % opponentPool.length];
+    const gamesForDate = createGamesByDate(date);
+    const scheduledGame =
+      gamesForDate.find((game) => game.teams?.home?.id === teamId || game.teams?.visitors?.id === teamId) || gamesForDate[0];
+    const isHome = scheduledGame.teams?.home?.id === teamId;
+    const opponent = isHome ? scheduledGame.teams?.visitors : scheduledGame.teams?.home;
 
     const minutes = clamp(Math.round(baseMinutes + (random() - 0.5) * 10), 18, 40);
     const points = clamp(Math.round(basePoints + (random() - 0.5) * 16), 4, 48);
@@ -166,8 +168,8 @@ function createPlayerStats(playerId: number): ApiSportsPlayerStat[] {
     const fgm = clamp(Math.round(points / 2 + (random() - 0.5) * 3), 1, fga);
 
     return {
-      game: { date: `${date}T00:00:00.000Z` },
-      team: { name: opponent.name },
+      game: { id: scheduledGame.id, date: `${date}T00:00:00.000Z` },
+      team: { name: opponent?.name || 'NBA Opponent' },
       points,
       totReb: rebounds,
       assists,
