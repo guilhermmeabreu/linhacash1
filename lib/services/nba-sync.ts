@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
+import { nbaMockProvider, type ApiSportsGame, type ApiSportsPlayer, type ApiSportsPlayerStat } from '@/lib/mock/nbaMock';
 
 type SyncStatus = 'running' | 'success' | 'error' | 'skipped';
 
@@ -13,40 +14,6 @@ type SyncSummary = {
   errors: string[];
   startedAt: string;
   finishedAt: string;
-};
-
-type ApiSportsGame = {
-  id: number;
-  date?: { start?: string | null };
-  teams?: {
-    home?: { id?: number; name?: string; logo?: string | null };
-    visitors?: { id?: number; name?: string; logo?: string | null };
-  };
-  status?: { long?: string | null };
-};
-
-type ApiSportsPlayer = {
-  id: number;
-  firstname?: string | null;
-  lastname?: string | null;
-  photo?: string | null;
-  leagues?: { standard?: { pos?: string | null } };
-};
-
-type ApiSportsPlayerStat = {
-  game?: { date?: string | null };
-  team?: { name?: string | null };
-  points?: number | null;
-  totReb?: number | null;
-  assists?: number | null;
-  tpm?: number | null;
-  fgm?: number | null;
-  fga?: number | null;
-  min?: string | null;
-  steals?: number | null;
-  blocks?: number | null;
-  p2a?: number | null;
-  p3a?: number | null;
 };
 
 type ApiSportsResponse<T> = { response?: T[] };
@@ -63,6 +30,14 @@ const DATE_WINDOW_PAST_DAYS = 2;
 const DATE_WINDOW_FUTURE_DAYS = 3;
 
 let inProcessRun = false;
+
+type ApiProvider = {
+  source: 'real' | 'mock';
+  getGamesByDate: (date: string, signal: AbortSignal) => Promise<ApiSportsGame[]>;
+  getPlayersByTeam: (teamId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayer[]>;
+  getPlayerStatistics: (playerId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayerStat[]>;
+  getTeamName?: (teamId: number) => string;
+};
 
 function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -127,6 +102,40 @@ async function apiGet<T>(path: string, apiKey: string, signal: AbortSignal, retr
   }
 
   throw lastError instanceof Error ? lastError : new Error('API-SPORTS request failed');
+}
+
+function createApiProvider(signal: AbortSignal): ApiProvider {
+  const useMock = process.env.USE_MOCK_DATA === 'true';
+  if (useMock) {
+    return {
+      source: 'mock',
+      getGamesByDate: async (date) => nbaMockProvider.getGamesByDate(date),
+      getPlayersByTeam: async (teamId) => nbaMockProvider.getPlayersByTeam(teamId),
+      getPlayerStatistics: async (playerId) => nbaMockProvider.getPlayerStatistics(playerId),
+      getTeamName: (teamId) => nbaMockProvider.getTeamName(teamId),
+    };
+  }
+
+  const apiKey = process.env.NBA_API_KEY;
+  if (!apiKey) {
+    throw new Error('NBA_API_KEY is missing');
+  }
+
+  return {
+    source: 'real',
+    getGamesByDate: async (date) => {
+      const response = await apiGet<ApiSportsGame>(`/games?date=${date}`, apiKey, signal);
+      return response.response || [];
+    },
+    getPlayersByTeam: async (teamId, season) => {
+      const response = await apiGet<ApiSportsPlayer>(`/players?team=${teamId}&season=${season}`, apiKey, signal);
+      return response.response || [];
+    },
+    getPlayerStatistics: async (playerId, season) => {
+      const response = await apiGet<ApiSportsPlayerStat>(`/players/statistics?id=${playerId}&season=${season}`, apiKey, signal);
+      return response.response || [];
+    },
+  };
 }
 
 function normalizeGame(game: ApiSportsGame, fallbackDate: string) {
@@ -315,11 +324,7 @@ async function upsertPlayerMetrics(supabase: SupabaseClient, playerId: number) {
 }
 
 async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promise<Omit<SyncSummary, 'startedAt' | 'finishedAt'>> {
-  const apiKey = process.env.NBA_API_KEY;
-  if (!apiKey) {
-    throw new Error('NBA_API_KEY is missing');
-  }
-
+  const apiProvider = createApiProvider(signal);
   const now = new Date();
   const dateTargets = Array.from({ length: DATE_WINDOW_PAST_DAYS + DATE_WINDOW_FUTURE_DAYS + 1 }, (_, index) => {
     const offset = index - DATE_WINDOW_PAST_DAYS;
@@ -328,8 +333,8 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
   const gamesPerDay = await Promise.all(
     dateTargets.map(async (day) => {
-      const response = await apiGet<ApiSportsGame>(`/games?date=${day}`, apiKey, signal);
-      return { day, games: response.response || [] };
+      const games = await apiProvider.getGamesByDate(day, signal);
+      return { day, games };
     })
   );
 
@@ -364,13 +369,13 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   let playerStatsSynced = 0;
 
   for (const teamId of teamIds) {
-    const playersResponse = await apiGet<ApiSportsPlayer>(`/players?team=${teamId}&season=${season}`, apiKey, signal);
-    const playersRaw = playersResponse.response || [];
+    const playersRaw = await apiProvider.getPlayersByTeam(teamId, season, signal);
     if (!playersRaw.length) continue;
 
     const teamName =
       [...uniqueGameMap.values()].find((entry) => toNumber(entry.game.teams?.home?.id) === teamId)?.game.teams?.home?.name ||
       [...uniqueGameMap.values()].find((entry) => toNumber(entry.game.teams?.visitors?.id) === teamId)?.game.teams?.visitors?.name ||
+      apiProvider.getTeamName?.(teamId) ||
       '';
 
     const normalizedPlayers = playersRaw.map((player) => normalizePlayer(player, teamId, teamName));
@@ -389,13 +394,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       const internalPlayerId = playerIdByApi.get(normalizedPlayer.api_id);
       if (!internalPlayerId) continue;
 
-      const statsResponse = await apiGet<ApiSportsPlayerStat>(
-        `/players/statistics?id=${normalizedPlayer.api_id}&season=${season}`,
-        apiKey,
-        signal
-      );
-
-      const statsRows = (statsResponse.response || [])
+      const statsRows = (await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, season, signal))
         .map((stat) => normalizePlayerStat(internalPlayerId, stat))
         .filter((row) => row.game_date)
         .slice(0, 30);
@@ -440,7 +439,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
   return {
     status: 'success',
-    message: `Sync finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.`,
+    message: `Sync (${apiProvider.source}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.`,
     gamesSynced: normalizedGames.length,
     teamsSynced: teamIds.size,
     playersSynced,
