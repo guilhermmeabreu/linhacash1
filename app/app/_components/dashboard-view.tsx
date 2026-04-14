@@ -288,6 +288,7 @@ export function DashboardView() {
   const playersStatusRef = useRef<Record<number, ResourceStatus>>({});
   const playersCacheRef = useRef<Record<number, Player[]>>({});
   const playersInFlightRef = useRef<Record<number, Promise<void> | null>>({});
+  const consumedStripeReturnRef = useRef<string | null>(null);
 
   const selectedGame = useMemo(
     () => games.find((game) => game.id === selectedGameId) ?? null,
@@ -328,6 +329,10 @@ export function DashboardView() {
     const stripeCheckoutStatus = (searchParams.get('checkout') || '').toLowerCase();
     if (!stripeCheckoutStatus) return;
 
+    if (consumedStripeReturnRef.current === stripeCheckoutStatus) {
+      return;
+    }
+
     if (stripeCheckoutStatus === 'success') {
       setCheckoutNotice('Pagamento confirmado! Seu plano Pro será liberado em instantes.');
     } else if (stripeCheckoutStatus === 'cancelled') {
@@ -335,6 +340,8 @@ export function DashboardView() {
     } else {
       setCheckoutNotice(null);
     }
+
+    consumedStripeReturnRef.current = stripeCheckoutStatus;
     setCheckoutReturnStatus(stripeCheckoutStatus);
 
     const params = new URLSearchParams(searchParams.toString());
@@ -344,6 +351,12 @@ export function DashboardView() {
     const nextUrl = `${pathname}${nextQuery ? `?${nextQuery}` : ''}`;
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [pathname, searchParams]);
+
+
+  const dismissCheckoutNotice = useCallback(() => {
+    setCheckoutNotice(null);
+    setCheckoutReturnStatus('');
+  }, []);
 
   const oauthQueryError = useMemo(() => {
     const error = searchParams.get('error_description') || searchParams.get('error');
@@ -1461,7 +1474,7 @@ export function DashboardView() {
                 <p>{checkoutNotice || paymentStatusNotice}</p>
               </div>
               {checkoutNotice ? (
-                <Button variant="secondary" size="sm" onClick={() => setCheckoutNotice(null)} aria-label="Fechar aviso de checkout">
+                <Button variant="secondary" size="sm" onClick={dismissCheckoutNotice} aria-label="Fechar aviso de checkout">
                   Fechar
                 </Button>
               ) : null}
