@@ -1293,7 +1293,7 @@ export function DashboardView() {
                                       : 28
                               }
                             >
-                              <LabelList dataKey="value" position="insideTop" offset={10} fill="var(--lc-text)" fontSize={10} />
+                              <LabelList dataKey="value" position="insideBottom" offset={14} fill="#000000" fontSize={10} />
                               {playerDetailModel.bars.map((bar, index) => (
                                 <Cell
                                   key={`${bar.label}-${index}`}

@@ -323,7 +323,7 @@
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: auto;
 }
 
 .playerTabsList {
@@ -344,7 +344,7 @@
   white-space: nowrap;
   display: flex;
   flex-wrap: nowrap;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: none;
 }
 
 .statsTabs :global(.lc-tab-trigger) {
@@ -354,7 +354,7 @@
   border-radius: 999px;
   letter-spacing: 0.08em;
   flex: 0 0 auto;
-  scroll-snap-align: start;
+  scroll-snap-align: none;
 }
 
 .lockedTab {
@@ -653,7 +653,7 @@
   background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
   border-radius: 10px;
   border: 0;
-  box-shadow: 0 6px 14px color-mix(in srgb, var(--lc-bg) 18%, transparent);
+  box-shadow: none;
   padding: 0.42rem 0.35rem;
   text-align: center;
   display: grid;
@@ -1455,7 +1455,6 @@ html.light .upgradeTotal {
 }
 
 html.dark .lineAdjustBox strong {
-  color: #000000;
 }
 
 @media (max-width: 620px) {
@@ -1479,6 +1478,7 @@ html.dark .lineAdjustBox strong {
     border-radius: 12px;
     border-color: color-mix(in srgb, var(--lc-border) 40%, transparent);
     background: color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%);
+    overflow: visible;
   }
 
   .playerMain {
@@ -1486,6 +1486,7 @@ html.dark .lineAdjustBox strong {
     flex: 1 1 auto;
     min-width: 0;
     flex-shrink: 1;
+    max-width: calc(100% - 4rem);
   }
 
   .playerName {
@@ -1504,7 +1505,13 @@ html.dark .lineAdjustBox strong {
   }
 
   .playerLineBlock {
-    flex: 0 0 auto;
+    flex: 0 0 3.6rem;
+    min-width: 3.6rem;
+    display: grid;
+    justify-items: end;
+    padding: 0.12rem 0.18rem;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--lc-accent) 10%, transparent);
   }
 
   .chartCanvas :global(.recharts-cartesian-axis-tick-value) {
