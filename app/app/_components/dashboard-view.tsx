@@ -278,6 +278,8 @@ export function DashboardView() {
   const [deleteConfirmValue, setDeleteConfirmValue] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteFeedback, setDeleteFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
+  const [checkoutReturnStatus, setCheckoutReturnStatus] = useState('');
   const [authBootstrapped, setAuthBootstrapped] = useState(false);
 
   const gamesRequestRef = useRef(0);
@@ -308,23 +310,40 @@ export function DashboardView() {
   const selectedMetricsError = selectedPlayerId ? metricsErrorByPlayer[selectedPlayerId]?.[selectedStat] ?? null : null;
   const marketLocked = isLockedStat(selectedStat, plan);
 
-  const checkoutNotice = useMemo(() => {
-    const stripeCheckoutStatus = (searchParams.get('checkout') || '').toLowerCase();
-    if (stripeCheckoutStatus === 'success') return 'Pagamento confirmado! Seu plano Pro será liberado em instantes.';
-    if (stripeCheckoutStatus === 'cancelled') return 'Pagamento cancelado. Sua sessão continua ativa e você pode tentar novamente quando quiser.';
+  const paymentStatusNotice = useMemo(() => {
     const checkoutStatus = (searchParams.get('status') || '').toLowerCase();
     if (checkoutStatus === 'success') return 'Pagamento confirmado! Seu plano Pro será liberado em instantes.';
     if (checkoutStatus === 'pending') return 'Pagamento pendente. Assim que for confirmado, seu acesso será atualizado.';
     if (checkoutStatus === 'failure') return 'Pagamento não concluído. Você pode tentar novamente quando quiser.';
     return null;
   }, [searchParams]);
-  const checkoutReturnStatus = useMemo(() => (searchParams.get('checkout') || '').toLowerCase(), [searchParams]);
 
   useEffect(() => {
     if (searchParams.get('open') === 'checkout' && plan !== 'pro') {
       setUpgradeOpen(true);
     }
   }, [plan, searchParams]);
+
+  useEffect(() => {
+    const stripeCheckoutStatus = (searchParams.get('checkout') || '').toLowerCase();
+    if (!stripeCheckoutStatus) return;
+
+    if (stripeCheckoutStatus === 'success') {
+      setCheckoutNotice('Pagamento confirmado! Seu plano Pro será liberado em instantes.');
+    } else if (stripeCheckoutStatus === 'cancelled') {
+      setCheckoutNotice('Pagamento cancelado. Sua sessão continua ativa e você pode tentar novamente quando quiser.');
+    } else {
+      setCheckoutNotice(null);
+    }
+    setCheckoutReturnStatus(stripeCheckoutStatus);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('checkout');
+    params.delete('plan');
+    const nextQuery = params.toString();
+    const nextUrl = `${pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, [pathname, searchParams]);
 
   const oauthQueryError = useMemo(() => {
     const error = searchParams.get('error_description') || searchParams.get('error');
@@ -1435,12 +1454,17 @@ export function DashboardView() {
               ) : null}
             </Surface>
           ) : null}
-          {checkoutNotice ? (
+          {(checkoutNotice || paymentStatusNotice) ? (
             <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
               <div className={styles.errorContent}>
                 <Crown size={16} />
-                <p>{checkoutNotice}</p>
+                <p>{checkoutNotice || paymentStatusNotice}</p>
               </div>
+              {checkoutNotice ? (
+                <Button variant="secondary" size="sm" onClick={() => setCheckoutNotice(null)} aria-label="Fechar aviso de checkout">
+                  Fechar
+                </Button>
+              ) : null}
             </Surface>
           ) : null}
 
