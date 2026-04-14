@@ -1297,7 +1297,7 @@ export function DashboardView() {
                               {playerDetailModel.bars.map((bar, index) => (
                                 <Cell
                                   key={`${bar.label}-${index}`}
-                                  fill={bar.tone === 'hit' ? '#24e880' : bar.tone === 'tie' ? '#969eaa' : '#ff5d5d'}
+                                  fill={bar.tone === 'hit' ? '#24e880' : bar.tone === 'tie' ? '#9fa6b2' : '#d7263d'}
                                 />
                               ))}
                             </Bar>

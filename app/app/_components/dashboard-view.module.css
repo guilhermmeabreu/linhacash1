@@ -1,7 +1,7 @@
 .dashboardCanvas {
   display: grid;
   gap: 1rem;
-  overflow-x: visible;
+  overflow-x: hidden;
 }
 
 .topbarBadges {
@@ -76,7 +76,7 @@
 }
 
 .playersView {
-  overflow-x: visible;
+  overflow-x: hidden;
 }
 
 .viewPanel {
@@ -304,7 +304,7 @@
 .playersTabsViewport {
   min-width: 0;
   padding-bottom: 0.15rem;
-  overflow: visible;
+  overflow: hidden;
   max-width: 100%;
 }
 
@@ -559,9 +559,10 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--lc-border) 86%, transparent);
+  border: 0;
   border-radius: 16px;
-  background: radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--lc-accent) 8%, transparent), transparent 48%), color-mix(in srgb, var(--lc-surface) 92%, var(--lc-bg) 8%);
+  background: radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--lc-accent) 10%, transparent), transparent 48%), color-mix(in srgb, var(--lc-surface) 96%, var(--lc-bg) 4%);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--lc-bg) 35%, transparent);
   padding: 0.75rem 0.85rem;
 }
 
@@ -652,6 +653,7 @@
   background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
   border-radius: 10px;
   border: 0;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--lc-bg) 18%, transparent);
   padding: 0.42rem 0.35rem;
   text-align: center;
   display: grid;
@@ -679,7 +681,8 @@
 .chartCard {
   border: 0;
   border-radius: 16px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 99%, var(--lc-bg) 1%), color-mix(in srgb, var(--lc-surface) 94%, var(--lc-bg) 6%));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 99%, var(--lc-bg) 1%), color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%));
+  box-shadow: 0 12px 22px color-mix(in srgb, var(--lc-bg) 20%, transparent);
   padding: 0.76rem 0.82rem;
   display: grid;
   gap: 0.45rem;
@@ -1242,8 +1245,8 @@
 }
 
 html.light .chartCard {
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-  border-color: #dbe4ef;
+  background: linear-gradient(180deg, #ffffff, #fcfdff);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
 html.light .quickStatsGrid > div {
@@ -1300,11 +1303,11 @@ html.light .upgradeTotal {
   }
 
   .playersView {
-    overflow-x: visible;
+    overflow-x: hidden;
   }
 
   .playersView .statsTabsWrap {
-    overflow: visible;
+    overflow: hidden;
   }
 
   .playersTabsViewport {
@@ -1449,6 +1452,10 @@ html.light .upgradeTotal {
   .profileHero {
     padding: 1rem;
   }
+}
+
+html.dark .lineAdjustBox strong {
+  color: #000000;
 }
 
 @media (max-width: 620px) {

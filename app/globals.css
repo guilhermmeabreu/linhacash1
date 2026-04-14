@@ -491,6 +491,7 @@ textarea {
   display: grid;
   place-items: center;
   text-align: center;
+  position: relative;
 }
 .lc-hero-content {
   display: grid;
@@ -508,7 +509,7 @@ textarea {
 .lc-hero-secondary-cta { text-decoration: none; }
 .lc-hero-secondary-cta .lc-btn-secondary { border-color: var(--lc-accent); color: var(--lc-text); }
 .lc-scroll-hint {
-  margin-top: clamp(1rem, 2.7vw, 1.8rem);
+  margin-top: 0;
   justify-self: center;
   display: inline-grid;
   justify-items: center;
@@ -518,10 +519,14 @@ textarea {
   text-transform: uppercase;
   letter-spacing: 0.11em;
   gap: 0.2rem;
-  animation: lc-scroll-pulse 1.9s ease-in-out infinite;
+  animation: none;
   opacity: 0.95;
   visibility: visible;
   z-index: 2;
+  position: absolute;
+  bottom: clamp(1.2rem, 3vw, 2.2rem);
+  left: 50%;
+  transform: translateX(-50%);
 }
 .lc-scroll-hint:hover { color: var(--lc-accent); }
 @keyframes lc-scroll-pulse {
@@ -790,6 +795,7 @@ html.light .lc-hero p {
   .lc-step-grid,
   .lc-plan-grid { grid-template-columns: 1fr; }
   .lc-hero { min-height: calc(100svh - 4.25rem); padding-top: 4.5rem; }
+  .lc-scroll-hint { position: static; transform: none; margin-top: 0.9rem; }
   .lc-scroll-hint span { display: none; }
   .lc-hero h1 { max-width: 10ch; font-size: clamp(2.75rem, 12vw, 6rem); }
   .lc-step-section { padding: 3.4rem 0 3.8rem; }
