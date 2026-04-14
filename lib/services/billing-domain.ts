@@ -32,6 +32,9 @@ export type BillingStatus = (typeof BILLING_STATUS)[keyof typeof BILLING_STATUS]
 export type BillingProfileRow = {
   id: string;
   plan: string | null;
+  subscription_status?: string | null;
+  playoff_pack_active?: boolean | null;
+  billing_updated_at?: string | null;
   plan_status: string | null;
   plan_source: string | null;
   billing_status: string | null;
@@ -49,6 +52,9 @@ export type BillingProfileRow = {
 
 export type BillingState = {
   plan: BillingPlan;
+  subscriptionStatus: string | null;
+  playoffPackActive: boolean;
+  billingUpdatedAt: string | null;
   planStatus: BillingPlanStatus;
   planSource: BillingPlanSource;
   billingStatus: BillingStatus;
@@ -87,7 +93,15 @@ function normalizeBillingStatus(value: string | null): BillingStatus {
 }
 
 export function resolveBillingState(row: BillingProfileRow): BillingState {
-  const plan = normalizePlan(row.plan);
+  const legacyPlan = normalizePlan(row.plan);
+  const normalizedPlan = (row.plan || '').trim().toLowerCase();
+  const subscriptionStatus = typeof row.subscription_status === 'string'
+    ? row.subscription_status.trim().toLowerCase()
+    : null;
+  const hasStripeProAccess =
+    (normalizedPlan === 'monthly' || normalizedPlan === 'annual') &&
+    (subscriptionStatus === 'trialing' || subscriptionStatus === 'active');
+  const plan = legacyPlan === PLAN.PRO || hasStripeProAccess ? PLAN.PRO : PLAN.FREE;
   const planSource = normalizePlanSource(row.plan_source);
   const planStatus = normalizePlanStatus(row.plan_status);
   const billingStatus = normalizeBillingStatus(row.billing_status);
@@ -105,6 +119,9 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
 
   return {
     plan,
+    subscriptionStatus,
+    playoffPackActive: Boolean(row.playoff_pack_active),
+    billingUpdatedAt: row.billing_updated_at ?? null,
     planStatus,
     planSource,
     billingStatus,
@@ -118,8 +135,8 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
     subscriptionReference: row.subscription_reference,
     externalReference: row.external_reference,
     referralCodeUsed: row.referral_code_used,
-    hasProAccess: paidStillActive || manualActive,
-    isPaidPro: paidStillActive,
+    hasProAccess: hasStripeProAccess || paidStillActive || manualActive,
+    isPaidPro: hasStripeProAccess || paidStillActive,
     isManualPro: manualActive,
   };
 }
