@@ -55,8 +55,11 @@ export default function LandingPage() {
 
       <section className="lc-hero lc-public-container" id="hero">
         <div className="lc-hero-content">
-          <h1>
-            Veja o que os números mostram
+          <h1 className="lc-hero-editorial-title">
+            <span>VEJA O QUE</span>
+            <span>OS</span>
+            <span className="lc-hero-highlight">NÚMEROS</span>
+            <span>MOSTRAM</span>
           </h1>
           <p>
             Analisar dados nunca ficou tão fácil com o Linha<span>Cash</span>.

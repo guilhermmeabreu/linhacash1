@@ -502,6 +502,21 @@ textarea {
 }
 .lc-kicker { color: var(--lc-accent); text-transform: uppercase; letter-spacing: .14em; font-size: .66rem; font-weight: 800; }
 .lc-hero h1 { font-size: clamp(3rem, 9.6vw, 8rem); line-height: 0.88; margin: 0 auto; max-width: 10ch; text-wrap: balance; letter-spacing: -0.065em; color: color-mix(in srgb, var(--lc-text) 96%, #fff 4%); text-shadow: 0 2px 20px rgba(0, 0, 0, 0.48); font-weight: 950; }
+.lc-hero-editorial-title {
+  display: grid;
+  justify-items: center;
+  text-transform: uppercase;
+  gap: 0.05em;
+}
+
+.lc-hero-editorial-title > span {
+  display: block;
+  line-height: 0.86;
+}
+
+.lc-hero-highlight {
+  color: var(--lc-accent);
+}
 .lc-hero p { color: color-mix(in srgb, var(--lc-text) 64%, var(--lc-muted) 36%); max-width: 33ch; margin: 0 auto; text-wrap: pretty; line-height: 1.45; font-size: clamp(0.95rem, 1.7vw, 1.15rem); }
 .lc-hero p span { color: var(--lc-accent); font-weight: 700; }
 .lc-hero small { color: var(--lc-muted); font-size: 0.75rem; }
@@ -796,7 +811,6 @@ html.light .lc-hero p {
   .lc-plan-grid { grid-template-columns: 1fr; }
   .lc-hero { min-height: calc(100svh - 4.25rem); padding-top: 4.5rem; }
   .lc-scroll-hint { position: static; transform: none; margin-top: 0.9rem; }
-  .lc-scroll-hint span { display: none; }
   .lc-hero h1 { max-width: 10ch; font-size: clamp(2.75rem, 12vw, 6rem); }
   .lc-step-section { padding: 3.4rem 0 3.8rem; }
   .lc-plan-section { padding: 3.8rem 0 4rem; }
