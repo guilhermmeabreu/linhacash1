@@ -26,6 +26,8 @@ type StripeCustomerRequest = {
 type StripeCustomerResponse = { id: string };
 
 type StripeCheckoutResponse = { id: string; url: string | null };
+type StripeBillingPortalRequest = { customer: string; return_url: string };
+type StripeBillingPortalResponse = { url: string };
 
 const STRIPE_API_BASE = 'https://api.stripe.com/v1';
 
@@ -109,6 +111,15 @@ export function getStripeServerClient() {
       }
 
       return stripeRequest<StripeCheckoutResponse>('/checkout/sessions', body);
+    },
+
+    async createBillingPortalSession(input: StripeBillingPortalRequest): Promise<StripeBillingPortalResponse> {
+      const body = formEncode({
+        customer: input.customer,
+        return_url: input.return_url,
+      });
+
+      return stripeRequest<StripeBillingPortalResponse>('/billing_portal/sessions', body);
     },
   };
 }

@@ -74,6 +74,7 @@ const SPLITS = ['24/25', 'L5', 'L10', 'L20', 'L30', 'Season', 'H2H'] as const;
 type Split = (typeof SPLITS)[number];
 
 type Plan = 'free' | 'pro';
+type UpgradePlan = 'monthly' | 'annual' | 'playoff';
 type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
 type Theme = 'dark' | 'light';
 type SupportSurface = 'faq' | 'support' | 'bug' | 'delete' | null;
@@ -125,6 +126,15 @@ type ProfileData = {
   plan: Plan;
   theme?: Theme | null;
   created_at?: string | null;
+};
+
+type BillingData = {
+  hasProAccess?: boolean;
+  isPaidPro?: boolean;
+  isManualPro?: boolean;
+  playoffPackActive?: boolean;
+  planSource?: string | null;
+  subscriptionStatus?: string | null;
 };
 
 type ChartBarTone = 'hit' | 'miss' | 'tie';
@@ -254,10 +264,12 @@ export function DashboardView() {
   const [plan, setPlan] = useState<Plan>('free');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [upgradePlan, setUpgradePlan] = useState<'monthly' | 'annual'>('annual');
+  const [upgradePlan, setUpgradePlan] = useState<UpgradePlan>('annual');
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [manageLoading, setManageLoading] = useState(false);
+  const [billing, setBilling] = useState<BillingData | null>(null);
   const [supportSurface, setSupportSurface] = useState<SupportSurface>(null);
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
@@ -528,17 +540,19 @@ export function DashboardView() {
         if (!canceled) {
           setPlan('free');
           setProfile(null);
+          setBilling(null);
         }
         return;
       }
 
-      const result = await apiFetch<{ profile?: ProfileData }>('/api/profile');
+      const result = await apiFetch<{ profile?: ProfileData; billing?: BillingData }>('/api/profile');
       if (canceled) return;
 
       if (result.ok) {
         const resolvedPlan = result.data.profile?.plan === 'pro' ? 'pro' : 'free';
         setPlan(resolvedPlan);
         setProfile(result.data.profile ?? null);
+        setBilling(result.data.billing ?? null);
       }
 
     }
@@ -621,6 +635,32 @@ export function DashboardView() {
   const openUpgradeSurface = useCallback(() => {
     setUpgradeError(null);
     setUpgradeOpen(true);
+  }, []);
+
+  const handleManageSubscription = useCallback(async () => {
+    setManageLoading(true);
+    setUpgradeError(null);
+    try {
+      const token = getAuthToken();
+      const response = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      const data = await response.json().catch(() => ({}));
+      const portalUrl = data?.data?.url;
+      if (!response.ok || !portalUrl) {
+        setUpgradeError(data?.error?.message || 'Não foi possível abrir o portal de assinatura.');
+        return;
+      }
+      window.location.href = portalUrl as string;
+    } catch {
+      setUpgradeError('Falha ao abrir o portal. Tente novamente em instantes.');
+    } finally {
+      setManageLoading(false);
+    }
   }, []);
 
   const openSupportSurface = useCallback((surface: Exclude<SupportSurface, null>) => {
@@ -1275,7 +1315,11 @@ export function DashboardView() {
                     <button type="button" className={`${styles.profileRow} technical-item ${plan === 'pro' ? styles.profileRowActive : ''}`} onClick={openUpgradeSurface}>
                       <div className={styles.profileRowContent}>
                         <span>Pro</span>
-                        <small>{plan === 'pro' ? 'Plano ativo · cobrança gerenciada no checkout' : 'R$24,90/mês · R$197/ano com desconto'}</small>
+                        <small>
+                          {plan === 'pro'
+                            ? `PRO ativo${billing?.isPaidPro ? ' · assinatura Stripe' : billing?.isManualPro ? ' · acesso concedido' : ''}`
+                            : 'R$24,90/mês · R$197/ano com desconto'}
+                        </small>
                       </div>
                       {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
                     </button>
@@ -1386,43 +1430,73 @@ export function DashboardView() {
                 <button type="button" className={styles.upgradeClose} onClick={() => setUpgradeOpen(false)} aria-label="Fechar">
                   <X size={16} />
                 </button>
-                <p className={styles.upgradeKicker}>Desbloquear LinhaCash Pro</p>
-                <h3>Escolha seu plano</h3>
-                <p className={styles.upgradeSubtitle}>Acesso completo a todos os recursos, com melhor custo no ciclo anual.</p>
-                <div className={styles.upgradePlans}>
-                  <button
-                    type="button"
-                    className={`${styles.upgradePlanBtn} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`}
-                    onClick={() => setUpgradePlan('monthly')}
-                  >
-                    <span>Mensal</span>
-                    <strong>R$24,90/mês</strong>
-                    <small>Flexível para começar</small>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.upgradePlanBtn} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
-                    onClick={() => setUpgradePlan('annual')}
-                  >
-                    <span>Anual · Mais vantajoso</span>
-                    <em className={styles.upgradePopular}>Mais popular</em>
-                    <strong>R$197/ano</strong>
-                    <small>Equivalente a R$16,41/mês · desconto no ciclo anual</small>
-                  </button>
-                </div>
-                <label className={styles.upgradeField}>
-                  Código de indicação
-                  <input
-                    value={upgradeCode}
-                    onChange={(event) => setUpgradeCode(event.target.value.toUpperCase())}
-                    placeholder="Opcional"
-                    maxLength={20}
-                  />
-                </label>
+                {plan === 'pro' ? (
+                  <>
+                    <p className={styles.upgradeKicker}>LinhaCash Pro</p>
+                    <h3>PRO ativo</h3>
+                    <p className={styles.upgradeSubtitle}>
+                      {billing?.playoffPackActive
+                        ? 'Plano atual: Pack Playoff ativo.'
+                        : billing?.isPaidPro
+                          ? 'Plano atual: PRO pago ativo.'
+                          : 'Plano atual: PRO ativo.'}
+                    </p>
+                    {billing?.isPaidPro ? (
+                      <Button size="lg" onClick={handleManageSubscription} disabled={manageLoading}>
+                        {manageLoading ? 'Abrindo portal...' : 'Gerenciar assinatura'}
+                      </Button>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <p className={styles.upgradeKicker}>Desbloquear LinhaCash Pro</p>
+                    <h3>Escolha seu plano</h3>
+                    <p className={styles.upgradeSubtitle}>Acesso completo a todos os recursos, com melhor custo no ciclo anual.</p>
+                    <div className={styles.upgradePlans}>
+                      <button
+                        type="button"
+                        className={`${styles.upgradePlanBtn} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`}
+                        onClick={() => setUpgradePlan('monthly')}
+                      >
+                        <span>Mensal</span>
+                        <strong>R$24,90/mês</strong>
+                        <small>Flexível para começar</small>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.upgradePlanBtn} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
+                        onClick={() => setUpgradePlan('annual')}
+                      >
+                        <span>Anual · Mais vantajoso</span>
+                        <em className={styles.upgradePopular}>Mais popular</em>
+                        <strong>R$197/ano</strong>
+                        <small>Equivalente a R$16,41/mês · desconto no ciclo anual</small>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.upgradePlanBtn} ${upgradePlan === 'playoff' ? styles.isSelected : ''}`}
+                        onClick={() => setUpgradePlan('playoff')}
+                      >
+                        <span>Pack Playoff</span>
+                        <strong>Acesso especial</strong>
+                        <small>Compra única para o período de playoffs</small>
+                      </button>
+                    </div>
+                    <label className={styles.upgradeField}>
+                      Código de indicação
+                      <input
+                        value={upgradeCode}
+                        onChange={(event) => setUpgradeCode(event.target.value.toUpperCase())}
+                        placeholder="Opcional"
+                        maxLength={20}
+                      />
+                    </label>
+                    <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
+                      {upgradeLoading ? 'Abrindo checkout...' : 'Continuar para pagamento'}
+                    </Button>
+                  </>
+                )}
                 {upgradeError ? <p className={styles.upgradeError}>{upgradeError}</p> : null}
-                <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
-                  {upgradeLoading ? 'Abrindo checkout...' : 'Continuar para pagamento'}
-                </Button>
               </Surface>
             </div>
           ) : null}
