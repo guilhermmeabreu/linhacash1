@@ -51,7 +51,6 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
-  Label,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -951,7 +950,7 @@ export function DashboardView() {
           activeKey={activeSidebarKey}
           onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
-            <button type="button" className={styles.accountSummary} onClick={() => setView('profile')}>
+            <button type="button" className={styles.accountSummary} data-close-mobile-sidebar="true" onClick={() => setView('profile')}>
               <div className={styles.accountAvatar}>{profileInitial}</div>
               <div className={styles.accountMeta}>
                 <strong>{profileName}</strong>
@@ -967,7 +966,7 @@ export function DashboardView() {
           activeKey={activeSidebarKey}
           onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
-            <button type="button" className={styles.accountSummary} onClick={() => setView('profile')}>
+            <button type="button" className={styles.accountSummary} data-close-mobile-sidebar="true" onClick={() => setView('profile')}>
               <div className={styles.accountAvatar}>{profileInitial}</div>
               <div className={styles.accountMeta}>
                 <strong>{profileName}</strong>
@@ -1043,17 +1042,19 @@ export function DashboardView() {
                       ) : null}
                       <div className={styles.gameCardTime}>{formatTipoff(game.game_time)}</div>
                       <div className={styles.gameCardTeams}>
-                        <div className={styles.teamBadge}>
-                          {game.away_logo ? <img src={game.away_logo} alt={game.away_team} loading="lazy" /> : shortTeamName(game.away_team)}
+                        <div className={styles.teamColumn}>
+                          <div className={styles.teamBadge}>
+                            {game.away_logo ? <img src={game.away_logo} alt={game.away_team} loading="lazy" /> : shortTeamName(game.away_team)}
+                          </div>
+                          <span>{game.away_team}</span>
                         </div>
                         <div className={styles.gameVs}>X</div>
-                        <div className={styles.teamBadge}>
-                          {game.home_logo ? <img src={game.home_logo} alt={game.home_team} loading="lazy" /> : shortTeamName(game.home_team)}
+                        <div className={styles.teamColumn}>
+                          <div className={styles.teamBadge}>
+                            {game.home_logo ? <img src={game.home_logo} alt={game.home_team} loading="lazy" /> : shortTeamName(game.home_team)}
+                          </div>
+                          <span>{game.home_team}</span>
                         </div>
-                      </div>
-                      <div className={styles.gameMatchup}>
-                        <span>{game.away_team}</span>
-                        <span>{game.home_team}</span>
                       </div>
                       <div className={styles.gameCardDivider} />
                       <div className={`${styles.gameCtaButton} ${locked ? styles.gameCtaLocked : ''}`}>
@@ -1278,9 +1279,7 @@ export function DashboardView() {
                               y={playerDetailModel.line}
                               stroke="var(--lc-accent)"
                               strokeDasharray="4 4"
-                            >
-                              <Label value={`LINE ${playerDetailModel.line.toFixed(1)}`} position="insideTopLeft" fill="var(--lc-accent)" fontSize={11} />
-                            </ReferenceLine>
+                            />
                             <Bar
                               dataKey="value"
                               radius={[1, 1, 0, 0]}
@@ -1559,7 +1558,7 @@ export function DashboardView() {
                         maxLength={20}
                       />
                     </label>
-                    <p className={styles.upgradeSubtitle}>
+                    <p className={styles.upgradeTotal}>
                       Total hoje:{' '}
                       <strong>
                         {upgradePlan === 'monthly' ? 'R$24,90' : upgradePlan === 'annual' ? 'R$197,00' : 'Pack Playoff'}

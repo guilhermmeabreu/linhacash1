@@ -39,7 +39,7 @@ export function AppShell({ className, sidebar, mobileSidebar, topbar, children, 
               className="lc-mobile-drawer-inner"
               onClickCapture={(event) => {
               const target = event.target as HTMLElement | null;
-              if (target?.closest('a[href]')) {
+              if (target?.closest('a[href], button[data-close-mobile-sidebar="true"]')) {
                 closeMobileSidebar();
               }
               }}
