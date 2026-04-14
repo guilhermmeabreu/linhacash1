@@ -17,7 +17,7 @@ function getSupabase() {
   return supabaseClient;
 }
 
-const BILLING_COLUMNS = `id,plan,plan_status,plan_source,billing_status,subscription_started_at,subscription_expires_at,cancelled_at,granted_by_admin,granted_reason,payment_provider,payment_reference,subscription_reference,external_reference,referral_code_used`;
+const BILLING_COLUMNS = `id,plan,subscription_status,playoff_pack_active,billing_updated_at,plan_status,plan_source,billing_status,subscription_started_at,subscription_expires_at,cancelled_at,granted_by_admin,granted_reason,payment_provider,payment_reference,subscription_reference,external_reference,referral_code_used`;
 
 export async function getBillingProfileByUserId(userId: string): Promise<BillingProfileRow | null> {
   const supabase = getSupabase();
