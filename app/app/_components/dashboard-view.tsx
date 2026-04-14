@@ -1283,14 +1283,7 @@ export function DashboardView() {
                             />
                             <Tooltip
                               cursor={false}
-                              contentStyle={{
-                                border: '1px solid var(--lc-border)',
-                                background: 'color-mix(in srgb, var(--lc-surface) 92%, var(--lc-bg) 8%)',
-                                color: 'var(--lc-text)',
-                                borderRadius: 8,
-                                boxShadow: '0 8px 20px rgba(0,0,0,.28)',
-                                fontSize: '12px',
-                              }}
+                              content={() => null}
                             />
                             <ReferenceLine
                               y={playerDetailModel.line}
