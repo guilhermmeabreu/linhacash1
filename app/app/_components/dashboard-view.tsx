@@ -1076,8 +1076,8 @@ export function DashboardView() {
 
               <div className={styles.statsTabsWrap}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
-                  <div className={`${styles.statsTabsScroller} ${styles.playersStatsTabsScroller} ${styles.playersTabsViewport}`}>
-                    <TabsList className={`${styles.statsTabs} ${styles.playersTabsRow}`}>
+                  <div className={`${styles.statsTabsScroller} ${styles.playersStatsTabsScroller} ${styles.playersTabsViewport} ${styles.playerTabsRail}`}>
+                    <TabsList className={`${styles.statsTabs} ${styles.playersTabsRow} ${styles.playerTabsList}`}>
                       {STATS.map((stat) => {
                         const locked = isLockedStat(stat, plan);
                         return (
@@ -1132,7 +1132,7 @@ export function DashboardView() {
                           return (
                             <button
                               key={player.id}
-                              className={`${styles.playerRow} technical-item`}
+                              className={styles.playerRow}
                               type="button"
                               onClick={() => {
                                 setSelectedPlayerId(player.id);
@@ -1242,7 +1242,6 @@ export function DashboardView() {
                     <div className={styles.chartHeader}>
                       <p className={styles.chartTitle}>{selectedStat} · {selectedSplit}</p>
                       <div className={styles.chartHeaderBadges}>
-                        <Badge variant="muted">Linha {playerDetailModel.line}</Badge>
                         <Badge variant="muted">Média {playerDetailModel.average ?? '—'}</Badge>
                       </div>
                     </div>
@@ -1531,7 +1530,7 @@ export function DashboardView() {
                       </button>
                       <button
                         type="button"
-                        className={`${styles.upgradePlanBtn} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
+                        className={`${styles.upgradePlanBtn} ${styles.upgradePlanAnnual} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
                         onClick={() => setUpgradePlan('annual')}
                       >
                         <span>Anual · Mais vantajoso</span>

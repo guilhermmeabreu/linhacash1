@@ -312,6 +312,18 @@
   width: max-content;
 }
 
+.playerTabsRail {
+  margin-inline: -0.1rem;
+  padding-inline: 0.1rem;
+}
+
+.playerTabsList {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  min-width: max-content;
+  gap: 0.28rem;
+}
+
 .statsTabsScroller::-webkit-scrollbar {
   display: none;
 }
@@ -562,9 +574,9 @@
 }
 
 .lineAdjustBox {
-  border: 1px solid color-mix(in srgb, var(--lc-border) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lc-border) 45%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--lc-surface) 88%, var(--lc-bg) 12%);
+  background: color-mix(in srgb, var(--lc-surface) 94%, var(--lc-bg) 6%);
   padding: 0.55rem 0.6rem;
   min-width: 12.5rem;
 }
@@ -628,7 +640,7 @@
 }
 
 .quickStatsGrid > div {
-  background: color-mix(in srgb, var(--lc-surface) 96%, var(--lc-bg) 4%);
+  background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
   border-radius: 10px;
   border: 0;
   padding: 0.42rem 0.35rem;
@@ -658,7 +670,7 @@
 .chartCard {
   border: 0;
   border-radius: 16px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%), color-mix(in srgb, var(--lc-surface) 91%, var(--lc-bg) 9%));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 99%, var(--lc-bg) 1%), color-mix(in srgb, var(--lc-surface) 94%, var(--lc-bg) 6%));
   padding: 0.76rem 0.82rem;
   display: grid;
   gap: 0.45rem;
@@ -1029,6 +1041,11 @@
   font-size: 1.06rem;
 }
 
+.upgradePlanAnnual {
+  border-color: color-mix(in srgb, var(--lc-accent) 50%, var(--lc-border) 50%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-accent) 18%, var(--lc-surface) 82%), color-mix(in srgb, var(--lc-accent) 9%, var(--lc-surface) 91%));
+}
+
 .upgradePlanBtn small {
   color: color-mix(in srgb, var(--lc-text) 70%, var(--lc-muted) 30%);
   font-size: 0.7rem;
@@ -1192,7 +1209,7 @@
   border: 1px solid color-mix(in srgb, var(--lc-border) 72%, transparent);
   border-radius: 14px;
   padding: 0.8rem 0.9rem;
-  background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-accent) 10%, var(--lc-surface) 90%), color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%));
 }
 
 .upgradeBenefits p {
@@ -1216,7 +1233,7 @@
 }
 
 html.light .chartCard {
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
   border-color: #dbe4ef;
 }
 
@@ -1309,6 +1326,11 @@ html.light .upgradeTotal {
     width: max-content;
   }
 
+  .playerTabsRail {
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+
   .playersTopbar h2 {
     font-size: 0.92rem;
   }
@@ -1339,6 +1361,8 @@ html.light .upgradeTotal {
     min-width: 0;
     width: 100%;
     padding: 0.38rem 0.45rem;
+    border: 0;
+    background: color-mix(in srgb, var(--lc-surface) 97%, transparent);
   }
 
   .lineAdjustDesktop {
@@ -1437,6 +1461,8 @@ html.light .upgradeTotal {
     padding: 0.72rem 0.66rem;
     border-radius: 12px;
     align-items: flex-start;
+    border-color: color-mix(in srgb, var(--lc-border) 40%, transparent);
+    background: color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%);
   }
 
   .playerMain {
@@ -1470,11 +1496,17 @@ html.light .upgradeTotal {
 @media (min-width: 900px) {
   .upgradePlans {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
   }
 
   .upgradePlanBtn {
     min-height: 10.4rem;
     align-content: flex-start;
+  }
+
+  .upgradePlanAnnual {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 24px color-mix(in srgb, var(--lc-accent) 24%, transparent);
   }
 }
 

@@ -519,6 +519,9 @@ textarea {
   letter-spacing: 0.11em;
   gap: 0.2rem;
   animation: lc-scroll-pulse 1.9s ease-in-out infinite;
+  opacity: 0.95;
+  visibility: visible;
+  z-index: 2;
 }
 .lc-scroll-hint:hover { color: var(--lc-accent); }
 @keyframes lc-scroll-pulse {
@@ -644,7 +647,7 @@ textarea {
 }
 .lc-public-actions a:hover { color: var(--lc-text); }
 html.light .lc-landing {
-  background: radial-gradient(circle at top, color-mix(in srgb, var(--lc-accent) 7%, transparent), transparent 52%), var(--lc-bg);
+  background: linear-gradient(180deg, #f8fafc 0%, #f4f7fb 36%, #f6f8fb 100%);
 }
 
 html.light .lc-hero h1 {
