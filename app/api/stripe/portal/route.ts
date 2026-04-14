@@ -14,9 +14,11 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/stripe/portal' });
+  let userId: string | null = null;
 
   try {
     const user = await requireAuthenticatedUser(req);
+    userId = user.id;
     const ip = getIP(req);
     const rate = await rateLimitDetailed(`stripe:portal:${user.id}:${ip}`, 12, 60_000);
     if (!rate.allowed) {
@@ -42,14 +44,14 @@ export async function POST(req: Request) {
       return_url: `${appUrl}/app?view=profile`,
     });
 
-    logSecurityEvent('checkout_attempt', { ...context, userId: user.id, provider: 'stripe_portal' });
+    logSecurityEvent('checkout_attempt', { ...context, userId: user.id, provider: 'stripe' });
     return ok({ url: portal.url });
   } catch (error) {
     if (error instanceof AppError) {
-      logRouteError('/api/stripe/portal', context.requestId, error, { status: error.status, code: error.code });
+      logRouteError('/api/stripe/portal', context.requestId, error, { status: error.status, errorCode: error.code, provider: 'stripe', userId });
       return fail(error, origin);
     }
-    logRouteError('/api/stripe/portal', context.requestId, error, { status: 500 });
+    logRouteError('/api/stripe/portal', context.requestId, error, { status: 500, provider: 'stripe', userId });
     return internalError(origin);
   }
 }

@@ -41,13 +41,12 @@ export async function GET(req: Request) {
       .order('game_time');
 
     if (error) {
-      console.error('[/api/games] Error:', error.message);
-      throw new Error('Erro ao buscar jogos');
+      throw error;
     }
 
     return (games || []).map(sanitizeGame);
   }).catch((error) => {
-    logRouteError('/api/games', context.requestId, error);
+    logRouteError('/api/games', context.requestId, error, { status: 500, provider: 'supabase', userId: session.userId || null });
     return null;
   });
 

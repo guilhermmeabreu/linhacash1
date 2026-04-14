@@ -47,6 +47,12 @@ function safeError(error: unknown): Record<string, unknown> {
   return { kind: 'unknown' };
 }
 
+function extractErrorCode(error: unknown): string {
+  if (error instanceof AppError) return error.code;
+  if (error instanceof Error && error.name) return error.name;
+  return 'UNKNOWN_ERROR';
+}
+
 export function logSecurityEvent(event: SecurityEvent, payload: Record<string, unknown>) {
   console.info('[security]', JSON.stringify({ event, ts: new Date().toISOString(), ...payload }));
 }
@@ -54,7 +60,15 @@ export function logSecurityEvent(event: SecurityEvent, payload: Record<string, u
 export function logRouteError(route: string, requestId: string, error: unknown, extra?: Record<string, unknown>) {
   console.error(
     '[route-error]',
-    JSON.stringify({ route, requestId, ts: new Date().toISOString(), error: safeError(error), ...extra }),
+    JSON.stringify({
+      route,
+      requestId,
+      ts: new Date().toISOString(),
+      status: 500,
+      errorCode: extractErrorCode(error),
+      error: safeError(error),
+      ...extra,
+    }),
   );
 }
 

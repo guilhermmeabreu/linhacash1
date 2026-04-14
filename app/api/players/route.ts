@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateSession, sanitizePlayer, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 import { getCachedValue } from '@/lib/cache/memory-cache';
+import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,53 +13,64 @@ const supabase = createClient(
 
 // GET /api/players?gameId=xxx — jogadores de um jogo
 export async function GET(req: Request) {
-  const session = await validateSession(req);
-  if (!session.valid) return errorResponse('Não autorizado', 401);
+  const context = buildRequestContext(req, { route: '/api/players' });
+  try {
+    const session = await validateSession(req);
+    if (!session.valid) {
+      logSecurityEvent('auth_failed', { ...context, reason: session.error || 'unauthorized' });
+      return errorResponse('Não autorizado', 401);
+    }
 
-  if (!await rateLimit(getIP(req), 60, 60000)) {
-    return errorResponse('Muitas requisições', 429);
+    if (!await rateLimit(getIP(req), 60, 60000)) {
+      logSecurityEvent('route_rate_limited', { ...context, userId: session.userId || null });
+      return errorResponse('Muitas requisições', 429);
+    }
+
+    const { searchParams } = new URL(req.url);
+    const gameId = searchParams.get('gameId');
+    if (!gameId || !/^\d+$/.test(gameId)) return errorResponse('gameId inválido');
+
+    const result = await getCachedValue(`players:${gameId}:${session.plan}`, 5 * 60_000, async () => {
+      const { data: game, error: gameError } = await supabase
+        .from('games')
+        .select('id, home_team_id, away_team_id, game_date')
+        .eq('id', gameId)
+        .single();
+
+      if (gameError) throw gameError;
+      if (!game) throw new Error('Jogo não encontrado');
+
+      const { data: players, error: playersError } = await supabase
+        .from('players')
+        .select('id, name, team_id, position')
+        .in('team_id', [game.home_team_id, game.away_team_id])
+        .order('name');
+
+      if (playersError) throw playersError;
+
+      let output = (players || []).map(sanitizePlayer);
+      if (session.plan === 'free') {
+        const homePlayer = output.find((player) => player.team_id === game.home_team_id);
+        const awayPlayer = output.find((player) => player.team_id === game.away_team_id);
+        output = [homePlayer, awayPlayer].filter(Boolean) as typeof output;
+      }
+      return output;
+    }).catch((error) => {
+      if (error instanceof Error && error.message === 'Jogo não encontrado') {
+        return 'not_found' as const;
+      }
+      logRouteError('/api/players', context.requestId, error, { status: 500, userId: session.userId || null, provider: 'supabase' });
+      return null;
+    });
+
+    if (result === 'not_found') return errorResponse('Jogo não encontrado', 404);
+    if (!result) return errorResponse('Erro ao buscar jogadores', 500);
+
+    return okResponse({ players: result });
+  } catch (error) {
+    logRouteError('/api/players', context.requestId, error, { status: 500, provider: 'supabase' });
+    return errorResponse('Erro ao buscar jogadores', 500);
   }
-
-  const { searchParams } = new URL(req.url);
-  const gameId = searchParams.get('gameId');
-  if (!gameId || !/^\d+$/.test(gameId)) return errorResponse('gameId inválido');
-
-  const result = await getCachedValue(`players:${gameId}:${session.plan}`, 5 * 60_000, async () => {
-    const { data: game, error: gameError } = await supabase
-      .from('games')
-      .select('id, home_team_id, away_team_id, game_date')
-      .eq('id', gameId)
-      .single();
-
-    if (gameError) throw gameError;
-    if (!game) throw new Error('Jogo não encontrado');
-
-    const { data: players, error: playersError } = await supabase
-      .from('players')
-      .select('id, name, team_id, position')
-      .in('team_id', [game.home_team_id, game.away_team_id])
-      .order('name');
-
-    if (playersError) throw playersError;
-
-    let output = (players || []).map(sanitizePlayer);
-    if (session.plan === 'free') {
-      const homePlayer = output.find((player) => player.team_id === game.home_team_id);
-      const awayPlayer = output.find((player) => player.team_id === game.away_team_id);
-      output = [homePlayer, awayPlayer].filter(Boolean) as typeof output;
-    }
-    return output;
-  }).catch((error) => {
-    if (error instanceof Error && error.message === 'Jogo não encontrado') {
-      return 'not_found' as const;
-    }
-    return null;
-  });
-
-  if (result === 'not_found') return errorResponse('Jogo não encontrado', 404);
-  if (!result) return errorResponse('Erro ao buscar jogadores', 500);
-
-  return okResponse({ players: result });
 }
 
 // OPTIONS — CORS preflight

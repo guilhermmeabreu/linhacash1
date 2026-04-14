@@ -10,11 +10,11 @@ import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/obse
 
 type StripePlan = 'monthly' | 'annual' | 'playoff';
 
-const PLAN_TO_PRICE_ID: Record<StripePlan, string> = {
-  monthly: requireEnv('STRIPE_PRICE_PRO_MONTHLY'),
-  annual: requireEnv('STRIPE_PRICE_PRO_ANNUAL'),
-  playoff: requireEnv('STRIPE_PRICE_PLAYOFF_PACK'),
-};
+function getPlanPriceId(plan: StripePlan): string {
+  if (plan === 'monthly') return requireEnv('STRIPE_PRICE_PRO_MONTHLY');
+  if (plan === 'annual') return requireEnv('STRIPE_PRICE_PRO_ANNUAL');
+  return requireEnv('STRIPE_PRICE_PLAYOFF_PACK');
+}
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -69,9 +69,11 @@ async function resolveStripeCustomerId(userId: string, email: string, name: stri
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/stripe/checkout' });
+  let userId: string | null = null;
 
   try {
     const user = await requireAuthenticatedUser(req);
+    userId = user.id;
     const ip = getIP(req);
     const rate = await rateLimitDetailed(`stripe:checkout:${user.id}:${ip}`, 8, 60_000);
     if (!rate.allowed) {
@@ -90,7 +92,7 @@ export async function POST(req: Request) {
       customer: stripeCustomerId,
       success_url: `${appUrl}/app?checkout=success&plan=${plan}`,
       cancel_url: `${appUrl}/app?checkout=cancelled&plan=${plan}`,
-      line_items: [{ price: PLAN_TO_PRICE_ID[plan], quantity: 1 }],
+      line_items: [{ price: getPlanPriceId(plan), quantity: 1 }],
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
@@ -111,10 +113,10 @@ export async function POST(req: Request) {
     return ok({ url: checkout.url, plan });
   } catch (error) {
     if (error instanceof AppError) {
-      logRouteError('/api/stripe/checkout', context.requestId, error, { status: error.status, code: error.code });
+      logRouteError('/api/stripe/checkout', context.requestId, error, { status: error.status, errorCode: error.code, provider: 'stripe', userId });
       return fail(error, origin);
     }
-    logRouteError('/api/stripe/checkout', context.requestId, error, { status: 500 });
+    logRouteError('/api/stripe/checkout', context.requestId, error, { status: 500, provider: 'stripe', userId });
     return internalError(origin);
   }
 }

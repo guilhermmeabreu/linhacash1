@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateSession, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimitDetailed, getIP } from '@/lib/rate-limit';
 import { getCachedValue } from '@/lib/cache/memory-cache';
-import { buildRequestContext, logSecurityEvent } from '@/lib/observability';
+import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,97 +28,98 @@ type MetricsSplit = (typeof SUPPORTED_SPLITS)[number];
 // GET /api/metrics?playerId=xxx&stat=PTS — métricas de um jogador
 export async function GET(req: Request) {
   const context = buildRequestContext(req, { route: '/api/metrics' });
-  const session = await validateSession(req);
-  if (!session.valid) {
-    logSecurityEvent('auth_failed', { ...context, reason: session.error || 'unauthorized' });
-    return errorResponse('Não autorizado', 401);
-  }
-
-  const rate = await rateLimitDetailed(`metrics:${session.userId}:${getIP(req)}`, 120, 60000);
-  if (!rate.allowed) {
-    logSecurityEvent('route_rate_limited', { ...context, retryAfterSeconds: rate.retryAfterSeconds });
-    return errorResponse('Muitas requisições', 429);
-  }
-
-  const { searchParams } = new URL(req.url);
-  const playerId = searchParams.get('playerId');
-  const stat = normalizeStat(searchParams.get('stat'));
-  const window = normalizeWindow(searchParams.get('window') || searchParams.get('split'));
-  const split = normalizeSplit(searchParams.get('location') || searchParams.get('venue') || searchParams.get('ha'));
-  const opponent = normalizeOpponent(searchParams.get('opponent') || searchParams.get('vs'));
-
-  if (!playerId || !/^\d+$/.test(playerId)) return errorResponse('playerId inválido');
-
-  // Plano Free: PTS + 3PM
-  if (session.plan === 'free' && !FREE_STATS.includes(stat)) {
-    return errorResponse('Estatística disponível apenas no plano Pro', 403);
-  }
-
-  // Validar stat — nunca aceitar input arbitrário do frontend
-  if (!ALL_STATS.includes(stat)) {
-    return errorResponse('Estatística inválida');
-  }
-
-  const parsedPlayerId = parseInt(playerId, 10);
-  const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponent || 'all'}`;
-  const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
-    const { data: recentStats, error } = await supabase
-      .from('player_stats')
-      .select('game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
-      .eq('player_id', parsedPlayerId)
-      .order('game_date', { ascending: false })
-      .limit(120);
-
-    if (error) {
-      throw new Error(`player_stats query failed: ${error.message}`);
+  try {
+    const session = await validateSession(req);
+    if (!session.valid) {
+      logSecurityEvent('auth_failed', { ...context, reason: session.error || 'unauthorized' });
+      return errorResponse('Não autorizado', 401);
     }
 
-    const allGames = (recentStats || []).map((row) => ({
-      date: row.game_date,
-      opponent: row.opponent ?? null,
-      is_home: row.is_home ?? null,
-      value: getStatValue(row, stat),
-      minutes: row.minutes,
-    }));
+    const rate = await rateLimitDetailed(`metrics:${session.userId}:${getIP(req)}`, 120, 60000);
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, retryAfterSeconds: rate.retryAfterSeconds });
+      return errorResponse('Muitas requisições', 429);
+    }
 
-    const filteredGames = applySplitAndOpponent(allGames, split, opponent);
-    const scopedGames = applyWindow(filteredGames, window);
-    const scopedValues = scopedGames.map((row) => row.value);
+    const { searchParams } = new URL(req.url);
+    const playerId = searchParams.get('playerId');
+    const stat = normalizeStat(searchParams.get('stat'));
+    const window = normalizeWindow(searchParams.get('window') || searchParams.get('split'));
+    const split = normalizeSplit(searchParams.get('location') || searchParams.get('venue') || searchParams.get('ha'));
+    const opponent = normalizeOpponent(searchParams.get('opponent') || searchParams.get('vs'));
 
-    const metrics = buildRuntimeMetrics(parsedPlayerId, stat, allGames, filteredGames, scopedGames, scopedValues);
+    if (!playerId || !/^\d+$/.test(playerId)) return errorResponse('playerId inválido');
 
-    return {
-      metrics,
-      games: scopedGames.map((row) => ({
-        date: row.date,
-        value: row.value,
+    if (session.plan === 'free' && !FREE_STATS.includes(stat)) {
+      return errorResponse('Estatística disponível apenas no plano Pro', 403);
+    }
+
+    if (!ALL_STATS.includes(stat)) {
+      return errorResponse('Estatística inválida');
+    }
+
+    const parsedPlayerId = parseInt(playerId, 10);
+    const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponent || 'all'}`;
+    const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
+      const { data: recentStats, error } = await supabase
+        .from('player_stats')
+        .select('game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
+        .eq('player_id', parsedPlayerId)
+        .order('game_date', { ascending: false })
+        .limit(120);
+
+      if (error) throw error;
+
+      const allGames = (recentStats || []).map((row) => ({
+        date: row.game_date,
+        opponent: row.opponent ?? null,
+        is_home: row.is_home ?? null,
+        value: getStatValue(row, stat),
         minutes: row.minutes,
-      })),
-      chartSeries: scopedGames.map((row) => ({
-        date: row.date,
-        value: row.value,
-      })),
-      recentGames: scopedGames.slice(0, 10).map((row) => ({
-        date: row.date,
-        value: row.value,
-        minutes: row.minutes,
-        opponent: row.opponent,
-        is_home: row.is_home,
-      })),
-    };
-  });
+      }));
 
-  return okResponse({
-    metrics: payload.metrics,
-    games: payload.games,
-    chartSeries: payload.chartSeries,
-    recentGames: payload.recentGames,
-    stat,
-    window,
-    split,
-    opponent,
-    availableStats: session.plan === 'pro' ? ALL_STATS : FREE_STATS,
-  });
+      const filteredGames = applySplitAndOpponent(allGames, split, opponent);
+      const scopedGames = applyWindow(filteredGames, window);
+      const scopedValues = scopedGames.map((row) => row.value);
+
+      const metrics = buildRuntimeMetrics(parsedPlayerId, stat, allGames, filteredGames, scopedGames, scopedValues);
+
+      return {
+        metrics,
+        games: scopedGames.map((row) => ({
+          date: row.date,
+          value: row.value,
+          minutes: row.minutes,
+        })),
+        chartSeries: scopedGames.map((row) => ({
+          date: row.date,
+          value: row.value,
+        })),
+        recentGames: scopedGames.slice(0, 10).map((row) => ({
+          date: row.date,
+          value: row.value,
+          minutes: row.minutes,
+          opponent: row.opponent,
+          is_home: row.is_home,
+        })),
+      };
+    });
+
+    return okResponse({
+      metrics: payload.metrics,
+      games: payload.games,
+      chartSeries: payload.chartSeries,
+      recentGames: payload.recentGames,
+      stat,
+      window,
+      split,
+      opponent,
+      availableStats: session.plan === 'pro' ? ALL_STATS : FREE_STATS,
+    });
+  } catch (error) {
+    logRouteError('/api/metrics', context.requestId, error, { status: 500, provider: 'supabase' });
+    return errorResponse('Erro ao buscar métricas', 500);
+  }
 }
 
 function normalizeStat(rawStat: string | null): string {

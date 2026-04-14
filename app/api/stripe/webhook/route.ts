@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { requireEnv } from '@/lib/env';
+import { buildRequestContext, logRouteError } from '@/lib/observability';
 
 export const runtime = 'nodejs';
 
@@ -90,7 +91,13 @@ async function resolveUserId(userId: string | null, stripeCustomerId: string | n
     .maybeSingle();
 
   if (error) {
-    console.error('[stripe webhook] failed resolving user by customer id', error);
+    console.error('[route-error]', JSON.stringify({
+      route: '/api/stripe/webhook',
+      status: 500,
+      errorCode: 'SUPABASE_LOOKUP_FAILED',
+      provider: 'supabase',
+      ts: new Date().toISOString(),
+    }));
     return null;
   }
 
@@ -110,7 +117,14 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
   const userId = await resolveUserId(metadata.userId, stripeCustomerId);
 
   if (!userId) {
-    console.error('[stripe webhook] checkout.session.completed missing user_id', { eventObject });
+    console.error('[route-error]', JSON.stringify({
+      route: '/api/stripe/webhook',
+      status: 422,
+      errorCode: 'USER_ID_MISSING',
+      provider: 'stripe',
+      eventType: 'checkout.session.completed',
+      ts: new Date().toISOString(),
+    }));
     return;
   }
 
@@ -132,7 +146,14 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
   const userId = await resolveUserId(metadata.userId, stripeCustomerId);
 
   if (!userId) {
-    console.error('[stripe webhook] invoice.paid missing user_id', { eventObject });
+    console.error('[route-error]', JSON.stringify({
+      route: '/api/stripe/webhook',
+      status: 422,
+      errorCode: 'USER_ID_MISSING',
+      provider: 'stripe',
+      eventType: 'invoice.paid',
+      ts: new Date().toISOString(),
+    }));
     return;
   }
 
@@ -151,7 +172,14 @@ async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
   const userId = await resolveUserId(metadata.userId, stripeCustomerId);
 
   if (!userId) {
-    console.error('[stripe webhook] customer.subscription.deleted missing user_id', { eventObject });
+    console.error('[route-error]', JSON.stringify({
+      route: '/api/stripe/webhook',
+      status: 422,
+      errorCode: 'USER_ID_MISSING',
+      provider: 'stripe',
+      eventType: 'customer.subscription.deleted',
+      ts: new Date().toISOString(),
+    }));
     return;
   }
 
@@ -169,10 +197,15 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const context = buildRequestContext(req, { route: '/api/stripe/webhook' });
   try {
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
-      console.error('[stripe webhook] missing Stripe signature');
+      logRouteError('/api/stripe/webhook', context.requestId, new Error('Missing Stripe signature'), {
+        status: 400,
+        errorCode: 'STRIPE_SIGNATURE_MISSING',
+        provider: 'stripe',
+      });
       return Response.json({ error: 'Missing signature' }, { status: 400 });
     }
 
@@ -180,7 +213,11 @@ export async function POST(req: Request) {
     const webhookSecret = requireEnv('STRIPE_WEBHOOK_SECRET');
 
     if (!verifyStripeSignature(payload, signature, webhookSecret)) {
-      console.error('[stripe webhook] invalid Stripe signature');
+      logRouteError('/api/stripe/webhook', context.requestId, new Error('Invalid Stripe signature'), {
+        status: 400,
+        errorCode: 'STRIPE_SIGNATURE_INVALID',
+        provider: 'stripe',
+      });
       return Response.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -201,16 +238,20 @@ export async function POST(req: Request) {
           break;
       }
     } catch (handlerError) {
-      console.error('[stripe webhook] handler error', {
+      logRouteError('/api/stripe/webhook', context.requestId, handlerError, {
+        status: 500,
         eventId: event.id,
         eventType: event.type,
-        error: handlerError,
+        provider: 'stripe',
       });
     }
 
     return Response.json({ received: true }, { status: 200 });
   } catch (error) {
-    console.error('[stripe webhook] fatal error', error);
+    logRouteError('/api/stripe/webhook', context.requestId, error, {
+      status: 500,
+      provider: 'stripe',
+    });
     return Response.json({ received: true }, { status: 200 });
   }
 }

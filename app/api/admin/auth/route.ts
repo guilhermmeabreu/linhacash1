@@ -8,6 +8,7 @@ import { auditLog } from '@/lib/services/audit-log-service';
 import { timingSafeEqualString } from '@/lib/auth/secure-compare';
 import { assertAllowedOrigin, assertJsonRequest } from '@/lib/http/request-guards';
 import { consumeRecoveryCode, verifyTotpCode } from '@/lib/auth/totp';
+import { buildRequestContext, logRouteError } from '@/lib/observability';
 
 function admin2faEnabled() {
   return Boolean(process.env.ADMIN_TOTP_SECRET);
@@ -15,6 +16,7 @@ function admin2faEnabled() {
 
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/admin/auth' });
   try {
     assertAllowedOrigin(req);
     assertJsonRequest(req);
@@ -46,7 +48,18 @@ export async function POST(req: Request) {
     await auditLog('admin_login_success', { ip });
     return response;
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/admin/auth', context.requestId, error, {
+        status: error.status,
+        errorCode: error.code,
+        adminId: process.env.ADMIN_EMAIL || 'configured_admin',
+      });
+      return fail(error, origin);
+    }
+    logRouteError('/api/admin/auth', context.requestId, error, {
+      status: 500,
+      adminId: process.env.ADMIN_EMAIL || 'configured_admin',
+    });
     return internalError(origin);
   }
 }
