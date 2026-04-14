@@ -9,14 +9,27 @@ import { BillingProfileRow, resolveBillingState } from '@/lib/services/billing-d
 import { grantManualPro, revokeManualPro } from '@/lib/services/billing-service';
 import { validateAdminBillingAction } from '@/lib/validators/billing-validator';
 import { getCachedValue, invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
+import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
+import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 type UsersProfileRow = BillingProfileRow & { id: string; name: string | null; email: string | null; created_at: string; plan: string | null };
 
+async function enforceAdminRate(req: Request, adminEmail: string, action: string, limit = 45) {
+  const rate = await rateLimitDetailed(`admin:users:${action}:${adminEmail}:${getIP(req)}`, limit, 60_000);
+  return rate;
+}
+
 export async function GET(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/admin/users', method: 'GET' });
   try {
-    await requireAdminUser(req);
+    const admin = await requireAdminUser(req);
+    const rate = await enforceAdminRate(req, admin.email, 'get');
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, adminEmail: admin.email, retryAfterSeconds: rate.retryAfterSeconds });
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many admin user list requests'), origin);
+    }
     const data = await getCachedValue('admin:users', 30_000, async () => {
       const { data: profiles } = await supabase
         .from('profiles')
@@ -35,15 +48,25 @@ export async function GET(req: Request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/admin/users', context.requestId, error, { status: error.status, code: error.code });
+      return fail(error, origin);
+    }
+    logRouteError('/api/admin/users', context.requestId, error, { status: 500 });
     return internalError(origin);
   }
 }
 
 export async function PATCH(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/admin/users', method: 'PATCH' });
   try {
     const admin = await requireAdminUser(req);
+    const rate = await enforceAdminRate(req, admin.email, 'patch', 20);
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, adminEmail: admin.email, retryAfterSeconds: rate.retryAfterSeconds });
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many admin billing changes'), origin);
+    }
     const payload = validateAdminBillingAction(await req.json());
 
     if (payload.action === 'grant_manual_pro') {
@@ -64,15 +87,25 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/admin/users', context.requestId, error, { status: error.status, code: error.code });
+      return fail(error, origin);
+    }
+    logRouteError('/api/admin/users', context.requestId, error, { status: 500 });
     return internalError(origin);
   }
 }
 
 export async function PUT(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/admin/users', method: 'PUT' });
   try {
-    await requireAdminUser(req);
+    const admin = await requireAdminUser(req);
+    const rate = await enforceAdminRate(req, admin.email, 'put', 12);
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, adminEmail: admin.email, retryAfterSeconds: rate.retryAfterSeconds });
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many admin password reset requests'), origin);
+    }
     const body = ensureObject(await req.json());
     const email = asEmail(body.email);
     await supabase.auth.admin.generateLink({ type: 'recovery', email });
@@ -80,15 +113,25 @@ export async function PUT(req: Request) {
     invalidateCacheByPrefix('admin:');
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/admin/users', context.requestId, error, { status: error.status, code: error.code });
+      return fail(error, origin);
+    }
+    logRouteError('/api/admin/users', context.requestId, error, { status: 500 });
     return internalError(origin);
   }
 }
 
 export async function DELETE(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/admin/users', method: 'DELETE' });
   try {
-    await requireAdminUser(req);
+    const admin = await requireAdminUser(req);
+    const rate = await enforceAdminRate(req, admin.email, 'delete', 8);
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, adminEmail: admin.email, retryAfterSeconds: rate.retryAfterSeconds });
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many admin delete requests'), origin);
+    }
     const body = ensureObject(await req.json());
     const id = asUUID(body.id, 'id');
     await supabase.from('profiles').delete().eq('id', id);
@@ -96,7 +139,11 @@ export async function DELETE(req: Request) {
     invalidateCacheByPrefix('admin:');
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/admin/users', context.requestId, error, { status: error.status, code: error.code });
+      return fail(error, origin);
+    }
+    logRouteError('/api/admin/users', context.requestId, error, { status: 500 });
     return internalError(origin);
   }
 }

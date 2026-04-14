@@ -5,6 +5,8 @@ import { AppError } from '@/lib/http/errors';
 import { fail, internalError, options } from '@/lib/http/responses';
 import { BillingProfileRow, resolveBillingState } from '@/lib/services/billing-domain';
 import { getCachedValue } from '@/lib/cache/memory-cache';
+import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
+import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 const MONTHLY_PRO_PRICE = 24.9;
@@ -70,9 +72,15 @@ function toRecentAction(event: EventRow) {
 
 export async function GET(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/admin/overview' });
 
   try {
-    await requireAdminUser(req);
+    const admin = await requireAdminUser(req);
+    const rate = await rateLimitDetailed(`admin:overview:${admin.email}:${getIP(req)}`, 45, 60_000);
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, adminEmail: admin.email, retryAfterSeconds: rate.retryAfterSeconds });
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many admin overview requests'), origin);
+    }
 
     const payload = await getCachedValue('admin:overview', ADMIN_OVERVIEW_TTL_MS, async () => {
       const [profilesResult, gamesResult, playersResult, referralsResult, referralUsesResult, commissionsResult, syncLogsResult, eventsResult, auditResult] = await Promise.all([
@@ -215,7 +223,11 @@ export async function GET(req: Request) {
 
     return NextResponse.json(payload);
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/admin/overview', context.requestId, error, { status: error.status, code: error.code });
+      return fail(error, origin);
+    }
+    logRouteError('/api/admin/overview', context.requestId, error, { status: 500 });
     return internalError(origin);
   }
 }

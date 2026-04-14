@@ -5,6 +5,8 @@ import { requireAuthenticatedUser } from '@/lib/auth/authorization';
 import { readJsonObject } from '@/lib/http/request-guards';
 import { requireEnv } from '@/lib/env';
 import { getStripeServerClient } from '@/lib/stripe/server';
+import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
+import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 type StripePlan = 'monthly' | 'annual' | 'playoff';
 
@@ -66,9 +68,16 @@ async function resolveStripeCustomerId(userId: string, email: string, name: stri
 
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const context = buildRequestContext(req, { route: '/api/stripe/checkout' });
 
   try {
     const user = await requireAuthenticatedUser(req);
+    const ip = getIP(req);
+    const rate = await rateLimitDetailed(`stripe:checkout:${user.id}:${ip}`, 8, 60_000);
+    if (!rate.allowed) {
+      logSecurityEvent('route_rate_limited', { ...context, userId: user.id, retryAfterSeconds: rate.retryAfterSeconds });
+      return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many stripe checkout attempts'), origin);
+    }
     const body = await readJsonObject(req);
     const plan = parsePlan(body.plan);
 
@@ -98,9 +107,14 @@ export async function POST(req: Request) {
       throw new ExternalIntegrationError('Stripe checkout URL not available');
     }
 
+    logSecurityEvent('checkout_created', { ...context, userId: user.id, plan, provider: 'stripe' });
     return ok({ url: checkout.url, plan });
   } catch (error) {
-    if (error instanceof AppError) return fail(error, origin);
+    if (error instanceof AppError) {
+      logRouteError('/api/stripe/checkout', context.requestId, error, { status: error.status, code: error.code });
+      return fail(error, origin);
+    }
+    logRouteError('/api/stripe/checkout', context.requestId, error, { status: 500 });
     return internalError(origin);
   }
 }

@@ -278,6 +278,7 @@ export function DashboardView() {
   const [deleteConfirmValue, setDeleteConfirmValue] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteFeedback, setDeleteFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [authBootstrapped, setAuthBootstrapped] = useState(false);
 
   const gamesRequestRef = useRef(0);
   const playersRequestRef = useRef<Record<number, number>>({});
@@ -308,12 +309,16 @@ export function DashboardView() {
   const marketLocked = isLockedStat(selectedStat, plan);
 
   const checkoutNotice = useMemo(() => {
+    const stripeCheckoutStatus = (searchParams.get('checkout') || '').toLowerCase();
+    if (stripeCheckoutStatus === 'success') return 'Pagamento confirmado! Seu plano Pro será liberado em instantes.';
+    if (stripeCheckoutStatus === 'cancelled') return 'Pagamento cancelado. Sua sessão continua ativa e você pode tentar novamente quando quiser.';
     const checkoutStatus = (searchParams.get('status') || '').toLowerCase();
     if (checkoutStatus === 'success') return 'Pagamento confirmado! Seu plano Pro será liberado em instantes.';
     if (checkoutStatus === 'pending') return 'Pagamento pendente. Assim que for confirmado, seu acesso será atualizado.';
     if (checkoutStatus === 'failure') return 'Pagamento não concluído. Você pode tentar novamente quando quiser.';
     return null;
   }, [searchParams]);
+  const checkoutReturnStatus = useMemo(() => (searchParams.get('checkout') || '').toLowerCase(), [searchParams]);
 
   useEffect(() => {
     if (searchParams.get('open') === 'checkout' && plan !== 'pro') {
@@ -526,10 +531,11 @@ export function DashboardView() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      if (!authBootstrapped) return;
       void loadGames();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadGames]);
+  }, [authBootstrapped, loadGames]);
 
   useEffect(() => {
     let canceled = false;
@@ -542,6 +548,7 @@ export function DashboardView() {
           setProfile(null);
           setBilling(null);
         }
+        if (!canceled) setAuthBootstrapped(true);
         return;
       }
 
@@ -553,8 +560,21 @@ export function DashboardView() {
         setPlan(resolvedPlan);
         setProfile(result.data.profile ?? null);
         setBilling(result.data.billing ?? null);
+        if (!canceled) setAuthBootstrapped(true);
+        return;
       }
 
+      if (checkoutReturnStatus === 'cancelled' || checkoutReturnStatus === 'success') {
+        const revalidated = await apiFetch<{ user?: ProfileData; billing?: BillingData }>('/api/auth');
+        if (!canceled && revalidated.ok) {
+          const resolvedPlan = revalidated.data.user?.plan === 'pro' ? 'pro' : 'free';
+          setPlan(resolvedPlan);
+          setProfile(revalidated.data.user ?? null);
+          setBilling(revalidated.data.billing ?? null);
+        }
+      }
+
+      if (!canceled) setAuthBootstrapped(true);
     }
 
     loadPlan();
@@ -562,7 +582,7 @@ export function DashboardView() {
     return () => {
       canceled = true;
     };
-  }, []);
+  }, [checkoutReturnStatus]);
 
   useEffect(() => {
     if (!selectedGameId) return;
