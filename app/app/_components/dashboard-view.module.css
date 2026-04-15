@@ -976,72 +976,28 @@
 .upgradeOverlay {
   position: fixed;
   inset: 0;
-  z-index: 70;
-  background: color-mix(in srgb, var(--lc-bg) 64%, black 36%);
-  backdrop-filter: blur(10px);
+  z-index: 100;
+  background: color-mix(in srgb, black 60%, transparent);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding: 0;
 }
 
-.upgradeDesktopView {
-  display: none;
-}
-
-.upgradeDesktopHeader {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
-  align-items: start;
-}
-
-.upgradeDesktopBody {
-  display: grid;
-  gap: 1.6rem;
-}
-
-.upgradeDesktopActions {
-  margin-top: 1rem;
-}
-
-.upgradePlansDesktopGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.upgradeDesktopMeta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.95rem;
-}
-
-.upgradeSelectedTag {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
-  font-style: normal;
-  font-size: 0.5rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: #03200f;
-  background: color-mix(in srgb, #22c55e 88%, #fff 12%);
-  border-radius: 999px;
-  padding: 0.16rem 0.42rem;
-}
-
 .upgradeModal {
-  width: min(100%, 36rem);
-  max-height: min(94vh, 52rem);
+  width: 100%;
+  max-width: 32rem;
+  max-height: min(92vh, 48rem);
   display: grid;
   gap: 0;
   position: relative;
   border-radius: 14px 14px 0 0;
-  border: 1px solid color-mix(in srgb, var(--lc-border) 45%, transparent);
-  background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
-  box-shadow: 0 -3px 14px color-mix(in srgb, black 14%, transparent);
+  border-top: 1px solid var(--lc-border);
+  border-inline: 0;
+  border-bottom: 0;
+  background: var(--lc-surface);
+  box-shadow: 0 -10px 26px color-mix(in srgb, black 24%, transparent);
   overflow: hidden;
   animation: upgradeSheetInMobile 220ms ease-out;
 }
@@ -1060,8 +1016,8 @@
 }
 
 .upgradeKicker {
-  color: color-mix(in srgb, var(--lc-accent) 80%, #d9ffe8 20%);
-  font-size: 0.6rem;
+  color: var(--lc-muted);
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-weight: 800;
@@ -1092,15 +1048,15 @@
 
 .upgradeSheetHeader h3 {
   max-width: 100%;
-  font-size: clamp(2.35rem, 8vw, 3.1rem);
-  letter-spacing: -0.03em;
-  line-height: 0.96;
+  font-size: clamp(1.8rem, 5vw, 2.2rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
   font-weight: 900;
 }
 
 .upgradeSheetBody {
   display: grid;
-  gap: 1.95rem;
+  gap: 1.5rem;
   padding: 1.5rem;
   overflow-y: auto;
   min-height: 0;
@@ -1118,26 +1074,28 @@
 
 .upgradePriceHighlight {
   display: grid;
-  gap: 0.56rem;
+  gap: 0.42rem;
   border: 0;
   padding: 0;
   background: transparent;
+  text-align: center;
 }
 
 .upgradePriceHighlight small {
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--lc-muted);
   font-weight: 800;
 }
 
 .upgradePriceHighlight strong {
-  font-size: clamp(2.9rem, 11vw, 3.9rem);
-  line-height: 0.82;
+  font-size: clamp(1.9rem, 8vw, 2.25rem);
+  line-height: 0.92;
   font-family: var(--lc-font-sans);
-  font-weight: 950;
-  letter-spacing: -0.045em;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #22c55e;
 }
 
 .upgradePriceHighlight p {
@@ -1148,26 +1106,27 @@
 }
 
 .upgradePlanSelector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.22rem 0.8rem;
-  padding-block: 0;
-  border: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.22rem;
+  border: 1px solid var(--lc-border);
+  background: color-mix(in srgb, var(--lc-surface-elevated) 74%, transparent);
 }
 
 .upgradePlanChip {
-  border: 0;
+  border: 1px solid transparent;
   background: transparent;
-  min-height: 1.9rem;
+  min-height: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.24rem;
   text-align: center;
-  padding: 0;
-  opacity: 0.56;
+  padding: 0.35rem;
+  opacity: 0.8;
   cursor: pointer;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .upgradePlanChip input {
@@ -1177,8 +1136,8 @@
 }
 
 .upgradePlanChip span {
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 800;
   font-family: var(--lc-font-mono);
@@ -1245,7 +1204,7 @@
   font-style: normal;
   color: #031108;
   border: 0;
-  background: color-mix(in srgb, #22c55e 90%, #f3fff7 10%);
+  background: color-mix(in srgb, #22c55e 85%, #f3fff7 15%);
   padding: 0.08rem 0.34rem;
   font-size: 0.48rem;
   text-transform: uppercase;
@@ -1264,6 +1223,8 @@
 .upgradePlanChip.isSelected {
   opacity: 1;
   color: color-mix(in srgb, var(--lc-text) 95%, #d5ffe5 5%);
+  border-color: color-mix(in srgb, var(--lc-accent) 60%, var(--lc-border) 40%);
+  background: color-mix(in srgb, var(--lc-accent) 12%, transparent);
 }
 
 .upgradePlanChip.isSelected::before {
@@ -1467,6 +1428,14 @@
   gap: 0.3rem;
 }
 
+.upgradeBenefitsGrid {
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 1px !important;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-border);
+}
+
 .upgradeBenefits li {
   font-size: 0.77rem;
   color: color-mix(in srgb, var(--lc-text) 85%, var(--lc-muted) 15%);
@@ -1475,20 +1444,22 @@
   border-radius: 0;
   padding: 0;
   background: transparent;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.36rem;
+  justify-content: space-between;
+  gap: 0.5rem;
   border-bottom: 0;
   font-family: var(--lc-font-mono);
+  background: var(--lc-bg);
+  padding: 0.82rem 0.9rem;
 }
 
 .upgradeBenefits li::before {
-  content: '';
-  width: 0.34rem;
-  height: 0.34rem;
-  border-radius: 2px;
-  background: color-mix(in srgb, #22c55e 72%, #9ce2b8 28%);
-  box-shadow: none;
+  content: none;
+}
+
+.upgradeBenefits li :global(svg) {
+  color: color-mix(in srgb, var(--lc-muted) 75%, var(--lc-text) 25%);
   flex: 0 0 auto;
 }
 
@@ -1528,8 +1499,8 @@
 
 .upgradeFooter {
   display: grid;
-  gap: 0.56rem;
-  padding: 0 1.5rem 1.4rem;
+  gap: 0.45rem;
+  padding: 0 1.5rem 1.2rem;
   border-top: 0;
   background: transparent;
 }
@@ -1540,6 +1511,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  width: 100%;
 }
 
 .upgradeSupportLine {
@@ -1640,10 +1612,6 @@ html.light .upgradeSecurity {
 }
 
 @media (max-width: 860px) {
-  .upgradeDesktopView {
-    display: none;
-  }
-
   .playersTopbarCompact :global(.lc-topbar-subtitle) {
     margin-top: 0;
     font-size: 0.58rem;
@@ -1850,32 +1818,20 @@ html.dark .lineAdjustBox strong {
 }
 
 @media (min-width: 900px) {
-  .upgradeDesktopView {
-    display: grid;
-    gap: 1.5rem;
-    margin-top: 1rem;
-    border: 1px solid color-mix(in srgb, var(--lc-border) 55%, transparent);
-    background: color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%);
-    box-shadow: 0 4px 16px color-mix(in srgb, black 10%, transparent);
-    padding: 1.4rem;
-  }
-
   .upgradeOverlay {
-    display: none;
-  }
-
-  .upgradePlanSelector {
-    display: none;
-  }
-
-  .upgradeFooter {
-    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    padding: 0;
+    padding: 1rem;
   }
 
-  .upgradeFooter :global(.lc-btn) {
-    min-width: 18rem;
+  .upgradeModal {
+    border: 1px solid var(--lc-border);
+    border-radius: 12px;
+    border-top: 1px solid var(--lc-border);
+    animation: upgradeSheetInDesktop 220ms ease-out;
+  }
+
+  .upgradePriceHighlight strong {
+    font-size: 2.35rem;
   }
 }
 
