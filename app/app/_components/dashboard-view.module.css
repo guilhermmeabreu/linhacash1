@@ -431,6 +431,12 @@
   min-width: 0;
 }
 
+.playerIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
 .avatar {
   width: 2rem;
   height: 2rem;
@@ -464,6 +470,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.playerMobileLine {
+  display: none;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-family: var(--lc-font-mono);
+  font-size: 0.74rem;
+  color: color-mix(in srgb, var(--lc-text) 86%, var(--lc-muted) 14%);
+}
+
+.playerMobileLine strong {
+  color: var(--lc-accent);
+  font-weight: 800;
 }
 
 .playerLineBlock {
@@ -1353,6 +1373,14 @@ html.light .upgradeTotal {
     font-size: 0.92rem;
   }
 
+  .playerMobileLine {
+    display: inline-flex;
+  }
+
+  .playerLineBlock {
+    display: none;
+  }
+
   .playersTopbar,
   .playerHero,
   .errorBox {
@@ -1517,16 +1545,6 @@ html.dark .lineAdjustBox strong {
     font-size: 0.66rem;
     max-width: 12.2rem;
     white-space: normal;
-  }
-
-  .playerLineBlock {
-    flex: 0 0 3.6rem;
-    min-width: 3.6rem;
-    display: grid;
-    justify-items: end;
-    padding: 0.12rem 0.18rem;
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--lc-accent) 10%, transparent);
   }
 
   .chartCanvas :global(.recharts-cartesian-axis-tick-value) {

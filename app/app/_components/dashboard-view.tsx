@@ -1158,9 +1158,13 @@ export function DashboardView() {
                             >
                               <div className={styles.playerMain}>
                                 <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
-                                <div>
+                                <div className={styles.playerIdentity}>
                                   <p className={styles.playerName}>{player.name}</p>
                                   <p className={styles.playerMeta}>{player.position} • {player.team}</p>
+                                  <p className={styles.playerMobileLine}>
+                                    <span>{selectedStat}: {selectedAvg?.toFixed(1) ?? '—'}</span>
+                                    <strong>Line: {line ? Number(line).toFixed(1) : '—'}</strong>
+                                  </p>
                                 </div>
                               </div>
                               <div className={styles.playerQuickStats}>
@@ -1284,6 +1288,7 @@ export function DashboardView() {
                             <Tooltip
                               cursor={false}
                               content={() => null}
+                              wrapperStyle={{ display: 'none' }}
                             />
                             <ReferenceLine
                               y={playerDetailModel.line}
