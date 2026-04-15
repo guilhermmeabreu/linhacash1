@@ -25,7 +25,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   AppShell,
@@ -242,8 +242,6 @@ export function DashboardView() {
     return 'games';
   });
   const [lineAdjustment, setLineAdjustment] = useState(0);
-  const playerTabsRailRef = useRef<HTMLDivElement | null>(null);
-  const playerTabsScrollLeftRef = useRef(0);
 
   const [games, setGames] = useState<Game[]>([]);
   const [playersByGame, setPlayersByGame] = useState<Record<number, Player[]>>({});
@@ -944,13 +942,6 @@ export function DashboardView() {
     }
   }, []);
 
-  useLayoutEffect(() => {
-    if (view !== 'players') return;
-    const rail = playerTabsRailRef.current;
-    if (!rail) return;
-    rail.scrollLeft = playerTabsScrollLeftRef.current;
-  }, [selectedStat, view]);
-
   return (
     <AppShell
       sidebar={(
@@ -1083,16 +1074,10 @@ export function DashboardView() {
                 <h2>Jogadores</h2>
               </div>
 
-              <div className={styles.statsTabsWrap}>
+              <div className={styles.detailTabsRow}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
-                  <div
-                    ref={playerTabsRailRef}
-                    onScroll={(event) => {
-                      playerTabsScrollLeftRef.current = event.currentTarget.scrollLeft;
-                    }}
-                    className={`${styles.statsTabsScroller} ${styles.playersStatsTabsScroller} ${styles.playersTabsViewport} ${styles.playerTabsRail}`}
-                  >
-                    <TabsList className={`${styles.statsTabs} ${styles.playersTabsRow} ${styles.playerTabsList}`}>
+                  <div className={styles.statsTabsScroller}>
+                    <TabsList className={styles.statsTabs}>
                       {STATS.map((stat) => {
                         const locked = isLockedStat(stat, plan);
                         return (
@@ -1144,7 +1129,6 @@ export function DashboardView() {
                       <div className={`${styles.playerList} technical-grid`}>
                         {players.map((player) => {
                           const line = metricsByPlayer[player.id]?.[selectedStat]?.metrics?.line;
-                          const selectedAvg = metricsByPlayer[player.id]?.[selectedStat]?.metrics?.avg_l10;
                           return (
                             <button
                               key={player.id}
@@ -1156,30 +1140,44 @@ export function DashboardView() {
                                 setView('detail');
                               }}
                             >
-                              <div className={styles.playerMain}>
-                                <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
-                                <div>
-                                  <p className={styles.playerName}>{player.name}</p>
-                                  <p className={styles.playerMeta}>{player.position} • {player.team}</p>
+                              <div className={styles.playerRowMobile}>
+                                <div className={styles.playerMobileLeft}>
+                                  <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
+                                  <div className={styles.playerMobileIdentity}>
+                                    <p className={styles.playerName}>{player.name}</p>
+                                    <p className={styles.playerMeta}>{player.position} • {player.team}</p>
+                                  </div>
+                                </div>
+                                <div className={styles.playerMobileRight}>
+                                  <small>Line</small>
+                                  <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
                                 </div>
                               </div>
-                              <div className={styles.playerQuickStats}>
-                                {PLAYER_ROW_STATS.map((entry) => (
-                                  <span key={`${player.id}-${entry.label}`}>
-                                    <small>{entry.label}</small>
-                                    <strong>{metricsByPlayer[player.id]?.[entry.stat]?.metrics?.avg_l10?.toFixed(1) ?? '—'}</strong>
+
+                              <div className={styles.playerRowDesktop}>
+                                <div className={styles.playerMain}>
+                                  <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
+                                  <div className={styles.playerIdentity}>
+                                    <p className={styles.playerName}>{player.name}</p>
+                                    <p className={styles.playerMeta}>{player.position} • {player.team}</p>
+                                  </div>
+                                </div>
+                                <div className={styles.playerQuickStats}>
+                                  {PLAYER_ROW_STATS.map((entry) => (
+                                    <span key={`${player.id}-${entry.label}`}>
+                                      <small>{entry.label}</small>
+                                      <strong>{metricsByPlayer[player.id]?.[entry.stat]?.metrics?.avg_l10?.toFixed(1) ?? '—'}</strong>
+                                    </span>
+                                  ))}
+                                  <span className={styles.playerQuickStatLine}>
+                                    <small>LINE</small>
+                                    <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
                                   </span>
-                                ))}
-                                <span className={styles.playerQuickStatLine}>
-                                  <small>LINE</small>
+                                </div>
+                                <div className={styles.playerLineBlock}>
+                                  <small>Line</small>
                                   <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
-                                </span>
-                              </div>
-                              <div className={styles.playerLineBlock}>
-                                <small>{selectedStat}</small>
-                                <span>{selectedAvg?.toFixed(1) ?? '—'}</span>
-                                <small>Line</small>
-                                <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
+                                </div>
                               </div>
                             </button>
                           );
@@ -1283,14 +1281,8 @@ export function DashboardView() {
                             />
                             <Tooltip
                               cursor={false}
-                              contentStyle={{
-                                border: '1px solid var(--lc-border)',
-                                background: 'color-mix(in srgb, var(--lc-surface) 92%, var(--lc-bg) 8%)',
-                                color: 'var(--lc-text)',
-                                borderRadius: 8,
-                                boxShadow: '0 8px 20px rgba(0,0,0,.28)',
-                                fontSize: '12px',
-                              }}
+                              content={() => null}
+                              wrapperStyle={{ display: 'none' }}
                             />
                             <ReferenceLine
                               y={playerDetailModel.line}
