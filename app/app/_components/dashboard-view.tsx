@@ -1528,34 +1528,40 @@ export function DashboardView() {
                         </section>
 
                         <section className={styles.upgradePlanSelector}>
-                          <button
-                            type="button"
-                            className={`${styles.upgradePlanChip} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`}
-                            onClick={() => setUpgradePlan('monthly')}
-                          >
+                          <label className={`${styles.upgradePlanChip} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`}>
+                            <input
+                              type="radio"
+                              name="upgrade-plan"
+                              checked={upgradePlan === 'monthly'}
+                              onChange={() => setUpgradePlan('monthly')}
+                            />
                             <span>Mensal</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={`${styles.upgradePlanChip} ${styles.upgradePlanChipAnnual} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
-                            onClick={() => setUpgradePlan('annual')}
-                          >
+                          </label>
+                          <label className={`${styles.upgradePlanChip} ${styles.upgradePlanChipAnnual} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}>
+                            <input
+                              type="radio"
+                              name="upgrade-plan"
+                              checked={upgradePlan === 'annual'}
+                              onChange={() => setUpgradePlan('annual')}
+                            />
                             <span>Anual</span>
                             <em className={styles.upgradePopular}>Mais popular</em>
-                          </button>
-                          <button
-                            type="button"
-                            className={`${styles.upgradePlanChip} ${upgradePlan === 'playoff' ? styles.isSelected : ''}`}
-                            onClick={() => setUpgradePlan('playoff')}
-                          >
+                          </label>
+                          <label className={`${styles.upgradePlanChip} ${upgradePlan === 'playoff' ? styles.isSelected : ''}`}>
+                            <input
+                              type="radio"
+                              name="upgrade-plan"
+                              checked={upgradePlan === 'playoff'}
+                              onChange={() => setUpgradePlan('playoff')}
+                            />
                             <span>Pack Playoff</span>
-                          </button>
+                          </label>
                         </section>
 
                         <section className={styles.upgradeBenefits}>
                           <p>Recursos liberados</p>
                           <ul>
-                            <li>Todos os jogos da rodada</li>
+                            <li>Todas as estatísticas liberadas</li>
                             <li>Todos os jogadores liberados</li>
                             <li>Estatísticas avançadas (H2H, L20)</li>
                             <li>Ajuste de linha</li>
