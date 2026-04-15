@@ -1483,8 +1483,14 @@ export function DashboardView() {
           ) : null}
 
           {upgradeOpen ? (
-            <div className={styles.upgradeOverlay} role="dialog" aria-modal="true" aria-label="Assinar plano Pro">
-              <Surface className={styles.upgradeModal}>
+            <div
+              className={styles.upgradeOverlay}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Assinar plano Pro"
+              onClick={() => setUpgradeOpen(false)}
+            >
+              <Surface className={styles.upgradeModal} onClick={(event) => event.stopPropagation()}>
                 <button type="button" className={styles.upgradeClose} onClick={() => setUpgradeOpen(false)} aria-label="Fechar">
                   <X size={16} />
                 </button>
@@ -1507,15 +1513,15 @@ export function DashboardView() {
                   </>
                 ) : (
                   <>
-                    <div className={styles.upgradeRebuild}>
-                      <header className={styles.upgradeHero}>
+                    <div className={styles.upgradeSheet}>
+                      <header className={styles.upgradeSheetHeader}>
                         <p className={styles.upgradeKicker}>LinhaCash Pro</p>
-                        <h3>Desbloqueie sua leitura completa da rodada</h3>
-                        <p className={styles.upgradeSubtitle}>Escolha o plano ideal para analisar props com contexto avançado e decisões mais rápidas.</p>
+                        <h3>Plano Pro para leitura premium de props NBA</h3>
+                        <p className={styles.upgradeSubtitle}>Escolha um plano, aplique código de indicação se tiver e siga para o checkout.</p>
                       </header>
 
-                      <div className={styles.upgradeBody}>
-                        <section className={styles.upgradePlansPanel}>
+                      <div className={styles.upgradeSheetBody}>
+                        <section className={styles.upgradePlanRail}>
                           <button
                             type="button"
                             className={`${styles.upgradePlanBtn} ${styles.upgradePlanAnnual} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}
@@ -1524,7 +1530,7 @@ export function DashboardView() {
                             <span>Anual</span>
                             <em className={styles.upgradePopular}>Mais popular</em>
                             <strong>R$197/ano</strong>
-                            <small>Economia no ciclo anual · equivalente a R$16,41/mês.</small>
+                            <small>Equivale a R$16,41/mês com melhor custo-benefício.</small>
                           </button>
                           <button
                             type="button"
@@ -1533,7 +1539,7 @@ export function DashboardView() {
                           >
                             <span>Mensal</span>
                             <strong>R$24,90/mês</strong>
-                            <small>2 dias de teste grátis para começar com segurança.</small>
+                            <small>2 dias de teste grátis no início da assinatura.</small>
                           </button>
                           <button
                             type="button"
@@ -1548,13 +1554,13 @@ export function DashboardView() {
 
                         <aside className={styles.upgradeSidePanel}>
                           <div className={styles.upgradeBenefits}>
-                            <p>O que você libera no Pro</p>
+                            <p>Benefícios do Pro</p>
                             <ul>
                               <li>Todas as estatísticas liberadas</li>
                               <li>Todos os jogadores e jogos destravados</li>
-                              <li>Leitura completa para decisões mais rápidas</li>
+                              <li>Estatísticas avançadas (H2H, L20)</li>
                               <li>Ajuste de linha</li>
-                              <li>Contexto avançado H2H</li>
+                              <li>Suporte prioritário</li>
                             </ul>
                           </div>
                           <div className={styles.upgradeReferral}>
@@ -1568,6 +1574,7 @@ export function DashboardView() {
                               />
                             </label>
                           </div>
+                          <p className={styles.upgradeSupportNote}>No plano anual, você economiza mais por mês e mantém o acesso contínuo ao fluxo completo.</p>
                         </aside>
                       </div>
 
