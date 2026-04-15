@@ -1662,7 +1662,7 @@ export function DashboardView() {
 
                       <section className={styles.upgradePriceHighlight}>
                         <small>{upgradePlan === 'monthly' ? 'PLANO MENSAL PRO' : upgradePlan === 'annual' ? 'PLANO ANUAL PRO' : 'PACK PLAYOFF'}</small>
-                        <strong>{upgradePlan === 'monthly' ? 'R$ 24,90' : upgradePlan === 'annual' ? 'R$ 197,00' : 'ACESSO ESPECIAL'}</strong>
+                        <strong>{upgradePlan === 'monthly' ? 'R$ 24,90' : upgradePlan === 'annual' ? 'R$ 197,00' : 'R$ 29,90'}</strong>
                         <p>{upgradePlan === 'monthly' ? '2 dias de teste grátis no mensal.' : upgradePlan === 'annual' ? 'Equivale a R$16,41/mês · melhor custo-benefício.' : 'Compra única para o período decisivo dos playoffs.'}</p>
                       </section>
 

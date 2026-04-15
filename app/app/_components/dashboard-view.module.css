@@ -1098,6 +1098,7 @@
 .upgradeSheet {
   display: grid;
   min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .upgradeSheetHeader {
@@ -1203,6 +1204,7 @@
   text-transform: uppercase;
   font-weight: 800;
   font-family: var(--lc-font-sans);
+  white-space: nowrap;
 }
 
 .upgradePlanChipAnnual {
@@ -1798,31 +1800,65 @@ html.light .upgradeSecurity {
   .upgradeModal {
     width: 100%;
     max-width: none;
-    max-height: min(92vh, 52rem);
-    max-height: min(92dvh, 52rem);
+    max-height: min(88vh, 46rem);
+    max-height: min(88dvh, 46rem);
   }
 
   .upgradeSheetHeader {
+    padding: 1rem 1rem 0;
     padding-right: 3rem;
+    gap: 0.28rem;
+  }
+
+  .upgradeSheetHeader h3 {
+    font-size: clamp(1.4rem, 8vw, 1.95rem);
   }
 
   .upgradePlanSelector {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.32rem;
+    padding: 0.2rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .upgradePlanSelector::-webkit-scrollbar {
+    display: none;
+  }
+
+  .upgradePlanChip {
+    flex: 0 0 auto;
+    min-width: max-content;
+    min-height: 2.15rem;
+    padding: 0.32rem 0.6rem;
+    gap: 0.3rem;
+  }
+
+  .upgradePlanChipAnnual .upgradePopular {
+    display: none;
   }
 
   .upgradePlanChip span {
-    font-size: clamp(0.84rem, 3.6vw, 0.95rem);
+    font-size: clamp(0.78rem, 3.3vw, 0.9rem);
     letter-spacing: 0.03em;
   }
 
   .upgradeSheetBody {
-    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
-    scroll-padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
+    gap: 1rem;
+    padding: 1rem;
+    padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  }
+
+  .upgradePriceHighlight strong {
+    font-size: clamp(1.55rem, 7vw, 1.95rem);
   }
 
   .upgradeReferral {
-    scroll-margin-bottom: calc(8rem + env(safe-area-inset-bottom));
+    scroll-margin-bottom: calc(6rem + env(safe-area-inset-bottom));
   }
 
   .upgradeField input {
@@ -1833,9 +1869,20 @@ html.light .upgradeSecurity {
     position: sticky;
     bottom: 0;
     margin-inline: 0;
-    padding: 0.84rem 1.5rem calc(1.3rem + env(safe-area-inset-bottom));
+    gap: 0.32rem;
+    padding: 0.58rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
     background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 68%, transparent), color-mix(in srgb, var(--lc-surface) 95%, var(--lc-bg) 5%) 38%);
     border-top: 1px solid color-mix(in srgb, var(--lc-border) 36%, transparent);
+  }
+
+  .upgradeFooter :global(.lc-btn) {
+    min-height: 2.3rem;
+    font-size: 0.78rem;
+  }
+
+  .upgradeSupportLine {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
   }
 
   .supportModal {
