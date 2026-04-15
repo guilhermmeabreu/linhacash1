@@ -195,7 +195,12 @@ export async function POST(req: Request) {
     const redirectUrl = `${publicUrl}/auth/callback?oauth=google`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: redirectUrl }
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          prompt: 'select_account',
+        },
+      }
     });
     if (error) return errorResponse(error.message);
     return okResponse({ url: data.url });

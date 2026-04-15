@@ -630,11 +630,8 @@ export function DashboardView() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (!authBootstrapped) return;
-      void loadGames();
-    }, 0);
-    return () => window.clearTimeout(timer);
+    if (!authBootstrapped) return;
+    void loadGames();
   }, [authBootstrapped, loadGames]);
 
   useEffect(() => {
@@ -652,6 +649,8 @@ export function DashboardView() {
         return;
       }
 
+      if (!canceled) setAuthBootstrapped(true);
+
       const result = await apiFetch<{ profile?: ProfileData; billing?: BillingData }>('/api/profile');
       if (canceled) return;
 
@@ -660,7 +659,6 @@ export function DashboardView() {
         setPlan(resolvedPlan);
         setProfile(result.data.profile ?? null);
         setBilling(result.data.billing ?? null);
-        if (!canceled) setAuthBootstrapped(true);
         return;
       }
 
@@ -668,7 +666,6 @@ export function DashboardView() {
         await refreshBillingState();
       }
 
-      if (!canceled) setAuthBootstrapped(true);
     }
 
     loadPlan();

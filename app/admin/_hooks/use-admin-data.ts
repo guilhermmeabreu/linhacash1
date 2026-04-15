@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { AdminActionInsights, adminApi, AffiliateCommission, OperationsInsights, ProductInsights, Profile, ReferralCode, ReferralUse, Stats } from '../_lib/admin-api';
+import { AdminActionInsights, AdminApiError, adminApi, AffiliateCommission, OperationsInsights, ProductInsights, Profile, ReferralCode, ReferralUse, Stats } from '../_lib/admin-api';
 
 export function useAdminData() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -29,8 +29,13 @@ export function useAdminData() {
       setProductInsights(data.productInsights || null);
       setOperationsInsights(data.operationsInsights || null);
       setAdminActionInsights(data.adminActionInsights || null);
-    } catch {
+    } catch (error) {
+      if (error instanceof AdminApiError && (error.status === 401 || error.status === 403)) {
+        setFeedback({ type: 'error', message: 'Sua sessão de admin expirou. Faça login novamente.' });
+        throw error;
+      }
       setFeedback({ type: 'error', message: 'Não foi possível carregar o painel.' });
+      throw error;
     } finally {
       setLoading(false);
     }

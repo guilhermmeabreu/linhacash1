@@ -104,6 +104,16 @@ export interface AdminActionInsights {
   recentResetsDeletions: Array<{ event: string; created_at: string; details: Record<string, unknown> | null }>;
 }
 
+export class AdminApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'AdminApiError';
+    this.status = status;
+  }
+}
+
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
@@ -112,7 +122,7 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}));
-    throw new Error(payload?.error || payload?.message || 'Erro na requisição');
+    throw new AdminApiError(payload?.error || payload?.message || 'Erro na requisição', res.status);
   }
 
   return res.json();

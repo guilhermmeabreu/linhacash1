@@ -27,8 +27,8 @@ type EventRow = {
 };
 
 type AuditRow = {
-  event: string;
-  created_at: string;
+  event: string | null;
+  created_at: string | null;
   details: Record<string, unknown> | null;
 };
 
@@ -139,7 +139,10 @@ export async function GET(req: Request) {
       const syncHistory = syncLogsResult.data || [];
       const latestSync = syncHistory[0] || null;
       const freshness = getSyncFreshness(latestSync?.created_at || null);
-      const audits = (auditResult.data || []) as AuditRow[];
+      const audits = ((auditResult.data || []) as AuditRow[]).filter(
+        (entry): entry is AuditRow & { event: string; created_at: string } =>
+          typeof entry.event === 'string' && entry.event.length > 0 && typeof entry.created_at === 'string' && entry.created_at.length > 0,
+      );
       const commissions = ((commissionsResult.data || []) as CommissionRow[]).map((item) => ({
         ...item,
         commission_status: item.commission_status || 'pending',
