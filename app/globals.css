@@ -845,8 +845,19 @@ html.light .lc-hero p {
     margin-top: 0.25rem;
   }
 
+  .lc-hero small {
+    order: 5;
+    margin-top: 0.2rem;
+  }
+
   .lc-scroll-hint {
-    bottom: clamp(0.85rem, 2.2vw, 1.5rem);
+    order: 4;
+    position: static;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    margin-top: 0.15rem;
+    opacity: 0.92;
   }
 }
 
