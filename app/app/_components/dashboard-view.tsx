@@ -264,6 +264,7 @@ export function DashboardView() {
   const [plan, setPlan] = useState<Plan>('free');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [isDesktopCheckoutViewport, setIsDesktopCheckoutViewport] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<UpgradePlan>('annual');
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
@@ -303,6 +304,16 @@ export function DashboardView() {
     () => players.find((player) => player.id === selectedPlayerId) ?? null,
     [players, selectedPlayerId],
   );
+  const showDesktopCheckoutView = upgradeOpen && isDesktopCheckoutViewport;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(min-width: 900px)');
+    const update = () => setIsDesktopCheckoutViewport(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
   const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
@@ -996,7 +1007,7 @@ export function DashboardView() {
     >
       <ContentContainer width="content">
         <div className={styles.dashboardCanvas}>
-          {view === 'games' ? (
+          {view === 'games' && !showDesktopCheckoutView ? (
             <section className={`${styles.gamesView} ${styles.viewPanel}`}>
               <p className={styles.gamesDateLine}>Hoje · {formatTodayLabel()}</p>
               {gamesStatus === 'loading' ? (
@@ -1068,7 +1079,7 @@ export function DashboardView() {
             </section>
           ) : null}
 
-          {view === 'players' ? (
+          {view === 'players' && !showDesktopCheckoutView ? (
             <section className={`${styles.playersView} ${styles.viewPanel}`}>
               <div className={styles.playersTopbar}>
                 <h2>Jogadores</h2>
@@ -1180,7 +1191,7 @@ export function DashboardView() {
             </section>
           ) : null}
 
-          {view === 'detail' && selectedPlayer ? (
+          {view === 'detail' && selectedPlayer && !showDesktopCheckoutView ? (
             <section className={`${styles.detailView} ${styles.viewPanel}`}>
               <div className={styles.detailTabsRow}>
                 <TabsRoot value={selectedStat} onValueChange={handleStatChange}>
@@ -1330,7 +1341,7 @@ export function DashboardView() {
             </section>
           ) : null}
 
-          {view === 'profile' ? (
+          {view === 'profile' && !showDesktopCheckoutView ? (
             <section className={`${styles.profileView} ${styles.viewPanel}`}>
               <div className={styles.profileTopHeader}>
                 <div className={styles.profileTopHeaderMain}>
@@ -1455,7 +1466,7 @@ export function DashboardView() {
             </section>
           ) : null}
 
-          {(errorMessage || oauthQueryError) ? (
+          {(errorMessage || oauthQueryError) && !showDesktopCheckoutView ? (
             <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
               <div className={styles.errorContent}>
                 <AlertCircle size={16} />
@@ -1468,7 +1479,7 @@ export function DashboardView() {
               ) : null}
             </Surface>
           ) : null}
-          {(checkoutNotice || paymentStatusNotice) ? (
+          {(checkoutNotice || paymentStatusNotice) && !showDesktopCheckoutView ? (
             <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
               <div className={styles.errorContent}>
                 <Crown size={16} />
