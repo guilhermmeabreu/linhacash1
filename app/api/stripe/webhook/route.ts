@@ -18,6 +18,8 @@ type WebhookMetadata = {
   plan: string | null;
 };
 
+type StripeAccessStatus = 'active' | 'trialing' | 'canceled';
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
@@ -60,6 +62,8 @@ function extractMetadataAndIds(eventObject: Record<string, unknown>): {
   metadata: WebhookMetadata;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  clientReferenceId: string | null;
+  customerEmail: string | null;
 } {
   const direct = readMetadata(eventObject);
 
@@ -76,32 +80,58 @@ function extractMetadataAndIds(eventObject: Record<string, unknown>): {
 
   const stripeCustomerId = typeof eventObject.customer === 'string' ? eventObject.customer : null;
   const stripeSubscriptionId = typeof eventObject.subscription === 'string' ? eventObject.subscription : null;
+  const clientReferenceId = typeof eventObject.client_reference_id === 'string' ? eventObject.client_reference_id : null;
+  const customerEmail = typeof eventObject.customer_email === 'string' ? eventObject.customer_email.trim().toLowerCase() : null;
 
-  return { metadata, stripeCustomerId, stripeSubscriptionId };
+  return { metadata, stripeCustomerId, stripeSubscriptionId, clientReferenceId, customerEmail };
 }
 
-async function resolveUserId(userId: string | null, stripeCustomerId: string | null): Promise<string | null> {
+async function resolveUserId(
+  userId: string | null,
+  stripeCustomerId: string | null,
+  clientReferenceId: string | null,
+  customerEmail: string | null,
+): Promise<string | null> {
   if (userId) return userId;
-  if (!stripeCustomerId) return null;
+  if (clientReferenceId) return clientReferenceId;
+  if (!stripeCustomerId && !customerEmail) return null;
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('stripe_customer_id', stripeCustomerId)
-    .maybeSingle();
+  if (stripeCustomerId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('stripe_customer_id', stripeCustomerId)
+      .maybeSingle();
 
-  if (error) {
-    console.error('[route-error]', JSON.stringify({
-      route: '/api/stripe/webhook',
-      status: 500,
-      errorCode: 'SUPABASE_LOOKUP_FAILED',
-      provider: 'supabase',
-      ts: new Date().toISOString(),
-    }));
-    return null;
+    if (error) {
+      console.error('[route-error]', JSON.stringify({
+        route: '/api/stripe/webhook',
+        status: 500,
+        errorCode: 'SUPABASE_LOOKUP_FAILED',
+        provider: 'supabase',
+        lookup: 'stripe_customer_id',
+        ts: new Date().toISOString(),
+      }));
+      return null;
+    }
+
+    const mappedByCustomer = (data?.id as string | undefined) ?? null;
+    if (mappedByCustomer) return mappedByCustomer;
   }
 
-  return (data?.id as string | undefined) ?? null;
+  if (customerEmail) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', customerEmail)
+      .maybeSingle();
+
+    if (!error) {
+      return (data?.id as string | undefined) ?? null;
+    }
+  }
+
+  return null;
 }
 
 async function patchProfile(userId: string, patch: Record<string, unknown>) {
@@ -113,8 +143,14 @@ async function patchProfile(userId: string, patch: Record<string, unknown>) {
 }
 
 async function handleCheckoutSessionCompleted(eventObject: Record<string, unknown>) {
-  const { metadata, stripeCustomerId, stripeSubscriptionId } = extractMetadataAndIds(eventObject);
-  const userId = await resolveUserId(metadata.userId, stripeCustomerId);
+  const {
+    metadata,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    clientReferenceId,
+    customerEmail,
+  } = extractMetadataAndIds(eventObject);
+  const userId = await resolveUserId(metadata.userId, stripeCustomerId, clientReferenceId, customerEmail);
 
   if (!userId) {
     console.error('[route-error]', JSON.stringify({
@@ -128,7 +164,15 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
     return;
   }
 
-  const status = typeof eventObject.payment_status === 'string' ? eventObject.payment_status : 'active';
+  const stripeMode = typeof eventObject.mode === 'string' ? eventObject.mode : null;
+  const paymentStatus = typeof eventObject.payment_status === 'string' ? eventObject.payment_status : null;
+  const status: StripeAccessStatus = stripeMode === 'subscription'
+    ? paymentStatus === 'no_payment_required'
+      ? 'trialing'
+      : 'active'
+    : paymentStatus === 'paid'
+      ? 'active'
+      : 'canceled';
   const isPlayoff = metadata.plan === 'playoff';
 
   await patchProfile(userId, {
@@ -142,8 +186,14 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
 }
 
 async function handleInvoicePaid(eventObject: Record<string, unknown>) {
-  const { metadata, stripeCustomerId, stripeSubscriptionId } = extractMetadataAndIds(eventObject);
-  const userId = await resolveUserId(metadata.userId, stripeCustomerId);
+  const {
+    metadata,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    clientReferenceId,
+    customerEmail,
+  } = extractMetadataAndIds(eventObject);
+  const userId = await resolveUserId(metadata.userId, stripeCustomerId, clientReferenceId, customerEmail);
 
   if (!userId) {
     console.error('[route-error]', JSON.stringify({
@@ -168,8 +218,14 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
 }
 
 async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
-  const { metadata, stripeCustomerId, stripeSubscriptionId } = extractMetadataAndIds(eventObject);
-  const userId = await resolveUserId(metadata.userId, stripeCustomerId);
+  const {
+    metadata,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    clientReferenceId,
+    customerEmail,
+  } = extractMetadataAndIds(eventObject);
+  const userId = await resolveUserId(metadata.userId, stripeCustomerId, clientReferenceId, customerEmail);
 
   if (!userId) {
     console.error('[route-error]', JSON.stringify({
@@ -188,6 +244,44 @@ async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
     stripe_subscription_id: stripeSubscriptionId,
     ...(metadata.plan ? { plan: metadata.plan } : {}),
     subscription_status: 'canceled',
+    billing_updated_at: new Date().toISOString(),
+  });
+}
+
+async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
+  const {
+    metadata,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    clientReferenceId,
+    customerEmail,
+  } = extractMetadataAndIds(eventObject);
+  const userId = await resolveUserId(metadata.userId, stripeCustomerId, clientReferenceId, customerEmail);
+
+  if (!userId) {
+    console.error('[route-error]', JSON.stringify({
+      route: '/api/stripe/webhook',
+      status: 422,
+      errorCode: 'USER_ID_MISSING',
+      provider: 'stripe',
+      eventType: 'customer.subscription.updated',
+      ts: new Date().toISOString(),
+    }));
+    return;
+  }
+
+  const subscriptionStatusRaw = typeof eventObject.status === 'string' ? eventObject.status.trim().toLowerCase() : '';
+  const subscriptionStatus: StripeAccessStatus = subscriptionStatusRaw === 'trialing'
+    ? 'trialing'
+    : subscriptionStatusRaw === 'active'
+      ? 'active'
+      : 'canceled';
+
+  await patchProfile(userId, {
+    stripe_customer_id: stripeCustomerId,
+    stripe_subscription_id: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
+    ...(metadata.plan ? { plan: metadata.plan } : {}),
+    subscription_status: subscriptionStatus,
     billing_updated_at: new Date().toISOString(),
   });
 }
@@ -230,6 +324,10 @@ export async function POST(req: Request) {
           break;
         case 'invoice.paid':
           await handleInvoicePaid(event.data.object);
+          break;
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated':
+          await handleSubscriptionUpsert(event.data.object);
           break;
         case 'customer.subscription.deleted':
           await handleSubscriptionDeleted(event.data.object);

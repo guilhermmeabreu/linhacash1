@@ -290,6 +290,7 @@ export function DashboardView() {
   const playersCacheRef = useRef<Record<number, Player[]>>({});
   const playersInFlightRef = useRef<Record<number, Promise<void> | null>>({});
   const consumedStripeReturnRef = useRef<string | null>(null);
+  const consumedCheckoutStatusRef = useRef<string | null>(null);
 
   const selectedGame = useMemo(
     () => games.find((game) => game.id === selectedGameId) ?? null,
@@ -305,6 +306,18 @@ export function DashboardView() {
     [players, selectedPlayerId],
   );
   const showDesktopCheckoutView = upgradeOpen && isDesktopCheckoutViewport;
+
+  const refreshBillingState = useCallback(async (): Promise<{ ok: boolean; hasPro: boolean }> => {
+    const result = await apiFetch<{ profile?: ProfileData; user?: ProfileData; billing?: BillingData }>('/api/auth');
+    if (!result.ok) return { ok: false, hasPro: false };
+
+    const nextProfile = result.data.profile ?? result.data.user ?? null;
+    const resolvedPlan = nextProfile?.plan === 'pro' ? 'pro' : 'free';
+    setPlan(resolvedPlan);
+    setProfile(nextProfile);
+    setBilling(result.data.billing ?? null);
+    return { ok: true, hasPro: resolvedPlan === 'pro' || Boolean(result.data.billing?.hasProAccess) };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -322,14 +335,6 @@ export function DashboardView() {
   const selectedMetricsError = selectedPlayerId ? metricsErrorByPlayer[selectedPlayerId]?.[selectedStat] ?? null : null;
   const marketLocked = isLockedStat(selectedStat, plan);
 
-  const paymentStatusNotice = useMemo(() => {
-    const checkoutStatus = (searchParams.get('status') || '').toLowerCase();
-    if (checkoutStatus === 'success') return 'Pagamento confirmado! Seu plano Pro será liberado em instantes.';
-    if (checkoutStatus === 'pending') return 'Pagamento pendente. Assim que for confirmado, seu acesso será atualizado.';
-    if (checkoutStatus === 'failure') return 'Pagamento não concluído. Você pode tentar novamente quando quiser.';
-    return null;
-  }, [searchParams]);
-
   useEffect(() => {
     if (searchParams.get('open') === 'checkout' && plan !== 'pro') {
       setUpgradeOpen(true);
@@ -345,7 +350,7 @@ export function DashboardView() {
     }
 
     if (stripeCheckoutStatus === 'success') {
-      setCheckoutNotice('Pagamento confirmado! Seu plano Pro será liberado em instantes.');
+      setCheckoutNotice('Pagamento recebido. Estamos confirmando sua assinatura Pro agora.');
     } else if (stripeCheckoutStatus === 'cancelled') {
       setCheckoutNotice('Pagamento cancelado. Sua sessão continua ativa e você pode tentar novamente quando quiser.');
     } else {
@@ -363,11 +368,63 @@ export function DashboardView() {
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [pathname, searchParams]);
 
+  useEffect(() => {
+    const checkoutStatus = (searchParams.get('status') || '').toLowerCase();
+    if (!checkoutStatus) return;
+    if (consumedCheckoutStatusRef.current === checkoutStatus) return;
+
+    if (checkoutStatus === 'success') {
+      setCheckoutNotice('Pagamento recebido. Estamos confirmando sua assinatura Pro agora.');
+      setCheckoutReturnStatus('success');
+    } else if (checkoutStatus === 'pending') {
+      setCheckoutNotice('Pagamento pendente. Assim que for confirmado, seu acesso será atualizado.');
+      setCheckoutReturnStatus('pending');
+    } else if (checkoutStatus === 'failure') {
+      setCheckoutNotice('Pagamento não concluído. Você pode tentar novamente quando quiser.');
+      setCheckoutReturnStatus('failure');
+    } else {
+      setCheckoutNotice(null);
+      setCheckoutReturnStatus('');
+    }
+    consumedCheckoutStatusRef.current = checkoutStatus;
+  }, [searchParams]);
+
 
   const dismissCheckoutNotice = useCallback(() => {
     setCheckoutNotice(null);
     setCheckoutReturnStatus('');
   }, []);
+
+  useEffect(() => {
+    if (checkoutReturnStatus !== 'success') return;
+    let cancelled = false;
+
+    const reconcile = async () => {
+      const maxAttempts = 6;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const refreshed = await refreshBillingState();
+        if (cancelled) return;
+        if (refreshed.ok && refreshed.hasPro) {
+          setCheckoutNotice('Pagamento confirmado e plano Pro ativado.');
+          return;
+        }
+
+        if (attempt < maxAttempts - 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        }
+      }
+
+      if (!cancelled) {
+        setCheckoutNotice('Pagamento recebido, mas a confirmação ainda está em processamento. Atualize em alguns instantes.');
+      }
+    };
+
+    void reconcile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutReturnStatus, refreshBillingState]);
 
   const oauthQueryError = useMemo(() => {
     const error = searchParams.get('error_description') || searchParams.get('error');
@@ -607,14 +664,8 @@ export function DashboardView() {
         return;
       }
 
-      if (checkoutReturnStatus === 'cancelled' || checkoutReturnStatus === 'success') {
-        const revalidated = await apiFetch<{ user?: ProfileData; billing?: BillingData }>('/api/auth');
-        if (!canceled && revalidated.ok) {
-          const resolvedPlan = revalidated.data.user?.plan === 'pro' ? 'pro' : 'free';
-          setPlan(resolvedPlan);
-          setProfile(revalidated.data.user ?? null);
-          setBilling(revalidated.data.billing ?? null);
-        }
+      if (checkoutReturnStatus === 'cancelled' || checkoutReturnStatus === 'success' || checkoutReturnStatus === 'pending') {
+        await refreshBillingState();
       }
 
       if (!canceled) setAuthBootstrapped(true);
@@ -625,7 +676,7 @@ export function DashboardView() {
     return () => {
       canceled = true;
     };
-  }, [checkoutReturnStatus]);
+  }, [checkoutReturnStatus, refreshBillingState]);
 
   useEffect(() => {
     if (!selectedGameId) return;
@@ -1486,11 +1537,11 @@ export function DashboardView() {
               ) : null}
             </Surface>
           ) : null}
-          {(checkoutNotice || paymentStatusNotice) && !showDesktopCheckoutView ? (
+          {checkoutNotice && !showDesktopCheckoutView ? (
             <Surface className={`${styles.errorBox} ${styles.infoBanner}`}>
               <div className={styles.errorContent}>
                 <Crown size={16} />
-                <p>{checkoutNotice || paymentStatusNotice}</p>
+                <p>{checkoutNotice}</p>
               </div>
               {checkoutNotice ? (
                 <Button variant="secondary" size="sm" onClick={dismissCheckoutNotice} aria-label="Fechar aviso de checkout">
