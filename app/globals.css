@@ -818,6 +818,38 @@ html.light .lc-hero p {
   .lc-public-footer-links { justify-self: start; }
 }
 
+@media (min-width: 921px) {
+  .lc-hero {
+    padding: clamp(4rem, 5.4vw, 4.9rem) 0 clamp(1rem, 1.8vw, 1.5rem);
+  }
+
+  .lc-hero-content {
+    gap: clamp(0.65rem, 1.3vw, 0.95rem);
+    width: min(100%, 49rem);
+    transform: translateY(clamp(-0.55rem, -0.9vw, -0.2rem));
+  }
+
+  .lc-hero h1 {
+    max-width: 9.3ch;
+    font-size: clamp(2.85rem, 7.2vw, 6.4rem);
+    line-height: 0.84;
+  }
+
+  .lc-hero p {
+    max-width: 31ch;
+    font-size: clamp(0.92rem, 1.2vw, 1.05rem);
+    line-height: 1.38;
+  }
+
+  .lc-hero-cta {
+    margin-top: 0.25rem;
+  }
+
+  .lc-scroll-hint {
+    bottom: clamp(0.85rem, 2.2vw, 1.5rem);
+  }
+}
+
 @media (max-width: 640px) {
   input,
   select,
