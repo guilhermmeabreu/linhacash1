@@ -1574,11 +1574,6 @@ export function DashboardView() {
                             />
                           </label>
                         </section>
-
-                        <section className={styles.upgradeSecurity}>
-                          <small>Pagamento seguro</small>
-                          <p>Checkout oficial com proteção de dados e ativação automática do acesso Pro.</p>
-                        </section>
                       </div>
 
                       <footer className={styles.upgradeFooter}>
