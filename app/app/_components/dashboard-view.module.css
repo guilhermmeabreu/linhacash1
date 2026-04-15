@@ -985,6 +985,53 @@
   padding: 0;
 }
 
+.upgradeDesktopView {
+  display: none;
+}
+
+.upgradeDesktopHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+}
+
+.upgradeDesktopBody {
+  display: grid;
+  gap: 1.6rem;
+}
+
+.upgradeDesktopActions {
+  margin-top: 1rem;
+}
+
+.upgradePlansDesktopGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.upgradeDesktopMeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.95rem;
+}
+
+.upgradeSelectedTag {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  font-style: normal;
+  font-size: 0.5rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #03200f;
+  background: color-mix(in srgb, #22c55e 88%, #fff 12%);
+  border-radius: 999px;
+  padding: 0.16rem 0.42rem;
+}
+
 .upgradeModal {
   width: min(100%, 36rem);
   max-height: min(94vh, 52rem);
@@ -1142,9 +1189,9 @@
 }
 
 .upgradePlanBtn {
-  border: 1px solid color-mix(in srgb, var(--lc-border) 82%, transparent);
-  border-radius: 14px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 96%, var(--lc-bg) 4%), color-mix(in srgb, var(--lc-surface-elevated) 87%, var(--lc-bg) 13%));
+  border: 1px solid color-mix(in srgb, var(--lc-border) 72%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%);
   padding: 0.92rem;
   text-align: left;
   display: grid;
@@ -1156,8 +1203,7 @@
 }
 
 .upgradePlanBtn:hover {
-  border-color: color-mix(in srgb, var(--lc-accent) 40%, var(--lc-border) 60%);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--lc-accent) 45%, var(--lc-border) 55%);
 }
 
 .upgradePlanBtn span {
@@ -1175,9 +1221,6 @@
 }
 
 .upgradePlanAnnual {
-  border-color: color-mix(in srgb, var(--lc-accent) 50%, var(--lc-border) 50%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lc-accent) 19%, var(--lc-surface) 81%), color-mix(in srgb, var(--lc-accent) 11%, var(--lc-surface) 89%));
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--lc-accent) 18%, transparent);
   min-height: 10.6rem;
 }
 
@@ -1213,9 +1256,9 @@
 }
 
 .upgradePlanBtn.isSelected {
-  border-color: color-mix(in srgb, var(--lc-accent) 44%, var(--lc-border) 56%);
-  background: color-mix(in srgb, var(--lc-accent) 18%, var(--lc-surface) 82%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 35%, transparent), 0 8px 20px color-mix(in srgb, var(--lc-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--lc-accent) 65%, var(--lc-border) 35%);
+  background: color-mix(in srgb, var(--lc-accent) 16%, var(--lc-surface) 84%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 52%, transparent);
 }
 
 .upgradePlanChip.isSelected {
@@ -1597,6 +1640,10 @@ html.light .upgradeSecurity {
 }
 
 @media (max-width: 860px) {
+  .upgradeDesktopView {
+    display: none;
+  }
+
   .playersTopbarCompact :global(.lc-topbar-subtitle) {
     margin-top: 0;
     font-size: 0.58rem;
@@ -1803,31 +1850,28 @@ html.dark .lineAdjustBox strong {
 }
 
 @media (min-width: 900px) {
+  .upgradeDesktopView {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    border: 1px solid color-mix(in srgb, var(--lc-border) 55%, transparent);
+    background: color-mix(in srgb, var(--lc-surface) 97%, var(--lc-bg) 3%);
+    box-shadow: 0 4px 16px color-mix(in srgb, black 10%, transparent);
+    padding: 1.4rem;
+  }
+
   .upgradeOverlay {
-    align-items: center;
-    padding: 1rem;
+    display: none;
   }
 
-  .upgradeModal {
-    width: min(100%, 34rem);
-    border-radius: 12px;
-    animation: upgradeSheetInDesktop 220ms ease-out;
-    box-shadow: 0 7px 22px color-mix(in srgb, black 18%, transparent);
-    max-height: min(92vh, 44rem);
-  }
-
-  .upgradeSheetBody {
-    gap: 2rem;
+  .upgradePlanSelector {
+    display: none;
   }
 
   .upgradeFooter {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    position: static;
-    margin-inline: 0;
-    padding: 0 1.5rem 1.5rem;
-    border-top: 0;
-    background: transparent;
+    padding: 0;
   }
 
   .upgradeFooter :global(.lc-btn) {
