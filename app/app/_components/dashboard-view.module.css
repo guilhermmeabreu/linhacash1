@@ -985,17 +985,17 @@
 }
 
 .upgradeModal {
-  width: min(100%, 72rem);
+  width: min(100%, 78rem);
   max-height: min(92vh, 52rem);
   display: grid;
   gap: 0;
   position: relative;
-  border-radius: 22px 22px 0 0;
-  border: 1px solid color-mix(in srgb, var(--lc-border) 84%, transparent);
+  border-radius: 14px 14px 0 0;
+  border: 1px solid color-mix(in srgb, var(--lc-border) 58%, transparent);
   background:
     radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--lc-accent) 11%, transparent), transparent 40%),
     linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 94%, var(--lc-bg) 6%), color-mix(in srgb, var(--lc-surface-elevated) 88%, var(--lc-bg) 12%));
-  box-shadow: 0 -12px 34px color-mix(in srgb, black 42%, transparent);
+  box-shadow: 0 -8px 22px color-mix(in srgb, black 32%, transparent);
   overflow: hidden;
   animation: upgradeSheetInMobile 220ms ease-out;
 }
@@ -1039,7 +1039,7 @@
 .upgradeSheetHeader {
   display: grid;
   gap: 0.42rem;
-  padding: 1.2rem 1.3rem 0.75rem;
+  padding: 1.6rem 1.5rem 0.85rem;
   border-bottom: 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--lc-surface) 92%, var(--lc-bg) 8%), color-mix(in srgb, var(--lc-surface) 100%, transparent) 80%);
 }
@@ -1054,7 +1054,7 @@
 .upgradeSheetBody {
   display: grid;
   gap: 1rem;
-  padding: 0.2rem 1.3rem 1rem;
+  padding: 0.2rem 1.5rem 1.1rem;
   overflow-y: auto;
   min-height: 0;
   scrollbar-width: none;
@@ -1066,7 +1066,7 @@
 
 .upgradePlansRow {
   display: grid;
-  gap: 0.72rem;
+  gap: 1rem;
 }
 
 .upgradePlanBtn {
@@ -1316,10 +1316,10 @@
 .infoBanner { background: color-mix(in srgb, var(--lc-surface) 83%, #0d151f 17%); }
 
 .upgradeBenefits {
-  border: 1px solid color-mix(in srgb, var(--lc-border) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lc-border) 44%, transparent);
   border-radius: 12px;
   padding: 0.8rem;
-  background: color-mix(in srgb, var(--lc-surface) 95%, var(--lc-bg) 5%);
+  background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
 }
 
 .upgradeBenefits p {
@@ -1341,16 +1341,16 @@
   font-size: 0.78rem;
   color: color-mix(in srgb, var(--lc-text) 85%, var(--lc-muted) 15%);
   line-height: 1.4;
-  border: 1px solid color-mix(in srgb, var(--lc-border) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lc-border) 52%, transparent);
   border-radius: 9px;
   padding: 0.4rem 0.45rem;
-  background: color-mix(in srgb, var(--lc-surface-elevated) 85%, transparent);
+  background: color-mix(in srgb, var(--lc-surface-elevated) 93%, transparent);
 }
 
 .upgradeReferral {
-  border: 1px solid color-mix(in srgb, var(--lc-border) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lc-border) 44%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--lc-surface) 95%, var(--lc-bg) 5%);
+  background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
   padding: 0.78rem;
   display: grid;
   gap: 0.52rem;
@@ -1390,9 +1390,9 @@
 }
 
 .upgradeSecurity {
-  border: 1px solid color-mix(in srgb, var(--lc-border) 74%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lc-border) 44%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--lc-surface) 95%, var(--lc-bg) 5%);
+  background: color-mix(in srgb, var(--lc-surface) 98%, var(--lc-bg) 2%);
   padding: 0.72rem;
   display: grid;
   gap: 0.3rem;
@@ -1688,9 +1688,9 @@ html.dark .lineAdjustBox strong {
   }
 
   .upgradeModal {
-    border-radius: 20px;
+    border-radius: 12px;
     animation: upgradeSheetInDesktop 220ms ease-out;
-    box-shadow: 0 24px 56px color-mix(in srgb, black 46%, transparent);
+    box-shadow: 0 14px 30px color-mix(in srgb, black 30%, transparent);
     max-height: min(92vh, 50rem);
   }
 
@@ -1699,9 +1699,9 @@ html.dark .lineAdjustBox strong {
   }
 
   .upgradePlansRow {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
     align-items: stretch;
-    gap: 0.82rem;
+    gap: 1.15rem;
   }
 
   .upgradePlanAnnual {
