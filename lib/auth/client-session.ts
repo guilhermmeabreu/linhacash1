@@ -28,24 +28,46 @@ export function readStoredAuthSession(): StoredAuthSession | null {
   if (!canUseBrowserStorage()) return null;
 
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
+  const fallbackLegacySession = () => {
     const legacyToken = window.localStorage.getItem(LEGACY_TOKEN_KEY);
     if (!legacyToken) return null;
     return { accessToken: legacyToken, refreshToken: null, expiresAt: null, tokenType: 'bearer' };
-  }
+  };
+
+  if (!raw) return fallbackLegacySession();
 
   try {
-    const parsed = JSON.parse(raw) as Partial<StoredAuthSession>;
-    const accessToken = typeof parsed.accessToken === 'string' ? parsed.accessToken.trim() : '';
-    if (!accessToken) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredAuthSession> & {
+      token?: string;
+      access_token?: string;
+      refresh_token?: string;
+      expires_at?: number | string;
+      token_type?: string;
+    };
+    const accessToken = typeof parsed.accessToken === 'string'
+      ? parsed.accessToken.trim()
+      : typeof parsed.token === 'string'
+        ? parsed.token.trim()
+        : typeof parsed.access_token === 'string'
+          ? parsed.access_token.trim()
+          : '';
+    if (!accessToken) return fallbackLegacySession();
     return {
       accessToken,
-      refreshToken: typeof parsed.refreshToken === 'string' ? parsed.refreshToken : null,
-      expiresAt: toPositiveNumber(parsed.expiresAt),
-      tokenType: typeof parsed.tokenType === 'string' ? parsed.tokenType : 'bearer',
+      refreshToken: typeof parsed.refreshToken === 'string'
+        ? parsed.refreshToken
+        : typeof parsed.refresh_token === 'string'
+          ? parsed.refresh_token
+          : null,
+      expiresAt: toPositiveNumber(parsed.expiresAt ?? parsed.expires_at),
+      tokenType: typeof parsed.tokenType === 'string'
+        ? parsed.tokenType
+        : typeof parsed.token_type === 'string'
+          ? parsed.token_type
+          : 'bearer',
     };
   } catch {
-    return null;
+    return fallbackLegacySession();
   }
 }
 
