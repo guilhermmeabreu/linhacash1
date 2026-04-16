@@ -4,7 +4,7 @@ import { AuthenticationError } from '@/lib/http/errors';
 
 const COOKIE_NAME = process.env.NODE_ENV === 'production' ? '__Host-lc_admin_session' : 'lc_admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
-const memoryStore = new Map<string, { expiresAt: number; email: string; ipHash: string; uaHash: string }>();
+const memoryStore = new Map<string, { expiresAt: number; email: string; ipHash: string | null; uaHash: string }>();
 
 function getStoreMode() {
   return process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN ? 'redis' : 'memory';
@@ -34,7 +34,8 @@ function readCookie(req: Request, cookieName: string): string | null {
 }
 async function persistSession(sessionId: string, email: string, ip: string, ua: string) {
   const expiresAt = now() + SESSION_TTL_SECONDS * 1000;
-  const payload = { expiresAt, email, ipHash: hash(ip), uaHash: hash(ua) };
+  const normalizedIp = ip && ip !== 'unknown' ? ip : null;
+  const payload = { expiresAt, email, ipHash: normalizedIp ? hash(normalizedIp) : null, uaHash: hash(ua) };
   if (getStoreMode() === 'redis') {
     const url = process.env.UPSTASH_REDIS_REST_URL!;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
@@ -57,7 +58,7 @@ async function readSession(sessionId: string) {
     });
     const data = await response.json();
     if (!data.result) return null;
-    return JSON.parse(data.result as string) as { expiresAt: number; email: string; ipHash: string; uaHash: string };
+    return JSON.parse(data.result as string) as { expiresAt: number; email: string; ipHash: string | null; uaHash: string };
   }
   const found = memoryStore.get(sessionId);
   if (!found) return null;
@@ -103,7 +104,9 @@ export async function requireAdminSession(req: Request) {
   const session = await readSession(sessionId);
   if (!session) throw new AuthenticationError();
 
-  const isValidIp = session.ipHash === hash(requestIp(req));
+  const currentIp = requestIp(req);
+  const shouldValidateIp = Boolean(session.ipHash) && currentIp !== 'unknown';
+  const isValidIp = shouldValidateIp ? session.ipHash === hash(currentIp) : true;
   const isValidUa = session.uaHash === hash(requestUa(req));
   if (!isValidIp || !isValidUa) {
     await deleteSession(sessionId);
