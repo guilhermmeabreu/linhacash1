@@ -1,102 +1,91 @@
 # LinhaCash
 
-Descubra onde a linha está errada antes de apostar.
+LinhaCash é um SaaS de análise de props da NBA para leitura pré-jogo orientada por dados. A plataforma centraliza jogos, jogadores e métricas em uma interface única para acelerar decisão e reduzir análise manual.
 
-O LinhaCash é uma plataforma de análise de props da NBA que transforma dados recentes em uma leitura rápida, clara e objetiva — focada em ajudar você a tomar decisões melhores antes dos jogos.
+## Stack real do projeto
 
----
+- **Frontend/App**: Next.js 16 (App Router), React 19, TypeScript
+- **Dados e auth**: Supabase (Postgres + Supabase Auth)
+- **Billing**: Stripe (checkout, portal e webhook)
+- **Infra de proteção/performance**: Upstash Redis (rate limit, lock distribuído), cache em memória como fallback
+- **Dados NBA**: API-SPORTS (pipeline de sincronização server-side)
 
-## O que você encontra
+## Estrutura principal (repositório)
 
-- Análise de jogadores por mercado (PTS, AST, REB, 3PM e outros)
-- Histórico recente com leitura visual simples
-- Comparação direta entre desempenho e linha atual
-- Hit rate por janelas (L5, L10, L20, L30)
-- Ajuste de linha para análise personalizada
-- Interface rápida, limpa e focada em decisão
+```text
+app/
+  api/
+    games/              # jogos do dia autenticados
+    players/            # jogadores por jogo
+    metrics/            # métricas por jogador/stat/window/split
+    sync/ + sync/run/   # execução do job de sync (cron protegido)
+    stripe/
+      checkout/         # criação de sessão Stripe
+      portal/           # portal de billing
+      webhook/          # eventos Stripe e atualização de acesso
+    billing/cancel/     # cancelamento de assinatura
+    auth/, profile/, account/, support/
+    admin/              # endpoints administrativos
+lib/
+  services/
+    nba-sync.ts         # ingestão NBA + upsert em Supabase
+    billing-service.ts  # estado de acesso (free/pro)
+    referral-service.ts # códigos de indicação
+    affiliate-commission-service.ts
+  auth/                 # autorização de usuário/admin/cron
+  stripe/               # cliente Stripe server-side
+  rate-limit.ts         # Upstash Redis + fallback memória
+  security.ts           # validação de sessão, helpers seguros
+```
 
----
+## Arquitetura e fluxo de dados
 
-## Como funciona
+1. Usuário autenticado no Supabase acessa `/app`.
+2. O frontend consome rotas internas (`/api/games`, `/api/players`, `/api/metrics`) com `Authorization: Bearer`.
+3. APIs consultam Supabase com service role no servidor e aplicam sanitização/rate limit/cache.
+4. O job de sync (`/api/sync` ou `/api/sync/run`) busca dados na API-SPORTS e persiste em `games`, `players`, `player_stats` e `player_metrics`.
+5. Mudanças de assinatura são processadas pelo webhook Stripe para refletir acesso Pro em `profiles`.
 
-1. Escolha um jogo  
-2. Selecione um jogador  
-3. Veja rapidamente como ele vem performando em relação à linha  
+## Pipeline de sincronização NBA
 
-Sem planilhas. Sem excesso de informação. Só o que importa.
+- Job protegido para cron (`requireCronRequest`) e rate limited.
+- Lock local + lock distribuído (Upstash NX EX) para evitar execução concorrente.
+- Janela de datas: **D-2 até D+3** para capturar rodada recente/próxima.
+- Upsert incremental:
+  - `games`
+  - `players`
+  - `player_stats`
+  - `player_metrics` (quando não está em mock)
+- Invalidação de cache por prefixo (`games:`, `players:`, `metrics:`, `admin:`) após sync.
 
----
+## Métricas e leitura de props
 
-## Para quem é
+A API de métricas suporta janelas **L5, L10, L20, L30 e SEASON**, além de filtros por **split (ALL/HOME/AWAY)** e **oponente**. No dashboard, isso é exibido em splits como **L5/L10/L20/L30, Season e H2H**.
 
-O LinhaCash é ideal para quem:
+Principais mercados disponíveis no backend incluem: `PTS`, `REB`, `AST`, `3PM`, `PA`, `PR`, `PRA`, `AR`, `DD`, `TD`, `STEAL`, `BLOCKS`, `SB`, `FG2A`, `FG3A`.
 
-- acompanha NBA com frequência  
-- analisa props antes de apostar  
-- quer tomar decisões com base em dados  
-- prefere leitura rápida em vez de ferramentas complexas  
+## Billing (Stripe)
 
----
+- Checkout: `/api/stripe/checkout`
+- Portal do cliente: `/api/stripe/portal`
+- Webhook: `/api/stripe/webhook`
 
-## O que o LinhaCash NÃO é
+O webhook valida assinatura Stripe, reconcilia usuário (metadata/customer/email), atualiza estado de plano no `profiles` e trata atribuição de referral/comissão quando aplicável.
 
-- Não é casa de apostas  
-- Não executa apostas  
-- Não fornece sinais garantidos  
-- Não promete lucro  
+## Segurança (base)
 
-A plataforma existe para **organizar dados e facilitar sua análise**.
+- Autenticação por token Supabase em rotas protegidas.
+- Controles por plano (free/pro) em métricas e experiência do dashboard.
+- Rate limiting por IP/usuário (Upstash com fallback local).
+- Proteção de endpoints internos de sync via segredo de cron.
+- Verificação de assinatura no webhook Stripe.
+- Chaves sensíveis usadas no servidor (ex.: `SUPABASE_SERVICE_KEY`, segredos Stripe/Upstash), sem exposição em respostas públicas.
 
----
+## Execução local
 
-## Sobre os dados
+```bash
+npm install
+npm run dev
+```
 
-As análises são baseadas em desempenho recente dos jogadores.
-
-- Não são atualizadas em tempo real durante os jogos  
-- São voltadas para análise pré-jogo  
-- Podem variar conforme contexto (lesões, minutos, adversário, etc.)
-
----
-
-## Planos
-
-- **Free**: acesso essencial para análise básica  
-- **Pro**: acesso a mercados adicionais e análises mais completas  
-
----
-
-## Segurança
-
-O projeto segue boas práticas modernas:
-
-- autenticação e sessão seguras  
-- validação de entrada nas rotas  
-- proteção contra abuso (rate limiting)  
-- verificação de webhooks  
-- headers de segurança em produção  
-
----
-
-## Por que usar o LinhaCash
-
-- Economiza tempo de análise  
-- Evita decisões no “achismo”  
-- Organiza dados de forma simples  
-- Ajuda a identificar padrões rapidamente  
-
----
-
-## Acesso
-
-A plataforma é acessada diretamente pelo navegador.
-
-Crie uma conta gratuita e comece a usar.
-
----
-
-## Licença
-
-Este projeto é disponibilizado apenas para fins de visualização e portfólio.
-
-O uso, cópia ou distribuição não são permitidos sem autorização do autor.
+Variáveis de ambiente obrigatórias e integrações são lidas em runtime no backend (Supabase, Stripe, API-SPORTS, Upstash, segredos de cron/webhook).
