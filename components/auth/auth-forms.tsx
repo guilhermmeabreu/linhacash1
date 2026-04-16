@@ -6,12 +6,16 @@ import { FormEvent, useState } from 'react';
 import { Lock, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { persistAuthSession } from '@/lib/auth/client-session';
 
 type ApiResponse = {
   ok?: boolean;
   error?: string;
   message?: string;
   token?: string;
+  refreshToken?: string;
+  expiresAt?: number;
+  tokenType?: string;
   url?: string;
   user?: {
     id: string;
@@ -36,7 +40,16 @@ export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const message = params.get('registered') ? 'Conta criada. Faça login para continuar.' : null;
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const flow = params.get('auth_flow');
+  const status = params.get('auth_status');
+  const queryMessage = params.get('auth_message');
+  const queryError = status === 'error' ? (queryMessage || 'Não foi possível concluir o fluxo de autenticação. Tente novamente.') : null;
+  const message = queryMessage
+    || (status === 'success' && flow === 'signup_confirmation' ? 'Email confirmado com sucesso. Faça login para continuar.' : null)
+    || (status === 'success' && flow === 'email_change' ? 'Email alterado com sucesso. Faça login novamente para continuar.' : null)
+    || (status === 'success' && flow === 'password_change' ? 'Senha alterada com sucesso. Faça login novamente para continuar.' : null)
+    || (params.get('registered') ? 'Conta criada. Faça login para continuar.' : null);
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent) {
@@ -49,7 +62,12 @@ export function LoginForm() {
       setError(data.error ?? 'Não foi possível entrar.');
       return;
     }
-    localStorage.setItem('lc_token', data.token);
+    persistAuthSession({
+      accessToken: data.token,
+      refreshToken: data.refreshToken,
+      expiresAt: data.expiresAt,
+      tokenType: data.tokenType,
+    });
     window.location.assign('/app');
   }
 
@@ -63,7 +81,7 @@ export function LoginForm() {
         Senha
         <div className="lc-auth-input"><Lock size={14} /><Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required /></div>
       </label>
-      {error ? <p className="lc-auth-error">{error}</p> : null}
+      {error || queryError ? <p className="lc-auth-error">{error || queryError}</p> : null}
       {message ? <p className="lc-auth-success">{message}</p> : null}
 
       <Button type="submit" size="lg" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</Button>
@@ -75,11 +93,13 @@ export function LoginForm() {
       <button
         type="button"
         className="lc-google-btn"
+        disabled={loading || googleLoading}
         onClick={async () => {
-          setLoading(true);
+          if (loading || googleLoading) return;
+          setGoogleLoading(true);
           setError(null);
           const { data } = await authRequest({ action: 'google' });
-          setLoading(false);
+          setGoogleLoading(false);
           if (data.error || !data.url) {
             setError(data.error ?? 'Erro ao conectar com Google.');
             return;
@@ -93,7 +113,7 @@ export function LoginForm() {
           <path fill="#4A90E2" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L3.4 7.5C2.5 9 2 10.5 2 12s.5 3 1.4 4.5L6.6 14Z"/>
           <path fill="#FBBC05" d="M12 6.2c1.4 0 2.6.5 3.5 1.4l2.6-2.6C16.7 3.7 14.5 3 12 3 8.2 3 5 5.2 3.4 8.5L6.6 11c.8-2.3 2.9-4.8 5.4-4.8Z"/>
         </svg>
-        Continuar com Google
+        {googleLoading ? 'Conectando com Google...' : 'Continuar com Google'}
       </button>
 
       <div className="lc-auth-recovery">

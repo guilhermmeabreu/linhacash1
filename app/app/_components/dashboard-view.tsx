@@ -46,6 +46,13 @@ import {
   TabsTrigger,
 } from '@/components/ui';
 import {
+  captureAuthSessionFromUrl,
+  clearAuthSession,
+  ensureValidAccessToken,
+  readStoredAuthSession,
+  refreshAuthSession,
+} from '@/lib/auth/client-session';
+import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -167,18 +174,25 @@ const sidebarItems = [
 ];
 
 function getAuthToken() {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('lc_token');
+  const session = readStoredAuthSession();
+  return session?.accessToken ?? null;
 }
 
 async function apiFetch<T>(path: string): Promise<ApiResult<T>> {
-  const token = getAuthToken();
-  const response = await fetch(path, {
+  const token = await ensureValidAccessToken();
+  const request = async (nextToken: string | null) => fetch(path, {
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(nextToken ? { Authorization: `Bearer ${nextToken}` } : {}),
     },
   });
+  let response = await request(token);
+  if (response.status === 401) {
+    const refreshed = await refreshAuthSession();
+    if (refreshed) {
+      response = await request(refreshed);
+    }
+  }
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -609,14 +623,11 @@ export function DashboardView() {
   }, [initialGameId]);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const currentUrl = new URL(window.location.href);
+    const queryParams = currentUrl.searchParams;
+    const hashParams = new URLSearchParams(currentUrl.hash.replace(/^#/, ''));
     const authMarkers = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'expires_at', 'code', 'error', 'error_description', 'type'];
-    const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
-
-    if (accessToken) {
-      window.localStorage.setItem('lc_token', accessToken);
-    }
+    captureAuthSessionFromUrl(currentUrl);
 
     const shouldCleanHash = authMarkers.some((key) => hashParams.has(key));
     const shouldCleanQuery = ['status', 'oauth', ...authMarkers].some((key) => queryParams.has(key));
@@ -638,7 +649,7 @@ export function DashboardView() {
     let canceled = false;
 
     async function loadPlan() {
-      const token = getAuthToken();
+      const token = await ensureValidAccessToken();
       if (!token) {
         if (!canceled) {
           setPlan('free');
@@ -732,7 +743,7 @@ export function DashboardView() {
     syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null, mode: view });
   }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString, view]);
 
-  const authTokenMissing = typeof window !== 'undefined' && !getAuthToken();
+  const authTokenMissing = typeof window !== 'undefined' && !readStoredAuthSession()?.accessToken;
 
   const handleStatChange = useCallback((value: string) => {
     const nextStat = resolveInitialStat(value);
@@ -752,7 +763,7 @@ export function DashboardView() {
     setManageLoading(true);
     setUpgradeError(null);
     try {
-      const token = getAuthToken();
+      const token = await ensureValidAccessToken();
       const response = await fetch('/api/stripe/portal', {
         method: 'POST',
         headers: {
@@ -796,7 +807,7 @@ export function DashboardView() {
     setSupportSubmitting(true);
     setSupportFeedback(null);
     try {
-      const token = getAuthToken();
+      const token = await ensureValidAccessToken();
       const response = await fetch('/api/support', {
         method: 'POST',
         headers: {
@@ -836,7 +847,7 @@ export function DashboardView() {
     setDeleteSubmitting(true);
     setDeleteFeedback(null);
     try {
-      const token = getAuthToken();
+      const token = await ensureValidAccessToken();
       const response = await fetch('/api/account/delete', {
         method: 'DELETE',
         headers: {
@@ -874,7 +885,7 @@ export function DashboardView() {
     setUpgradeLoading(true);
     setUpgradeError(null);
     try {
-      const token = getAuthToken();
+      const token = await ensureValidAccessToken();
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: {
@@ -1004,6 +1015,15 @@ export function DashboardView() {
 
   const handleLogout = useCallback(() => {
     if (typeof window !== 'undefined') {
+      const token = getAuthToken();
+      if (token) {
+        void fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: 'logout' }),
+        });
+      }
+      clearAuthSession();
       window.location.assign('/login');
     }
   }, []);

@@ -94,7 +94,9 @@ export async function POST(req: Request) {
       logSecurityEvent('auth_success', { ...context, action, userId: data.user.id });
       return okResponse({
       token: data.session?.access_token,
+      refreshToken: data.session?.refresh_token,
       expiresAt: data.session?.expires_at,
+      tokenType: data.session?.token_type,
       user: sanitizeProfile({ ...(profile || { id: data.user.id, email: data.user.email || email }), email: data.user.email || profile?.email || email, plan: billing.hasProAccess ? 'pro' : 'free' }),
       billing,
     });
@@ -224,6 +226,29 @@ export async function POST(req: Request) {
 
     // Sempre retornar ok — não revelar se email existe
       return okResponse({ ok: true });
+    }
+
+    if (action === 'refresh') {
+      const refreshToken = typeof body?.refreshToken === 'string' ? body.refreshToken.trim() : '';
+      if (!refreshToken) return errorResponse('Refresh token ausente', 400);
+
+      const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+      if (error || !data.session?.access_token) {
+        return errorResponse('Sessão expirada', 401);
+      }
+
+      if (!data.user?.id) {
+        return errorResponse('Sessão expirada', 401);
+      }
+
+      await syncProfileEmail(data.user.id, data.user.email);
+      return okResponse({
+        ok: true,
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token,
+        expiresAt: data.session.expires_at,
+        tokenType: data.session.token_type,
+      });
     }
 
   // ── LOGOUT ─────────────────────────────────────────────────────────────────
