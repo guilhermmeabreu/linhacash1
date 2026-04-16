@@ -22,6 +22,7 @@ type WebhookMetadata = {
 };
 
 type StripeAccessStatus = 'active' | 'trialing' | 'canceled';
+type StripePlan = 'monthly' | 'annual' | 'playoff';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -145,6 +146,56 @@ async function patchProfile(userId: string, patch: Record<string, unknown>) {
   }
 }
 
+function asStripePlan(value: string | null): StripePlan | null {
+  if (value === 'monthly' || value === 'annual' || value === 'playoff') return value;
+  return null;
+}
+
+function resolvePlanStatus(status: StripeAccessStatus): 'active' | 'cancelled' {
+  return status === 'active' || status === 'trialing' ? 'active' : 'cancelled';
+}
+
+function buildStripeOwnershipPatch(input: {
+  status: StripeAccessStatus;
+  plan: StripePlan | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  paymentReference?: string | null;
+  subscriptionExpiresAt?: string | null;
+}): Record<string, unknown> {
+  const planStatus = resolvePlanStatus(input.status);
+  const isPlayoff = input.plan === 'playoff';
+  const patch: Record<string, unknown> = {
+    stripe_customer_id: input.stripeCustomerId,
+    stripe_subscription_id: input.stripeSubscriptionId,
+    subscription_status: input.status,
+    plan_source: 'paid',
+    plan_status: planStatus,
+    billing_status: planStatus === 'active' ? 'active' : 'cancelled',
+    payment_provider: 'stripe',
+    subscription_reference: input.stripeSubscriptionId,
+    granted_by_admin: null,
+    granted_reason: null,
+    cancelled_at: input.status === 'canceled' ? new Date().toISOString() : null,
+    playoff_pack_active: isPlayoff && input.status !== 'canceled',
+    billing_updated_at: new Date().toISOString(),
+  };
+
+  if (input.plan) {
+    patch.plan = input.plan;
+  }
+
+  if (typeof input.paymentReference !== 'undefined') {
+    patch.payment_reference = input.paymentReference;
+  }
+
+  if (typeof input.subscriptionExpiresAt !== 'undefined') {
+    patch.subscription_expires_at = input.subscriptionExpiresAt;
+  }
+
+  return patch;
+}
+
 function mapStripePlanToLegacyReferralPlan(plan: string | null): 'mensal' | 'anual' | null {
   if (plan === 'monthly') return 'mensal';
   if (plan === 'annual') return 'anual';
@@ -250,18 +301,22 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
     : paymentStatus === 'paid'
       ? 'active'
       : 'canceled';
-  const isPlayoff = metadata.plan === 'playoff';
+  const stripePlan = asStripePlan(metadata.plan);
   const paidAt = typeof eventObject.created === 'number' ? new Date(eventObject.created * 1000).toISOString() : new Date().toISOString();
   const amountTotal = typeof eventObject.amount_total === 'number' ? Number(eventObject.amount_total) / 100 : null;
+  const checkoutPaymentReference = typeof eventObject.payment_intent === 'string'
+    ? eventObject.payment_intent
+    : typeof eventObject.id === 'string'
+      ? `stripe_session:${eventObject.id}`
+      : null;
 
-  await patchProfile(userId, {
-    stripe_customer_id: stripeCustomerId,
-    stripe_subscription_id: stripeSubscriptionId,
-    plan: metadata.plan,
-    subscription_status: status,
-    ...(isPlayoff ? { playoff_pack_active: true } : {}),
-    billing_updated_at: new Date().toISOString(),
-  });
+  await patchProfile(userId, buildStripeOwnershipPatch({
+    status,
+    plan: stripePlan,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    paymentReference: checkoutPaymentReference,
+  }));
 
   if (stripeMode === 'payment' && paymentStatus === 'paid') {
     const paymentIntentId = typeof eventObject.payment_intent === 'string' ? eventObject.payment_intent : null;
@@ -298,16 +353,25 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
     return;
   }
 
-  await patchProfile(userId, {
-    stripe_customer_id: stripeCustomerId,
-    stripe_subscription_id: stripeSubscriptionId,
-    ...(metadata.plan ? { plan: metadata.plan } : {}),
-    subscription_status: 'active',
-    ...(metadata.plan === 'playoff' ? { playoff_pack_active: true } : {}),
-    billing_updated_at: new Date().toISOString(),
-  });
-
+  const stripePlan = asStripePlan(metadata.plan);
+  const periodEnd = typeof eventObject.period_end === 'number'
+    ? new Date(eventObject.period_end * 1000).toISOString()
+    : undefined;
   const invoiceId = typeof eventObject.id === 'string' ? eventObject.id : null;
+  const paymentReference = typeof eventObject.payment_intent === 'string'
+    ? eventObject.payment_intent
+    : invoiceId
+      ? `stripe_invoice:${invoiceId}`
+      : null;
+  await patchProfile(userId, buildStripeOwnershipPatch({
+    status: 'active',
+    plan: stripePlan,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    paymentReference,
+    subscriptionExpiresAt: periodEnd,
+  }));
+
   const subscriptionReference = stripeSubscriptionId || (typeof eventObject.subscription === 'string' ? eventObject.subscription : null);
   const paymentId = subscriptionReference ? `stripe_sub:${subscriptionReference}` : invoiceId ? `stripe_invoice:${invoiceId}` : null;
   if (!paymentId) return;
@@ -351,14 +415,17 @@ async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
     return;
   }
 
-  await patchProfile(userId, {
-    stripe_customer_id: stripeCustomerId,
-    stripe_subscription_id: stripeSubscriptionId,
-    ...(metadata.plan ? { plan: metadata.plan } : {}),
-    subscription_status: 'canceled',
-    playoff_pack_active: false,
-    billing_updated_at: new Date().toISOString(),
-  });
+  const stripePlan = asStripePlan(metadata.plan);
+  const periodEnd = typeof eventObject.current_period_end === 'number'
+    ? new Date(eventObject.current_period_end * 1000).toISOString()
+    : null;
+  await patchProfile(userId, buildStripeOwnershipPatch({
+    status: 'canceled',
+    plan: stripePlan,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    subscriptionExpiresAt: periodEnd,
+  }));
 }
 
 async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
@@ -390,14 +457,17 @@ async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
       ? 'active'
       : 'canceled';
 
-  await patchProfile(userId, {
-    stripe_customer_id: stripeCustomerId,
-    stripe_subscription_id: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
-    ...(metadata.plan ? { plan: metadata.plan } : {}),
-    subscription_status: subscriptionStatus,
-    ...(metadata.plan === 'playoff' ? { playoff_pack_active: subscriptionStatus !== 'canceled' } : {}),
-    billing_updated_at: new Date().toISOString(),
-  });
+  const stripePlan = asStripePlan(metadata.plan);
+  const periodEnd = typeof eventObject.current_period_end === 'number'
+    ? new Date(eventObject.current_period_end * 1000).toISOString()
+    : undefined;
+  await patchProfile(userId, buildStripeOwnershipPatch({
+    status: subscriptionStatus,
+    plan: stripePlan,
+    stripeCustomerId,
+    stripeSubscriptionId: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
+    subscriptionExpiresAt: periodEnd,
+  }));
 }
 
 export async function GET() {

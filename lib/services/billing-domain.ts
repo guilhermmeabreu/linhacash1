@@ -124,11 +124,13 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
   const planSource = inferredPlanSource || normalizePlanSource(row.plan_source);
   const planStatus = inferredPlanStatus || normalizePlanStatus(row.plan_status);
   const billingStatus = inferredBillingStatus || normalizeBillingStatus(row.billing_status);
-  const plan = legacyPlan === PLAN.PRO || hasStripeProAccess ? PLAN.PRO : PLAN.FREE;
+  const hasPaidAccessSignal =
+    planSource === PLAN_SOURCE.PAID &&
+    (subscriptionStatus === 'trialing' || subscriptionStatus === 'active' || planStatus === PLAN_STATUS.ACTIVE);
+  const plan = legacyPlan === PLAN.PRO || hasStripeProAccess || hasPaidAccessSignal ? PLAN.PRO : PLAN.FREE;
   const now = Date.now();
   const expiresAt = row.subscription_expires_at ? new Date(row.subscription_expires_at).getTime() : null;
   const paidStillActive =
-    plan === PLAN.PRO &&
     planSource === PLAN_SOURCE.PAID &&
     (planStatus === PLAN_STATUS.ACTIVE || (planStatus === PLAN_STATUS.CANCELLED && (!expiresAt || expiresAt > now)));
 
