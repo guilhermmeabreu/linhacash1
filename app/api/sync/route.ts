@@ -45,6 +45,7 @@ async function withLockDiagnostics<T extends Record<string, unknown>>(payload: T
 
 async function executeSync(req: Request) {
   const origin = req.headers.get('origin') || undefined;
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
 
   try {
     if (!(await rateLimit(`sync:${getIP(req)}`, 10, 60_000))) {
@@ -52,7 +53,7 @@ async function executeSync(req: Request) {
     }
 
     await requireSyncExecutionAccess(req);
-    const result = await runNbaSyncJob();
+    const result = await runNbaSyncJob({ requestId, routeSource: 'cron' });
     const responsePayload = await withLockDiagnostics(result as Record<string, unknown>);
     const statusCode = result.status === 'error' ? 500 : result.status === 'skipped' ? 202 : 200;
     return NextResponse.json(responsePayload, { status: statusCode });

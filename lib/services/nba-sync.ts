@@ -15,6 +15,18 @@ type SyncSummary = {
   errors: string[];
   startedAt: string;
   finishedAt: string;
+  debug?: {
+    requestId: string | null;
+    routeSource: 'cron' | 'manual' | null;
+    hasRunningSync: boolean | null;
+    inProcessRunAlready: boolean;
+    distributedLock: 'acquired' | 'locked' | 'unavailable' | null;
+  };
+};
+
+type RunNbaSyncOptions = {
+  requestId?: string | null;
+  routeSource?: 'cron' | 'manual' | null;
 };
 
 type ApiSportsResponse<T> = { response?: T[] };
@@ -211,33 +223,33 @@ function parseLockStartedAt(lockValue: string | null): number | null {
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-async function tryRecoverStaleDistributedLock(lockValue: string): Promise<boolean> {
+async function tryRecoverStaleDistributedLock(lockValue: string): Promise<'recovered' | 'missing' | 'not_recovered'> {
   const currentLockValue = await upstashGet(REDIS_SYNC_LOCK_KEY);
-  if (!currentLockValue) return false;
+  if (!currentLockValue) return 'missing';
 
   const ttlSeconds = await upstashTtl(REDIS_SYNC_LOCK_KEY);
   const lockHasExpiry = typeof ttlSeconds === 'number' && ttlSeconds > 0;
 
   const lockStartedAt = parseLockStartedAt(currentLockValue);
   if (lockHasExpiry) {
-    if (!lockStartedAt) return false;
+    if (!lockStartedAt) return 'not_recovered';
     const lockAge = Date.now() - lockStartedAt;
-    if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return false;
+    if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return 'not_recovered';
   } else if (!lockStartedAt) {
     // Legacy/manual lock value without timestamp and without expiry.
     // It cannot be age-validated, so recover it as stale to avoid permanent skip.
   } else {
     const lockAge = Date.now() - lockStartedAt;
-    if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return false;
+    if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return 'not_recovered';
   }
 
   if (lockHasExpiry) {
-    return false;
+    return 'not_recovered';
   }
 
   await upstashDeleteIfValueMatches(REDIS_SYNC_LOCK_KEY, currentLockValue);
   const retryState = await upstashSetNxEx(REDIS_SYNC_LOCK_KEY, lockValue, Math.ceil((SYNC_TIMEOUT_MS + 2 * 60_000) / 1000));
-  return retryState === 'acquired';
+  return retryState === 'acquired' ? 'recovered' : 'not_recovered';
 }
 
 async function detectTableColumns(supabase: SupabaseClient, table: string): Promise<Set<string>> {
@@ -529,7 +541,12 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   };
 }
 
-export async function runNbaSyncJob(): Promise<SyncSummary> {
+export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<SyncSummary> {
+  const debugBase = {
+    requestId: options.requestId ?? null,
+    routeSource: options.routeSource ?? null,
+  };
+
   if (inProcessRun) {
     const timestamp = nowIso();
     return {
@@ -542,6 +559,12 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
       errors: [],
       startedAt: timestamp,
       finishedAt: timestamp,
+      debug: {
+        ...debugBase,
+        hasRunningSync: null,
+        inProcessRunAlready: true,
+        distributedLock: null,
+      },
     };
   }
 
@@ -550,12 +573,41 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
   const lockValue = `${startedAt}:${Math.random().toString(36).slice(2)}`;
   const lockTtlSeconds = Math.ceil((SYNC_TIMEOUT_MS + 2 * 60_000) / 1000);
   let distributedLockAcquired = false;
+  let distributedLockState: 'acquired' | 'locked' | 'unavailable' | null = null;
+  let hasRunningSyncResult: boolean | null = null;
 
   if (upstashAvailable()) {
     const lockState = await upstashSetNxEx(REDIS_SYNC_LOCK_KEY, lockValue, lockTtlSeconds);
+    distributedLockState = lockState;
     if (lockState === 'locked') {
-      const recovered = await tryRecoverStaleDistributedLock(lockValue);
-      if (!recovered) {
+      const recoveryResult = await tryRecoverStaleDistributedLock(lockValue);
+      if (recoveryResult === 'missing') {
+        const retryLockState = await upstashSetNxEx(REDIS_SYNC_LOCK_KEY, lockValue, lockTtlSeconds);
+        distributedLockState = retryLockState;
+        if (retryLockState === 'acquired') {
+          distributedLockAcquired = true;
+        } else {
+          const finishedAt = nowIso();
+          inProcessRun = false;
+          return {
+            status: 'skipped',
+            message: 'Sync skipped because another sync lock is active.',
+            gamesSynced: 0,
+            teamsSynced: 0,
+            playersSynced: 0,
+            playerStatsSynced: 0,
+            errors: [],
+            startedAt,
+            finishedAt,
+            debug: {
+              ...debugBase,
+              hasRunningSync: hasRunningSyncResult,
+              inProcessRunAlready: false,
+              distributedLock: distributedLockState,
+            },
+          };
+        }
+      } else if (recoveryResult !== 'recovered') {
         const finishedAt = nowIso();
         inProcessRun = false;
         return {
@@ -568,12 +620,21 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
           errors: [],
           startedAt,
           finishedAt,
+          debug: {
+            ...debugBase,
+            hasRunningSync: hasRunningSyncResult,
+            inProcessRunAlready: false,
+            distributedLock: distributedLockState,
+          },
         };
+      } else {
+        distributedLockAcquired = true;
       }
-      distributedLockAcquired = true;
     } else {
       distributedLockAcquired = lockState === 'acquired';
     }
+  } else {
+    distributedLockState = 'unavailable';
   }
 
   const supabase = getSupabaseAdmin();
@@ -583,7 +644,8 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
   let logId: string | number | null = null;
 
   try {
-    if (await hasRunningSync(supabase, syncLogColumns, now)) {
+    hasRunningSyncResult = await hasRunningSync(supabase, syncLogColumns, now);
+    if (hasRunningSyncResult) {
       const finishedAt = nowIso();
       const skippedSummary: SyncSummary = {
         status: 'skipped',
@@ -595,6 +657,12 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
         errors: [],
         startedAt,
         finishedAt,
+        debug: {
+          ...debugBase,
+          hasRunningSync: hasRunningSyncResult,
+          inProcessRunAlready: false,
+          distributedLock: distributedLockState,
+        },
       };
 
       await updateSyncLog(supabase, syncLogColumns, null, {
@@ -638,6 +706,12 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
       ...partial,
       startedAt,
       finishedAt,
+      debug: {
+        ...debugBase,
+        hasRunningSync: hasRunningSyncResult,
+        inProcessRunAlready: false,
+        distributedLock: distributedLockState,
+      },
     };
   } catch (error) {
     const finishedAt = nowIso();
@@ -660,6 +734,12 @@ export async function runNbaSyncJob(): Promise<SyncSummary> {
       errors: [message],
       startedAt,
       finishedAt,
+      debug: {
+        ...debugBase,
+        hasRunningSync: hasRunningSyncResult,
+        inProcessRunAlready: false,
+        distributedLock: distributedLockState,
+      },
     };
   } finally {
     if (distributedLockAcquired) {
