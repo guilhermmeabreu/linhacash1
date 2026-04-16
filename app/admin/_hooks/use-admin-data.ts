@@ -14,6 +14,7 @@ export function useAdminData() {
   const [operationsInsights, setOperationsInsights] = useState<OperationsInsights | null>(null);
   const [adminActionInsights, setAdminActionInsights] = useState<AdminActionInsights | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncRunning, setSyncRunning] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadAll = useCallback(async () => {
@@ -74,14 +75,21 @@ export function useAdminData() {
         setReferrals((curr) => curr.filter((ref) => ref.id !== id));
       },
       async runSync() {
-        const data = await adminApi.runSync();
-        const statusLabel = data.status === 'success' ? 'success' : data.status === 'skipped' ? 'skipped' : 'failure';
-        const message = data.error || data.message || 'Sync concluído.';
-        setFeedback({
-          type: data.status === 'error' ? 'error' : 'success',
-          message: `Sync ${statusLabel}: ${message}`,
-        });
-        await loadAll();
+        if (syncRunning) return;
+
+        setSyncRunning(true);
+        try {
+          const data = await adminApi.runSync();
+          const statusLabel = data.status === 'success' ? 'success' : data.status === 'skipped' ? 'skipped' : 'failure';
+          const message = data.error || data.message || 'Sync concluído.';
+          setFeedback({
+            type: data.status === 'error' ? 'error' : 'success',
+            message: `Sync ${statusLabel}: ${message}`,
+          });
+          await loadAll();
+        } finally {
+          setSyncRunning(false);
+        }
       },
       async updateCommissionStatus(id: number, commissionStatus: 'pending' | 'earned' | 'paid', payoutNote?: string) {
         await adminApi.updateCommissionStatus(id, commissionStatus, payoutNote);
@@ -92,7 +100,7 @@ export function useAdminData() {
         setFeedback(null);
       },
     }),
-    [loadAll],
+    [loadAll, syncRunning],
   );
 
   return {
@@ -106,6 +114,7 @@ export function useAdminData() {
     operationsInsights,
     adminActionInsights,
     loading,
+    syncRunning,
     feedback,
     loadAll,
     actions,

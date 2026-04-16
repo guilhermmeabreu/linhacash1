@@ -36,7 +36,7 @@ function AdminSkeleton() {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { stats, users, referrals, referralUses, commissions, syncHistory, productInsights, operationsInsights, adminActionInsights, loading, feedback, loadAll, actions } = useAdminData();
+  const { stats, users, referrals, referralUses, commissions, syncHistory, productInsights, operationsInsights, adminActionInsights, loading, syncRunning, feedback, loadAll, actions } = useAdminData();
   const [tab, setTab] = useState<AdminTab>('dashboard');
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState<'all' | 'pro_paid' | 'pro_admin' | 'free'>('all');
@@ -688,7 +688,9 @@ export default function AdminPage() {
         {!loading && tab === 'sync' && (
           <section className="adm-card">
             <div className="adm-row" style={{ marginBottom: 16 }}>
-              <button className="adm-btn" onClick={() => destroy('Executar sincronização agora?', actions.runSync)}>Rodar sync agora</button>
+              <button className="adm-btn" disabled={syncRunning} onClick={() => destroy('Executar sincronização agora?', actions.runSync)}>
+                {syncRunning ? 'Sincronizando...' : 'Rodar sync agora'}
+              </button>
               <span className="adm-muted">Mostrando as 5 sincronizações mais recentes.</span>
             </div>
             {(syncHistory || []).slice(0, 5).map((entry, index) => (

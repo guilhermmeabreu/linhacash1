@@ -65,8 +65,8 @@ async function executeSync(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
-  return executeSync(req);
+export async function GET() {
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
 
 export async function POST(req: Request) {
