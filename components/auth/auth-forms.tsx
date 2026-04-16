@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Lock, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { persistAuthSession } from '@/lib/auth/client-session';
+import { ensureValidAccessToken, persistAuthSession } from '@/lib/auth/client-session';
 
 type ApiResponse = {
   ok?: boolean;
@@ -36,11 +36,13 @@ async function authRequest(payload: Record<string, unknown>) {
 }
 
 export function LoginForm() {
+  const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [bootstrapComplete, setBootstrapComplete] = useState(false);
   const flow = params.get('auth_flow');
   const status = params.get('auth_status');
   const queryMessage = params.get('auth_message');
@@ -51,6 +53,38 @@ export function LoginForm() {
     || (status === 'success' && flow === 'password_change' ? 'Senha alterada com sucesso. Faça login novamente para continuar.' : null)
     || (params.get('registered') ? 'Conta criada. Faça login para continuar.' : null);
   const [error, setError] = useState<string | null>(null);
+  const shouldForceLogin = flow === 'email_change' || flow === 'password_change' || flow === 'signup_confirmation';
+
+  useEffect(() => {
+    let canceled = false;
+
+    async function bootstrapAuth() {
+      if (shouldForceLogin || status === 'error') {
+        if (!canceled) setBootstrapComplete(true);
+        return;
+      }
+
+      const token = await ensureValidAccessToken();
+      if (canceled) return;
+
+      if (token) {
+        router.replace('/app');
+        return;
+      }
+
+      setBootstrapComplete(true);
+    }
+
+    void bootstrapAuth();
+
+    return () => {
+      canceled = true;
+    };
+  }, [router, shouldForceLogin, status]);
+
+  if (!bootstrapComplete) {
+    return <p className="lc-auth-help">Restaurando sessão...</p>;
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

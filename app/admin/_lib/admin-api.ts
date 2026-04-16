@@ -1,3 +1,5 @@
+import { ensureValidAccessToken } from '@/lib/auth/client-session';
+
 export interface Billing {
   planSource: string;
   planStatus: string;
@@ -115,8 +117,14 @@ export class AdminApiError extends Error {
 }
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
+  const token = await ensureValidAccessToken();
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers || {}),
+    },
+    credentials: 'include',
     ...init,
   });
 

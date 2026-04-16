@@ -26,6 +26,9 @@ function requestUa(req: Request) {
   return req.headers.get('user-agent') || 'unknown';
 }
 
+function shouldBindAdminSessionToIp() {
+  return process.env.ADMIN_SESSION_BIND_IP === 'true';
+}
 
 function readCookie(req: Request, cookieName: string): string | null {
   const raw = req.headers.get('cookie') || '';
@@ -105,7 +108,7 @@ export async function requireAdminSession(req: Request) {
   if (!session) throw new AuthenticationError();
 
   const currentIp = requestIp(req);
-  const shouldValidateIp = Boolean(session.ipHash) && currentIp !== 'unknown';
+  const shouldValidateIp = shouldBindAdminSessionToIp() && Boolean(session.ipHash) && currentIp !== 'unknown';
   const isValidIp = shouldValidateIp ? session.ipHash === hash(currentIp) : true;
   const isValidUa = session.uaHash === hash(requestUa(req));
   if (!isValidIp || !isValidUa) {
