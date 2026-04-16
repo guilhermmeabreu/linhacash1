@@ -68,6 +68,7 @@ export type BillingState = {
   subscriptionReference: string | null;
   externalReference: string | null;
   referralCodeUsed: string | null;
+  paidPlanType: 'monthly' | 'annual' | 'playoff' | 'legacy_paid' | null;
   hasProAccess: boolean;
   isPaidPro: boolean;
   isManualPro: boolean;
@@ -98,13 +99,32 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
   const subscriptionStatus = typeof row.subscription_status === 'string'
     ? row.subscription_status.trim().toLowerCase()
     : null;
-  const hasStripeProAccess =
+  const isStripePlan = normalizedPlan === 'monthly' || normalizedPlan === 'annual' || normalizedPlan === 'playoff';
+  const hasStripeSubscriptionAccess =
     (normalizedPlan === 'monthly' || normalizedPlan === 'annual') &&
     (subscriptionStatus === 'trialing' || subscriptionStatus === 'active');
+  const hasStripePlayoffAccess = normalizedPlan === 'playoff' && Boolean(row.playoff_pack_active);
+  const hasStripeProAccess = hasStripeSubscriptionAccess || hasStripePlayoffAccess;
+  const stripeCancelled = isStripePlan && subscriptionStatus === 'canceled';
+  const inferredPlanSource = isStripePlan ? PLAN_SOURCE.PAID : null;
+  const inferredPlanStatus = isStripePlan
+    ? hasStripeProAccess
+      ? PLAN_STATUS.ACTIVE
+      : stripeCancelled
+        ? PLAN_STATUS.CANCELLED
+        : PLAN_STATUS.EXPIRED
+    : null;
+  const inferredBillingStatus = isStripePlan
+    ? hasStripeProAccess
+      ? BILLING_STATUS.ACTIVE
+      : stripeCancelled
+        ? BILLING_STATUS.CANCELLED
+        : BILLING_STATUS.EXPIRED
+    : null;
+  const planSource = inferredPlanSource || normalizePlanSource(row.plan_source);
+  const planStatus = inferredPlanStatus || normalizePlanStatus(row.plan_status);
+  const billingStatus = inferredBillingStatus || normalizeBillingStatus(row.billing_status);
   const plan = legacyPlan === PLAN.PRO || hasStripeProAccess ? PLAN.PRO : PLAN.FREE;
-  const planSource = normalizePlanSource(row.plan_source);
-  const planStatus = normalizePlanStatus(row.plan_status);
-  const billingStatus = normalizeBillingStatus(row.billing_status);
   const now = Date.now();
   const expiresAt = row.subscription_expires_at ? new Date(row.subscription_expires_at).getTime() : null;
   const paidStillActive =
@@ -116,6 +136,13 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
     plan === PLAN.PRO &&
     planSource === PLAN_SOURCE.ADMIN &&
     (planStatus === PLAN_STATUS.ACTIVE || planStatus === PLAN_STATUS.CANCELLED);
+  const paidPlanType = hasStripeSubscriptionAccess
+    ? normalizedPlan as 'monthly' | 'annual'
+    : hasStripePlayoffAccess
+      ? 'playoff'
+      : paidStillActive
+        ? 'legacy_paid'
+        : null;
 
   return {
     plan,
@@ -135,6 +162,7 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
     subscriptionReference: row.subscription_reference,
     externalReference: row.external_reference,
     referralCodeUsed: row.referral_code_used,
+    paidPlanType,
     hasProAccess: hasStripeProAccess || paidStillActive || manualActive,
     isPaidPro: hasStripeProAccess || paidStillActive,
     isManualPro: manualActive,

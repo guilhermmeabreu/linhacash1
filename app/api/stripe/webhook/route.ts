@@ -2,6 +2,9 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { requireEnv } from '@/lib/env';
 import { buildRequestContext, logRouteError } from '@/lib/observability';
+import { findExistingReferralCode } from '@/lib/services/referral-service';
+import { upsertAffiliateCommission } from '@/lib/services/affiliate-commission-service';
+import { invalidateCacheByPrefix } from '@/lib/cache/memory-cache';
 
 export const runtime = 'nodejs';
 
@@ -142,6 +145,80 @@ async function patchProfile(userId: string, patch: Record<string, unknown>) {
   }
 }
 
+function mapStripePlanToLegacyReferralPlan(plan: string | null): 'mensal' | 'anual' | null {
+  if (plan === 'monthly') return 'mensal';
+  if (plan === 'annual') return 'anual';
+  return null;
+}
+
+async function getActiveProfileReferralCode(userId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('profiles').select('referral_code_used').eq('id', userId).maybeSingle();
+  if (error) throw error;
+
+  const stored = typeof data?.referral_code_used === 'string' ? data.referral_code_used.trim().toUpperCase() : null;
+  if (!stored) return null;
+  const referral = await findExistingReferralCode(stored);
+  return referral?.active ? referral.code : null;
+}
+
+async function registerReferralAttribution(input: {
+  userId: string;
+  paymentId: string;
+  plan: string | null;
+  paidAt: string | null;
+  transactionAmountBrl: number | null;
+}) {
+  const referralCode = await getActiveProfileReferralCode(input.userId);
+  if (!referralCode) return;
+
+  const { data: existingReferralUse, error: referralUseLookupError } = await supabase
+    .from('referral_uses')
+    .select('id')
+    .eq('payment_id', input.paymentId)
+    .maybeSingle();
+  if (referralUseLookupError) throw referralUseLookupError;
+
+  if (!existingReferralUse) {
+    const { error: insertReferralUseError } = await supabase
+      .from('referral_uses')
+      .insert({
+        code: referralCode,
+        user_id: input.userId,
+        payment_id: input.paymentId,
+        created_at: input.paidAt || new Date().toISOString(),
+      });
+    if (insertReferralUseError) throw insertReferralUseError;
+
+    const { error: incrementError } = await supabase.rpc('increment_referral_use', { referral_code: referralCode });
+    if (incrementError) {
+      const { data: refData, error: refLookupError } = await supabase
+        .from('referral_codes')
+        .select('uses')
+        .eq('code', referralCode)
+        .maybeSingle();
+      if (refLookupError) throw refLookupError;
+      const currentUses = Number(refData?.uses || 0);
+      const { error: fallbackIncrementError } = await supabase
+        .from('referral_codes')
+        .update({ uses: currentUses + 1 })
+        .eq('code', referralCode);
+      if (fallbackIncrementError) throw fallbackIncrementError;
+    }
+  }
+
+  const commissionPlan = mapStripePlanToLegacyReferralPlan(input.plan);
+  if (!commissionPlan) return;
+
+  await upsertAffiliateCommission({
+    code: referralCode,
+    userId: input.userId,
+    paymentId: input.paymentId,
+    plan: commissionPlan,
+    transactionAmount: input.transactionAmountBrl,
+    paidAt: input.paidAt,
+  });
+}
+
 async function handleCheckoutSessionCompleted(eventObject: Record<string, unknown>) {
   const {
     metadata,
@@ -174,6 +251,8 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
       ? 'active'
       : 'canceled';
   const isPlayoff = metadata.plan === 'playoff';
+  const paidAt = typeof eventObject.created === 'number' ? new Date(eventObject.created * 1000).toISOString() : new Date().toISOString();
+  const amountTotal = typeof eventObject.amount_total === 'number' ? Number(eventObject.amount_total) / 100 : null;
 
   await patchProfile(userId, {
     stripe_customer_id: stripeCustomerId,
@@ -183,6 +262,18 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
     ...(isPlayoff ? { playoff_pack_active: true } : {}),
     billing_updated_at: new Date().toISOString(),
   });
+
+  if (stripeMode === 'payment' && paymentStatus === 'paid') {
+    const paymentIntentId = typeof eventObject.payment_intent === 'string' ? eventObject.payment_intent : null;
+    const paymentId = paymentIntentId || `stripe_session:${typeof eventObject.id === 'string' ? eventObject.id : userId}`;
+    await registerReferralAttribution({
+      userId,
+      paymentId,
+      plan: metadata.plan,
+      paidAt,
+      transactionAmountBrl: amountTotal,
+    });
+  }
 }
 
 async function handleInvoicePaid(eventObject: Record<string, unknown>) {
@@ -215,6 +306,27 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
     ...(metadata.plan === 'playoff' ? { playoff_pack_active: true } : {}),
     billing_updated_at: new Date().toISOString(),
   });
+
+  const invoiceId = typeof eventObject.id === 'string' ? eventObject.id : null;
+  const subscriptionReference = stripeSubscriptionId || (typeof eventObject.subscription === 'string' ? eventObject.subscription : null);
+  const paymentId = subscriptionReference ? `stripe_sub:${subscriptionReference}` : invoiceId ? `stripe_invoice:${invoiceId}` : null;
+  if (!paymentId) return;
+
+  const paidAt = typeof eventObject.status_transitions === 'object' && eventObject.status_transitions
+    ? (() => {
+      const transitions = eventObject.status_transitions as Record<string, unknown>;
+      const paidAtUnix = typeof transitions.paid_at === 'number' ? transitions.paid_at : null;
+      return paidAtUnix ? new Date(paidAtUnix * 1000).toISOString() : new Date().toISOString();
+    })()
+    : new Date().toISOString();
+  const amountPaid = typeof eventObject.amount_paid === 'number' ? Number(eventObject.amount_paid) / 100 : null;
+  await registerReferralAttribution({
+    userId,
+    paymentId,
+    plan: metadata.plan,
+    paidAt,
+    transactionAmountBrl: amountPaid,
+  });
 }
 
 async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
@@ -244,6 +356,7 @@ async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
     stripe_subscription_id: stripeSubscriptionId,
     ...(metadata.plan ? { plan: metadata.plan } : {}),
     subscription_status: 'canceled',
+    playoff_pack_active: false,
     billing_updated_at: new Date().toISOString(),
   });
 }
@@ -282,6 +395,7 @@ async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
     stripe_subscription_id: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
     ...(metadata.plan ? { plan: metadata.plan } : {}),
     subscription_status: subscriptionStatus,
+    ...(metadata.plan === 'playoff' ? { playoff_pack_active: subscriptionStatus !== 'canceled' } : {}),
     billing_updated_at: new Date().toISOString(),
   });
 }
@@ -335,6 +449,7 @@ export async function POST(req: Request) {
         default:
           break;
       }
+      invalidateCacheByPrefix('admin:');
     } catch (handlerError) {
       logRouteError('/api/stripe/webhook', context.requestId, handlerError, {
         status: 500,

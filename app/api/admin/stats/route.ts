@@ -9,7 +9,8 @@ import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
-const MONTHLY_PRO_PRICE = 24.9;
+const MONTHLY_PRO_PRICE_BRL = 24.9;
+const ANNUAL_PRO_PRICE_BRL = 197;
 type StatsProfileRow = BillingProfileRow & { created_at: string; name: string | null; email: string | null; id: string };
 
 export async function GET(req: Request) {
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
       const [profiles, games, players] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id,plan,plan_status,plan_source,billing_status,subscription_started_at,subscription_expires_at,cancelled_at,granted_by_admin,granted_reason,payment_provider,payment_reference,subscription_reference,external_reference,referral_code_used,created_at,name,email')
+          .select('id,plan,subscription_status,playoff_pack_active,billing_updated_at,plan_status,plan_source,billing_status,subscription_started_at,subscription_expires_at,cancelled_at,granted_by_admin,granted_reason,payment_provider,payment_reference,subscription_reference,external_reference,referral_code_used,created_at,name,email')
           .order('created_at', { ascending: false }),
         supabase.from('games').select('id', { count: 'exact' }),
         supabase.from('players').select('id', { count: 'exact' }),
@@ -39,7 +40,11 @@ export async function GET(req: Request) {
       const pro_admin_users = billingStates.filter((b) => b.isManualPro).length;
       const pro_users = pro_paid_users + pro_admin_users;
       const free_users = total_users - pro_users;
-      const estimated_monthly_revenue_brl = Number((pro_paid_users * MONTHLY_PRO_PRICE).toFixed(2));
+      const paidMonthlyUsers = billingStates.filter((billing) => billing.isPaidPro && billing.paidPlanType === 'monthly').length;
+      const paidAnnualUsers = billingStates.filter((billing) => billing.isPaidPro && billing.paidPlanType === 'annual').length;
+      const paidPlayoffUsers = billingStates.filter((billing) => billing.isPaidPro && billing.paidPlanType === 'playoff').length;
+      const estimatedMonthlyRecurringRevenue = (paidMonthlyUsers * MONTHLY_PRO_PRICE_BRL) + (paidAnnualUsers * (ANNUAL_PRO_PRICE_BRL / 12));
+      const estimated_monthly_revenue_brl = Number(estimatedMonthlyRecurringRevenue.toFixed(2));
 
       return {
         total_users,
@@ -47,6 +52,9 @@ export async function GET(req: Request) {
         pro_paid_users,
         pro_admin_users,
         free_users,
+        paid_monthly_users: paidMonthlyUsers,
+        paid_annual_users: paidAnnualUsers,
+        paid_playoff_users: paidPlayoffUsers,
         total_games: games.count || 0,
         total_players: players.count || 0,
         estimated_monthly_revenue_brl,
