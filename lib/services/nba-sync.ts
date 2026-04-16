@@ -215,14 +215,23 @@ async function tryRecoverStaleDistributedLock(lockValue: string): Promise<boolea
   const currentLockValue = await upstashGet(REDIS_SYNC_LOCK_KEY);
   if (!currentLockValue) return false;
 
-  const lockStartedAt = parseLockStartedAt(currentLockValue);
-  if (!lockStartedAt) return false;
-
-  const lockAge = Date.now() - lockStartedAt;
-  if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return false;
-
   const ttlSeconds = await upstashTtl(REDIS_SYNC_LOCK_KEY);
-  if (typeof ttlSeconds === 'number' && ttlSeconds > 0) {
+  const lockHasExpiry = typeof ttlSeconds === 'number' && ttlSeconds > 0;
+
+  const lockStartedAt = parseLockStartedAt(currentLockValue);
+  if (lockHasExpiry) {
+    if (!lockStartedAt) return false;
+    const lockAge = Date.now() - lockStartedAt;
+    if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return false;
+  } else if (!lockStartedAt) {
+    // Legacy/manual lock value without timestamp and without expiry.
+    // It cannot be age-validated, so recover it as stale to avoid permanent skip.
+  } else {
+    const lockAge = Date.now() - lockStartedAt;
+    if (lockAge < STALE_LOCK_RECOVERY_THRESHOLD_MS) return false;
+  }
+
+  if (lockHasExpiry) {
     return false;
   }
 
