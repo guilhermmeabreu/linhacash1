@@ -75,7 +75,12 @@ export function useAdminData() {
       },
       async runSync() {
         const data = await adminApi.runSync();
-        setFeedback({ type: data.error ? 'error' : 'success', message: data.error || data.message || 'Sync concluído.' });
+        const statusLabel = data.status === 'success' ? 'success' : data.status === 'skipped' ? 'skipped' : 'failure';
+        const message = data.error || data.message || 'Sync concluído.';
+        setFeedback({
+          type: data.status === 'error' ? 'error' : 'success',
+          message: `Sync ${statusLabel}: ${message}`,
+        });
         await loadAll();
       },
       async updateCommissionStatus(id: number, commissionStatus: 'pending' | 'earned' | 'paid', payoutNote?: string) {

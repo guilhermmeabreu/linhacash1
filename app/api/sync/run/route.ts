@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireCronRequest } from '@/lib/auth/authorization';
+import { requireSyncExecutionAccess } from '@/lib/auth/authorization';
 import { AppError } from '@/lib/http/errors';
 import { fail, options } from '@/lib/http/responses';
 import { getIP, rateLimit } from '@/lib/rate-limit';
@@ -15,7 +15,7 @@ async function executeSync(req: Request) {
       return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many sync requests'), origin);
     }
 
-    await requireCronRequest(req);
+    await requireSyncExecutionAccess(req);
     const result = await runNbaSyncJob();
     const statusCode = result.status === 'error' ? 500 : result.status === 'skipped' ? 202 : 200;
     return NextResponse.json(result, { status: statusCode });

@@ -175,7 +175,7 @@ export const adminApi = {
     return json('/api/admin/users', { method: 'PUT', body: JSON.stringify({ email }) });
   },
   runSync() {
-    return json<{ message?: string; error?: string }>('/api/sync');
+    return json<{ status: 'success' | 'skipped' | 'error'; message?: string; error?: string }>('/api/sync/run', { method: 'POST' });
   },
   createReferral(code: string, influencer_name: string) {
     return json('/api/admin/referrals', {

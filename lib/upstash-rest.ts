@@ -33,6 +33,12 @@ export async function upstashGet(key: string): Promise<string | null> {
   return typeof value === 'string' ? value : null;
 }
 
+export async function upstashTtl(key: string): Promise<number | null> {
+  const result = await runPipeline([['TTL', key]]);
+  const ttl = result?.[0]?.result;
+  return typeof ttl === 'number' ? ttl : null;
+}
+
 export async function upstashSetEx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
   const result = await runPipeline([['SET', key, value, 'EX', Math.max(1, Math.floor(ttlSeconds))]]);
   return result?.[0]?.result === 'OK';
