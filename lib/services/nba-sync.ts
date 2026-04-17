@@ -91,6 +91,13 @@ function parseMinutes(raw: string | null | undefined): number {
   return toNumber(minutes);
 }
 
+function resolveStatsSeason(defaultSeason: number): number {
+  const raw = process.env.NBA_STATS_SEASON;
+  if (!raw) return defaultSeason;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : defaultSeason;
+}
+
 async function apiGet<T>(path: string, apiKey: string, signal: AbortSignal, retries = 2): Promise<ApiSportsResponse<T>> {
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -414,6 +421,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   }
 
   const season = now.getUTCMonth() >= 8 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+  const statsSeason = resolveStatsSeason(season);
   const selectedTeamIds = isMock ? [...teamIds].slice(0, MOCK_MAX_TEAMS) : [...teamIds];
   let playersSynced = 0;
   let playerStatsSynced = 0;
@@ -445,7 +453,12 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       const internalPlayerId = playerIdByApi.get(normalizedPlayer.api_id);
       if (!internalPlayerId) continue;
 
-      const statsRows = (await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, season, signal))
+      let statsRaw = await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, statsSeason, signal);
+      if (!statsRaw.length && !isMock && statsSeason === season) {
+        statsRaw = await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, season - 1, signal);
+      }
+
+      const statsRows = statsRaw
         .map((stat) => normalizePlayerStat(internalPlayerId, stat))
         .filter((row) => row.game_id && row.game_date)
         .slice(0, isMock ? MOCK_MAX_PLAYER_STATS : 30);
