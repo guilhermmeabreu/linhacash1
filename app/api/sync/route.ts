@@ -7,6 +7,7 @@ import { runNbaSyncJob } from '@/lib/services/nba-sync';
 import { upstashAvailable, upstashGet, upstashTtl } from '@/lib/upstash-rest';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 const REDIS_SYNC_LOCK_KEY = 'lock:nba_sync';
 type SyncMode = 'bootstrap' | 'daily';
 
@@ -15,6 +16,16 @@ function resolveSyncModeFromRequest(req: Request): SyncMode {
   const mode = (searchParams.get('mode') || searchParams.get('syncMode') || '').toLowerCase();
   if (mode === 'bootstrap') return 'bootstrap';
   return 'daily';
+}
+
+function resolveTeamBatchFromRequest(req: Request): number[] {
+  const { searchParams } = new URL(req.url);
+  const rawTeamBatch = searchParams.get('teamBatch') || '';
+  if (!rawTeamBatch) return [];
+  return rawTeamBatch
+    .split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value) && value > 0);
 }
 
 async function withLockDiagnostics<T extends Record<string, unknown>>(payload: T): Promise<T | (T & {
@@ -55,6 +66,7 @@ async function executeSync(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
   const syncMode = resolveSyncModeFromRequest(req);
+  const bootstrapTeamIds = syncMode === 'bootstrap' ? resolveTeamBatchFromRequest(req) : [];
 
   try {
     if (!(await rateLimit(`sync:${getIP(req)}`, 10, 60_000))) {
@@ -62,7 +74,7 @@ async function executeSync(req: Request) {
     }
 
     await requireSyncExecutionAccess(req);
-    const result = await runNbaSyncJob({ requestId, routeSource: 'cron', syncMode });
+    const result = await runNbaSyncJob({ requestId, routeSource: 'cron', syncMode, bootstrapTeamIds });
     const responsePayload = await withLockDiagnostics(result as Record<string, unknown>);
     const statusCode = result.status === 'error' ? 500 : result.status === 'skipped' ? 202 : 200;
     return NextResponse.json(responsePayload, { status: statusCode });

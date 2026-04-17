@@ -28,6 +28,7 @@ type RunNbaSyncOptions = {
   requestId?: string | null;
   routeSource?: 'cron' | 'manual' | null;
   syncMode?: 'bootstrap' | 'daily';
+  bootstrapTeamIds?: number[];
 };
 
 type ApiSportsResponse<T> = { response?: T[] };
@@ -417,7 +418,8 @@ async function upsertPlayerMetrics(supabase: SupabaseClient, playerId: number, m
 async function runSyncCore(
   supabase: SupabaseClient,
   signal: AbortSignal,
-  syncMode: 'bootstrap' | 'daily'
+  syncMode: 'bootstrap' | 'daily',
+  bootstrapTeamIds: number[] = []
 ): Promise<Omit<SyncSummary, 'startedAt' | 'finishedAt'>> {
   const apiProvider = createApiProvider(signal);
   const isMock = apiProvider.source === 'mock';
@@ -446,15 +448,23 @@ async function runSyncCore(
   }
 
   if (!isMock && syncMode === 'bootstrap') {
+    const requestTeamBatch = [...new Set(bootstrapTeamIds.filter((teamId) => Number.isInteger(teamId) && teamId > 0))];
+    const hasRequestTeamBatch = requestTeamBatch.length > 0;
     const configuredTeamIds = parseTeamIds(process.env.NBA_BOOTSTRAP_TEAM_IDS);
-    const baselineTeamIds = configuredTeamIds.length ? configuredTeamIds : DEFAULT_BOOTSTRAP_TEAM_IDS;
+    const baselineTeamIds = hasRequestTeamBatch
+      ? requestTeamBatch
+      : configuredTeamIds.length
+        ? configuredTeamIds
+        : DEFAULT_BOOTSTRAP_TEAM_IDS;
     const relevantTeamIds = new Set<number>(baselineTeamIds);
 
-    for (const entry of uniqueGameMap.values()) {
-      const home = toNumber(entry.game.teams?.home?.id);
-      const away = toNumber(entry.game.teams?.visitors?.id);
-      if (home > 0) relevantTeamIds.add(home);
-      if (away > 0) relevantTeamIds.add(away);
+    if (!hasRequestTeamBatch) {
+      for (const entry of uniqueGameMap.values()) {
+        const home = toNumber(entry.game.teams?.home?.id);
+        const away = toNumber(entry.game.teams?.visitors?.id);
+        if (home > 0) relevantTeamIds.add(home);
+        if (away > 0) relevantTeamIds.add(away);
+      }
     }
 
     for (const teamId of relevantTeamIds) {
@@ -789,7 +799,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
 
     let partial: Omit<SyncSummary, 'startedAt' | 'finishedAt'>;
     try {
-      partial = await runSyncCore(supabase, controller.signal, syncMode);
+      partial = await runSyncCore(supabase, controller.signal, syncMode, options.bootstrapTeamIds ?? []);
     } finally {
       clearTimeout(timeoutHandle);
     }
