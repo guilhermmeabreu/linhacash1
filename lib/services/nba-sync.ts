@@ -199,7 +199,6 @@ function normalizeGame(game: ApiSportsGame, fallbackDate: string) {
   const home = game.teams?.home;
   const away = game.teams?.visitors;
   return {
-    api_id: toNumber(game.id) || null,
     game_date: fallbackDate,
     home_team: home?.name || 'Unknown',
     away_team: away?.name || 'Unknown',
