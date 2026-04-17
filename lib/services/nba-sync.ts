@@ -148,7 +148,7 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
   return {
     source: 'real',
     getGamesByDate: async (date) => {
-      const response = await apiGet<ApiSportsGame>(`/games?date=${date}&league=Standard`, apiKey, signal);
+      const response = await apiGet<ApiSportsGame>(`/games?date=${date}`, apiKey, signal);
       return response.response || [];
     },
     getPlayersByTeam: async (teamId, season) => {
@@ -509,9 +509,9 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
     }
   } else {
     const selectedGameIds = [...uniqueGameMap.keys()];
+    let loggedFirstRealGameStatsDebug = false;
     for (const gameId of selectedGameIds) {
       const statsRaw = await apiProvider.getPlayerStatisticsByGame(gameId, statsSeason, signal);
-      if (!statsRaw.length) continue;
 
       const statsRows = statsRaw
         .map((stat) => {
@@ -524,6 +524,27 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
         })
         .filter((row): row is ReturnType<typeof normalizePlayerStat> => Boolean(row?.game_id && row.game_date));
 
+      if (!loggedFirstRealGameStatsDebug) {
+        const firstStat = statsRaw[0] as
+          | (ApiSportsPlayerStat & { player?: { id?: number | null }; game?: { id?: number | null; date?: string | null } })
+          | undefined;
+        const firstStatPlayerApiId = toNumber(firstStat?.player?.id);
+        const matchedInternalPlayerId = playerIdByApi.get(firstStatPlayerApiId);
+
+        console.debug('[nba-sync] first real game stats checkpoint', {
+          gameId,
+          responseLength: statsRaw.length,
+          firstItemKeys: firstStat ? Object.keys(firstStat) : [],
+          hasPlayerId: Boolean(firstStat?.player?.id),
+          hasGameId: Boolean(firstStat?.game?.id),
+          hasGameDate: Boolean(firstStat?.game?.date),
+          playerIdMapped: Boolean(matchedInternalPlayerId),
+          rowsAfterFinalFilter: statsRows.length,
+        });
+        loggedFirstRealGameStatsDebug = true;
+      }
+
+      if (!statsRaw.length) continue;
       if (!statsRows.length) continue;
 
       const { error: statsUpsertError } = await supabase
