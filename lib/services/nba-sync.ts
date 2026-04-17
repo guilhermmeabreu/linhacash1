@@ -390,17 +390,50 @@ function buildPlayerMetricPayloads(
   stats: PlayerStatMetricsRow[],
   metricColumns: Set<string>
 ) {
+  const doubleDoubleValues = stats.map((row) => {
+    const categories = [
+      toNumber(row.points),
+      toNumber(row.rebounds),
+      toNumber(row.assists),
+      toNumber(row.steals),
+      toNumber(row.blocks),
+    ].filter((value) => value >= 10).length;
+    return categories >= 2 ? 1 : 0;
+  });
+  const tripleDoubleValues = stats.map((row) => {
+    const categories = [
+      toNumber(row.points),
+      toNumber(row.rebounds),
+      toNumber(row.assists),
+      toNumber(row.steals),
+      toNumber(row.blocks),
+    ].filter((value) => value >= 10).length;
+    return categories >= 3 ? 1 : 0;
+  });
+
   const metricMap: Record<string, number[]> = {
-    points: stats.map((row) => toNumber(row.points)),
-    rebounds: stats.map((row) => toNumber(row.rebounds)),
-    assists: stats.map((row) => toNumber(row.assists)),
-    three_pointers: stats.map((row) => toNumber(row.three_pointers)),
-    fgm: stats.map((row) => toNumber(row.fgm)),
-    fga: stats.map((row) => toNumber(row.fga)),
-    steals: stats.map((row) => toNumber(row.steals)),
-    blocks: stats.map((row) => toNumber(row.blocks)),
-    fg2a: stats.map((row) => toNumber(row.fg2a)),
-    fg3a: stats.map((row) => toNumber(row.fg3a || row.three_pa)),
+    PTS: stats.map((row) => toNumber(row.points)),
+    REB: stats.map((row) => toNumber(row.rebounds)),
+    AST: stats.map((row) => toNumber(row.assists)),
+    '3PM': stats.map((row) => toNumber(row.three_pointers)),
+    PA: stats.map((row) => toNumber(row.points) + toNumber(row.assists)),
+    PR: stats.map((row) => toNumber(row.points) + toNumber(row.rebounds)),
+    PRA: stats.map((row) => toNumber(row.points) + toNumber(row.rebounds) + toNumber(row.assists)),
+    AR: stats.map((row) => toNumber(row.assists) + toNumber(row.rebounds)),
+    DD: doubleDoubleValues,
+    TD: tripleDoubleValues,
+    STEAL: stats.map((row) => toNumber(row.steals)),
+    BLOCKS: stats.map((row) => toNumber(row.blocks)),
+    SB: stats.map((row) => toNumber(row.steals) + toNumber(row.blocks)),
+    FG2A: stats.map((row) => {
+      const fg2a = toNumber(row.fg2a);
+      if (fg2a > 0) return fg2a;
+      const fga = toNumber(row.fga);
+      const fg3a = toNumber(row.fg3a || row.three_pa);
+      if (fga > 0 && fg3a >= 0) return Math.max(0, fga - fg3a);
+      return 0;
+    }),
+    FG3A: stats.map((row) => toNumber(row.fg3a || row.three_pa)),
   };
 
   const updatedAt = nowIso();

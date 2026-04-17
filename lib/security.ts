@@ -110,7 +110,8 @@ export function sanitizeMetrics(metrics: any) {
     avg_l5: metrics.avg_l5,
     avg_l10: metrics.avg_l10,
     avg_l20: metrics.avg_l20,
-    avg_l30: metrics.avg_l20, // fallback até ter L30 real
+    avg_l30: metrics.avg_l30,
+    avg_season: metrics.avg_season,
     avg_home: metrics.avg_home,
     avg_away: metrics.avg_away,
     hit_rate_l10: metrics.hit_rate_l10,

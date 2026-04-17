@@ -272,6 +272,7 @@ function buildRuntimeMetrics(
     avg_l10: line,
     avg_l20: avg(filteredValues.slice(0, 20)),
     avg_l30: avg(filteredValues.slice(0, 30)),
+    avg_season: avg(filteredValues),
     avg_home: avg(allGames.filter((row) => row.is_home === true).map((row) => row.value)),
     avg_away: avg(allGames.filter((row) => row.is_home === false).map((row) => row.value)),
     hit_rate_l10: hitRate(l10Values, line),

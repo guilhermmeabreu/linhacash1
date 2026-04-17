@@ -114,6 +114,7 @@ type PlayerMetrics = {
   avg_l10?: number | null;
   avg_l20?: number | null;
   avg_l30?: number | null;
+  avg_season?: number | null;
   avg_home?: number | null;
   avg_away?: number | null;
   hit_rate_l10?: number | null;
@@ -959,6 +960,26 @@ export function DashboardView() {
       return { ...sample, tone, label };
     });
     const splitMetrics: PlayerDetailSplitMetric[] = SPLITS.map((split) => {
+      const metrics = payload?.metrics;
+      const averageBySplit: Record<'L5' | 'L10' | 'L20' | 'L30' | 'Season', number | null | undefined> = {
+        L5: metrics?.avg_l5,
+        L10: metrics?.avg_l10,
+        L20: metrics?.avg_l20,
+        L30: metrics?.avg_l30,
+        Season: metrics?.avg_season,
+      };
+      if (split in averageBySplit) {
+        const rawAverage = averageBySplit[split as keyof typeof averageBySplit];
+        const averageValue = Number(rawAverage);
+        if (Number.isFinite(averageValue)) {
+          return {
+            label: split,
+            value: averageValue.toFixed(1),
+            note: 'Média',
+          };
+        }
+      }
+
       const scopedGames = split === 'Season'
         ? allGames
         : split === '24/25'
