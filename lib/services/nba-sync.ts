@@ -199,6 +199,7 @@ function normalizeGame(game: ApiSportsGame, fallbackDate: string) {
   const home = game.teams?.home;
   const away = game.teams?.visitors;
   return {
+    api_id: toNumber(game.id) || null,
     game_date: fallbackDate,
     home_team: home?.name || 'Unknown',
     away_team: away?.name || 'Unknown',
@@ -470,8 +471,35 @@ async function runSyncCore(
 
   const normalizedGames = [...uniqueGameMap.values()].map((entry) => normalizeGame(entry.game, entry.day));
   if (normalizedGames.length > 0) {
-    const { error } = await supabase.from('games').upsert(normalizedGames, {
-      onConflict: 'game_date,home_team,away_team',
+    const gameColumns = await detectTableColumns(supabase, 'games');
+    const hasApiIdColumn = gameColumns.has('api_id');
+    const normalizedGamesPayload = normalizedGames.map((row) => pickColumns(row, gameColumns));
+
+    const dedupedGames = (() => {
+      if (hasApiIdColumn) {
+        const byApiId = new Map<number, (typeof normalizedGamesPayload)[number]>();
+        for (const game of normalizedGamesPayload) {
+          const apiId = toNumber((game as { api_id?: unknown }).api_id);
+          if (apiId > 0) {
+            byApiId.set(apiId, game);
+          }
+        }
+        return [...byApiId.values()];
+      }
+
+      const byLogicalKey = new Map<string, (typeof normalizedGamesPayload)[number]>();
+      for (const game of normalizedGamesPayload) {
+        const gameDate = String((game as { game_date?: string | null }).game_date || '');
+        const homeTeam = String((game as { home_team?: string | null }).home_team || '');
+        const awayTeam = String((game as { away_team?: string | null }).away_team || '');
+        const logicalKey = `${gameDate}__${homeTeam}__${awayTeam}`;
+        byLogicalKey.set(logicalKey, game);
+      }
+      return [...byLogicalKey.values()];
+    })();
+
+    const { error } = await supabase.from('games').upsert(dedupedGames, {
+      onConflict: hasApiIdColumn ? 'api_id' : 'game_date,home_team,away_team',
     });
 
     if (error) {
