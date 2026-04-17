@@ -196,11 +196,11 @@ function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: stri
   };
 }
 
-function normalizePlayerStat(playerId: number, stat: ApiSportsPlayerStat) {
+function normalizePlayerStat(playerId: number, stat: ApiSportsPlayerStat, fallbackGameDate: string | null = null) {
   return {
     player_id: playerId,
     game_id: toNumber(stat.game?.id) || null,
-    game_date: stat.game?.date ? stat.game.date.slice(0, 10) : null,
+    game_date: stat.game?.date ? stat.game.date.slice(0, 10) : fallbackGameDate,
     opponent: stat.team?.name || '',
     is_home: null,
     points: toNumber(stat.points),
@@ -474,7 +474,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       }
 
       const statsRows = statsRaw
-        .map((stat) => normalizePlayerStat(internalPlayerId, stat))
+        .map((stat) => normalizePlayerStat(internalPlayerId, stat, null))
         .filter((row) => row.game_id && row.game_date)
         .slice(0, isMock ? MOCK_MAX_PLAYER_STATS : 30);
 
@@ -513,6 +513,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
     
     for (const gameId of selectedGameIds) {
       const statsRaw = await apiProvider.getPlayerStatisticsByGame(gameId, statsSeason, signal);
+      const fallbackGameDate = uniqueGameMap.get(gameId)?.day ?? null;
       
       if (!isMock && !loggedFirstRealGameStatsDebug) {
   console.log('DEBUG GAME STATS:', { 
@@ -533,7 +534,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
           if (!internalPlayerId) {
             return null;
           }
-          return normalizePlayerStat(internalPlayerId, stat);
+          return normalizePlayerStat(internalPlayerId, stat, fallbackGameDate);
         })
         .filter((row): row is ReturnType<typeof normalizePlayerStat> => Boolean(row?.game_id && row.game_date));
 
