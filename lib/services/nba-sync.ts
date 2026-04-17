@@ -51,6 +51,7 @@ type ApiProvider = {
   getGamesByDate: (date: string, signal: AbortSignal) => Promise<ApiSportsGame[]>;
   getPlayersByTeam: (teamId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayer[]>;
   getPlayerStatistics: (playerId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayerStat[]>;
+  getPlayerStatisticsByGame: (gameId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayerStat[]>;
   getTeamName?: (teamId: number) => string;
 };
 
@@ -134,6 +135,7 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
       getGamesByDate: async (date) => nbaMockProvider.getGamesByDate(date),
       getPlayersByTeam: async (teamId) => nbaMockProvider.getPlayersByTeam(teamId),
       getPlayerStatistics: async (playerId) => nbaMockProvider.getPlayerStatistics(playerId),
+      getPlayerStatisticsByGame: async () => [],
       getTeamName: (teamId) => nbaMockProvider.getTeamName(teamId),
     };
   }
@@ -146,7 +148,7 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
   return {
     source: 'real',
     getGamesByDate: async (date) => {
-      const response = await apiGet<ApiSportsGame>(`/games?date=${date}`, apiKey, signal);
+      const response = await apiGet<ApiSportsGame>(`/games?date=${date}&league=standard`, apiKey, signal);
       return response.response || [];
     },
     getPlayersByTeam: async (teamId, season) => {
@@ -155,6 +157,10 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
     },
     getPlayerStatistics: async (playerId, season) => {
       const response = await apiGet<ApiSportsPlayerStat>(`/players/statistics?id=${playerId}&season=${season}`, apiKey, signal);
+      return response.response || [];
+    },
+    getPlayerStatisticsByGame: async (gameId) => {
+      const response = await apiGet<ApiSportsPlayerStat>(`/players/statistics?game=${gameId}`, apiKey, signal);
       return response.response || [];
     },
   };
@@ -425,6 +431,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   const selectedTeamIds = isMock ? [...teamIds].slice(0, MOCK_MAX_TEAMS) : [...teamIds];
   let playersSynced = 0;
   let playerStatsSynced = 0;
+  const syncedPlayerApiIds: number[] = [];
 
   for (const teamId of selectedTeamIds) {
     const playersRaw = await apiProvider.getPlayersByTeam(teamId, season, signal);
@@ -439,23 +446,31 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
     const normalizedPlayers = selectedPlayers.map((player) => normalizePlayer(player, teamId, teamName));
     playersSynced += normalizedPlayers.length;
+    syncedPlayerApiIds.push(...normalizedPlayers.map((player) => player.api_id));
 
     const { error: playerUpsertError } = await supabase.from('players').upsert(normalizedPlayers, { onConflict: 'api_id' });
     if (playerUpsertError) {
       throw new Error(`players upsert failed for team ${teamId}: ${playerUpsertError.message}`);
     }
+  }
 
-    const apiIds = normalizedPlayers.map((player) => player.api_id);
-    const { data: playerRows } = await supabase.from('players').select('id,api_id').in('api_id', apiIds);
-    const playerIdByApi = new Map<number, number>((playerRows || []).map((row) => [toNumber(row.api_id), toNumber(row.id)]));
+  const uniqueSyncedApiIds = [...new Set(syncedPlayerApiIds)];
+  const { data: allPlayerRows } = uniqueSyncedApiIds.length
+    ? await supabase.from('players').select('id,api_id').in('api_id', uniqueSyncedApiIds)
+    : { data: [] as Array<{ id: number; api_id: number }> };
+  const playerIdByApi = new Map<number, number>((allPlayerRows || []).map((row) => [toNumber(row.api_id), toNumber(row.id)]));
+  const metricPlayerIds = new Set<number>();
 
-    for (const normalizedPlayer of normalizedPlayers) {
-      const internalPlayerId = playerIdByApi.get(normalizedPlayer.api_id);
-      if (!internalPlayerId) continue;
+  if (isMock) {
+    for (const apiId of uniqueSyncedApiIds) {
+      const internalPlayerId = playerIdByApi.get(apiId);
+      if (!internalPlayerId) {
+        continue;
+      }
 
-      let statsRaw = await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, statsSeason, signal);
-      if (!statsRaw.length && !isMock && statsSeason === season) {
-        statsRaw = await apiProvider.getPlayerStatistics(normalizedPlayer.api_id, season - 1, signal);
+      let statsRaw = await apiProvider.getPlayerStatistics(apiId, statsSeason, signal);
+      if (!statsRaw.length && statsSeason === season) {
+        statsRaw = await apiProvider.getPlayerStatistics(apiId, season - 1, signal);
       }
 
       const statsRows = statsRaw
@@ -473,7 +488,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
         const message = statsUpsertError.message.toLowerCase();
         const missingConstraint = message.includes('no unique') || message.includes('there is no unique');
         if (!missingConstraint) {
-          throw new Error(`player_stats upsert failed for player ${normalizedPlayer.api_id}: ${statsUpsertError.message}`);
+          throw new Error(`player_stats upsert failed for player ${apiId}: ${statsUpsertError.message}`);
         }
 
         for (const row of statsRows) {
@@ -486,14 +501,66 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
         const { error: statsInsertError } = await supabase.from('player_stats').insert(statsRows);
         if (statsInsertError) {
-          throw new Error(`player_stats insert fallback failed for player ${normalizedPlayer.api_id}: ${statsInsertError.message}`);
+          throw new Error(`player_stats insert fallback failed for player ${apiId}: ${statsInsertError.message}`);
         }
       }
 
       playerStatsSynced += statsRows.length;
-      if (!isMock) {
-        await upsertPlayerMetrics(supabase, internalPlayerId);
+    }
+  } else {
+    const selectedGameIds = [...uniqueGameMap.keys()];
+    for (const gameId of selectedGameIds) {
+      const statsRaw = await apiProvider.getPlayerStatisticsByGame(gameId, statsSeason, signal);
+      if (!statsRaw.length) continue;
+
+      const statsRows = statsRaw
+        .map((stat) => {
+          const statPlayerApiId = toNumber((stat as { player?: { id?: number | null } }).player?.id);
+          const internalPlayerId = playerIdByApi.get(statPlayerApiId);
+          if (!internalPlayerId) {
+            return null;
+          }
+          return normalizePlayerStat(internalPlayerId, stat);
+        })
+        .filter((row): row is ReturnType<typeof normalizePlayerStat> => Boolean(row?.game_id && row.game_date));
+
+      if (!statsRows.length) continue;
+
+      const { error: statsUpsertError } = await supabase
+        .from('player_stats')
+        .upsert(statsRows, { onConflict: 'player_id,game_id' });
+
+      if (statsUpsertError) {
+        const message = statsUpsertError.message.toLowerCase();
+        const missingConstraint = message.includes('no unique') || message.includes('there is no unique');
+        if (!missingConstraint) {
+          throw new Error(`player_stats upsert failed for game ${gameId}: ${statsUpsertError.message}`);
+        }
+
+        for (const row of statsRows) {
+          await supabase
+            .from('player_stats')
+            .delete()
+            .eq('player_id', row.player_id)
+            .eq('game_id', row.game_id);
+        }
+
+        const { error: statsInsertError } = await supabase.from('player_stats').insert(statsRows);
+        if (statsInsertError) {
+          throw new Error(`player_stats insert fallback failed for game ${gameId}: ${statsInsertError.message}`);
+        }
       }
+
+      playerStatsSynced += statsRows.length;
+      for (const row of statsRows) {
+        metricPlayerIds.add(row.player_id);
+      }
+    }
+  }
+
+  if (!isMock) {
+    for (const playerId of metricPlayerIds) {
+      await upsertPlayerMetrics(supabase, playerId);
     }
   }
 
