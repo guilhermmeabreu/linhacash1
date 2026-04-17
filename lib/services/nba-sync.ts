@@ -17,6 +17,7 @@ type SyncSummary = {
   debug?: {
     requestId: string | null;
     routeSource: 'cron' | 'manual' | null;
+    syncMode?: 'bootstrap' | 'daily';
     hasRunningSync: boolean | null;
     inProcessRunAlready: boolean;
     distributedLock: 'acquired' | 'locked' | 'unavailable' | null;
@@ -26,6 +27,7 @@ type SyncSummary = {
 type RunNbaSyncOptions = {
   requestId?: string | null;
   routeSource?: 'cron' | 'manual' | null;
+  syncMode?: 'bootstrap' | 'daily';
 };
 
 type ApiSportsResponse<T> = { response?: T[] };
@@ -43,12 +45,17 @@ const DATE_WINDOW_FUTURE_DAYS = 3;
 const MOCK_MAX_TEAMS = 4;
 const MOCK_MAX_PLAYERS_PER_TEAM = 6;
 const MOCK_MAX_PLAYER_STATS = 12;
+const DEFAULT_BOOTSTRAP_TEAM_IDS = [
+  1, 2, 4, 5, 6, 7, 10, 11, 14, 15,
+  16, 17, 20, 21, 24, 25, 26, 27, 28, 29,
+];
 
 let inProcessRun = false;
 
 type ApiProvider = {
   source: 'real' | 'mock';
   getGamesByDate: (date: string, signal: AbortSignal) => Promise<ApiSportsGame[]>;
+  getGamesByTeamSeason: (teamId: number, season: number, signal: AbortSignal) => Promise<ApiSportsGame[]>;
   getPlayersByTeam: (teamId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayer[]>;
   getPlayerStatistics: (playerId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayerStat[]>;
   getPlayerStatisticsByGame: (gameId: number, season: number, signal: AbortSignal) => Promise<ApiSportsPlayerStat[]>;
@@ -99,6 +106,23 @@ function resolveStatsSeason(defaultSeason: number): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : defaultSeason;
 }
 
+function parseTeamIds(raw: string | undefined): number[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value) && value > 0);
+}
+
+function isLikelyFinishedGame(game: ApiSportsGame, now = new Date()): boolean {
+  const status = (game.status?.long || '').toLowerCase();
+  if (status.includes('finished') || status.includes('over') || status.includes('final')) return true;
+
+  const start = game.date?.start;
+  if (!start) return false;
+  return new Date(start).getTime() <= now.getTime();
+}
+
 async function apiGet<T>(path: string, apiKey: string, signal: AbortSignal, retries = 2): Promise<ApiSportsResponse<T>> {
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -133,6 +157,7 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
     return {
       source: 'mock',
       getGamesByDate: async (date) => nbaMockProvider.getGamesByDate(date),
+      getGamesByTeamSeason: async () => [],
       getPlayersByTeam: async (teamId) => nbaMockProvider.getPlayersByTeam(teamId),
       getPlayerStatistics: async (playerId) => nbaMockProvider.getPlayerStatistics(playerId),
       getPlayerStatisticsByGame: async () => [],
@@ -149,6 +174,10 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
     source: 'real',
     getGamesByDate: async (date) => {
       const response = await apiGet<ApiSportsGame>(`/games?date=${date}`, apiKey, signal);
+      return response.response || [];
+    },
+    getGamesByTeamSeason: async (teamId, season) => {
+      const response = await apiGet<ApiSportsGame>(`/games?team=${teamId}&season=${season}`, apiKey, signal);
       return response.response || [];
     },
     getPlayersByTeam: async (teamId, season) => {
@@ -340,13 +369,13 @@ async function hasRunningSync(supabase: SupabaseClient, columns: Set<string>, no
   return (count || 0) > 0;
 }
 
-async function upsertPlayerMetrics(supabase: SupabaseClient, playerId: number) {
+async function upsertPlayerMetrics(supabase: SupabaseClient, playerId: number, metricColumns: Set<string>) {
   const { data: stats } = await supabase
     .from('player_stats')
-    .select('points,rebounds,assists,three_pointers,fgm,fga,minutes,is_home,game_date,steals,blocks,fg2a,fg3a,three_pa')
+    .select('points,rebounds,assists,three_pointers,fgm,fga,minutes,game_date,steals,blocks,fg2a,fg3a,three_pa')
     .eq('player_id', playerId)
     .order('game_date', { ascending: false })
-    .limit(30);
+    .limit(120);
 
   if (!stats?.length) return;
 
@@ -364,30 +393,37 @@ async function upsertPlayerMetrics(supabase: SupabaseClient, playerId: number) {
   };
 
   for (const [stat, values] of Object.entries(metricMap)) {
-    const recent = values.slice(0, 10);
-    const line = avg(recent);
-
-    await supabase.from('player_metrics').upsert(
+    const payload = pickColumns(
       {
         player_id: playerId,
         stat,
         avg_l5: avg(values.slice(0, 5)),
-        avg_l10: avg(recent),
+        avg_l10: avg(values.slice(0, 10)),
         avg_l20: avg(values.slice(0, 20)),
-        avg_home: avg(stats.filter((row) => row.is_home === true).map((row) => toNumber((row as Record<string, unknown>)[stat]))),
-        avg_away: avg(stats.filter((row) => row.is_home === false).map((row) => toNumber((row as Record<string, unknown>)[stat]))),
-        line,
+        avg_l30: avg(values.slice(0, 30)),
+        avg_season: avg(values),
         updated_at: nowIso(),
       },
+      metricColumns
+    );
+
+    await supabase.from('player_metrics').upsert(
+      payload,
       { onConflict: 'player_id,stat' }
     );
   }
 }
 
-async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promise<Omit<SyncSummary, 'startedAt' | 'finishedAt'>> {
+async function runSyncCore(
+  supabase: SupabaseClient,
+  signal: AbortSignal,
+  syncMode: 'bootstrap' | 'daily'
+): Promise<Omit<SyncSummary, 'startedAt' | 'finishedAt'>> {
   const apiProvider = createApiProvider(signal);
   const isMock = apiProvider.source === 'mock';
   const now = new Date();
+  const season = now.getUTCMonth() >= 8 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+  const statsSeason = resolveStatsSeason(season);
   const dateTargets = Array.from({ length: DATE_WINDOW_PAST_DAYS + DATE_WINDOW_FUTURE_DAYS + 1 }, (_, index) => {
     const offset = index - DATE_WINDOW_PAST_DAYS;
     return dateOnly(addDays(now, offset));
@@ -401,10 +437,35 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   );
 
   const uniqueGameMap = new Map<number, { day: string; game: ApiSportsGame }>();
+  let bootstrapRelevantTeamIds: Set<number> | null = null;
   for (const dayGames of gamesPerDay) {
     for (const game of dayGames.games) {
-      uniqueGameMap.set(game.id, { day: dayGames.day, game });
+      const gameDay = game.date?.start?.slice(0, 10) || dayGames.day;
+      uniqueGameMap.set(game.id, { day: gameDay, game });
     }
+  }
+
+  if (!isMock && syncMode === 'bootstrap') {
+    const configuredTeamIds = parseTeamIds(process.env.NBA_BOOTSTRAP_TEAM_IDS);
+    const baselineTeamIds = configuredTeamIds.length ? configuredTeamIds : DEFAULT_BOOTSTRAP_TEAM_IDS;
+    const relevantTeamIds = new Set<number>(baselineTeamIds);
+
+    for (const entry of uniqueGameMap.values()) {
+      const home = toNumber(entry.game.teams?.home?.id);
+      const away = toNumber(entry.game.teams?.visitors?.id);
+      if (home > 0) relevantTeamIds.add(home);
+      if (away > 0) relevantTeamIds.add(away);
+    }
+
+    for (const teamId of relevantTeamIds) {
+      const seasonGames = await apiProvider.getGamesByTeamSeason(teamId, season, signal);
+      for (const game of seasonGames) {
+        const gameDay = game.date?.start?.slice(0, 10) || dateOnly(now);
+        uniqueGameMap.set(game.id, { day: gameDay, game });
+      }
+    }
+
+    bootstrapRelevantTeamIds = relevantTeamIds;
   }
 
   const normalizedGames = [...uniqueGameMap.values()].map((entry) => normalizeGame(entry.game, entry.day));
@@ -426,9 +487,11 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
     if (away > 0) teamIds.add(away);
   }
 
-  const season = now.getUTCMonth() >= 8 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
-  const statsSeason = resolveStatsSeason(season);
-  const selectedTeamIds = isMock ? [...teamIds].slice(0, MOCK_MAX_TEAMS) : [...teamIds];
+  const selectedTeamIds = isMock
+    ? [...teamIds].slice(0, MOCK_MAX_TEAMS)
+    : syncMode === 'bootstrap' && bootstrapRelevantTeamIds
+      ? [...bootstrapRelevantTeamIds]
+      : [...teamIds];
   let playersSynced = 0;
   let playerStatsSynced = 0;
   const syncedPlayerApiIds: number[] = [];
@@ -508,7 +571,12 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       playerStatsSynced += statsRows.length;
     }
   } else {
-    const selectedGameIds = [...uniqueGameMap.keys()];
+    const selectedGameIds = [...uniqueGameMap.keys()].filter((gameId) => {
+      if (syncMode !== 'bootstrap') return true;
+      const gameEntry = uniqueGameMap.get(gameId);
+      if (!gameEntry) return false;
+      return isLikelyFinishedGame(gameEntry.game, now);
+    });
     let loggedFirstRealGameStatsDebug = false;
     
     for (const gameId of selectedGameIds) {
@@ -516,16 +584,19 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
       const fallbackGameDate = uniqueGameMap.get(gameId)?.day ?? null;
       
       if (!isMock && !loggedFirstRealGameStatsDebug) {
-  console.log('DEBUG GAME STATS:', { 
-    gameId,
-    statsLength: statsRaw?.length,
-    firstItemKeys: statsRaw?.[0] ? Object.keys(statsRaw[0]) : null,
-    hasPlayerId: (statsRaw?.[0] as any)?.player?.id ?? null,
-    hasGameId: (statsRaw?.[0] as any)?.game?.id ?? null,
-    hasGameDate: (statsRaw?.[0] as any)?.game?.date ?? null,
-  });
-  loggedFirstRealGameStatsDebug = true;
-}
+        const firstDebugStat = statsRaw[0] as
+          | (ApiSportsPlayerStat & { player?: { id?: number | null }; game?: { id?: number | null; date?: string | null } })
+          | undefined;
+        console.log('DEBUG GAME STATS:', {
+          gameId,
+          statsLength: statsRaw?.length,
+          firstItemKeys: firstDebugStat ? Object.keys(firstDebugStat) : null,
+          hasPlayerId: firstDebugStat?.player?.id ?? null,
+          hasGameId: firstDebugStat?.game?.id ?? null,
+          hasGameDate: firstDebugStat?.game?.date ?? null,
+        });
+        loggedFirstRealGameStatsDebug = true;
+      }
 
       const statsRows = statsRaw
         .map((stat) => {
@@ -594,8 +665,9 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   }
 
   if (!isMock) {
+    const metricColumns = await detectTableColumns(supabase, 'player_metrics');
     for (const playerId of metricPlayerIds) {
-      await upsertPlayerMetrics(supabase, playerId);
+      await upsertPlayerMetrics(supabase, playerId, metricColumns);
     }
   }
 
@@ -606,7 +678,7 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 
   return {
     status: 'success',
-    message: `Sync (${apiProvider.source}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.${isMock ? ' Mock mode uses reduced team/player/stat volume and skips player_metrics writes.' : ''}`,
+    message: `Sync (${apiProvider.source}, ${syncMode}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.${isMock ? ' Mock mode uses reduced team/player/stat volume and skips player_metrics writes.' : ''}`,
     gamesSynced: normalizedGames.length,
     teamsSynced: selectedTeamIds.length,
     playersSynced,
@@ -616,9 +688,11 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
 }
 
 export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<SyncSummary> {
+  const syncMode = options.syncMode ?? 'daily';
   const debugBase = {
     requestId: options.requestId ?? null,
     routeSource: options.routeSource ?? null,
+    syncMode,
   };
 
   if (inProcessRun) {
@@ -703,7 +777,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
 
     let partial: Omit<SyncSummary, 'startedAt' | 'finishedAt'>;
     try {
-      partial = await runSyncCore(supabase, controller.signal);
+      partial = await runSyncCore(supabase, controller.signal, syncMode);
     } finally {
       clearTimeout(timeoutHandle);
     }
