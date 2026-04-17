@@ -191,7 +191,7 @@ function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: stri
     name: composedName || `Player ${player.id}`,
     team: teamName,
     team_id: teamId,
-    position: player.leagues?.Standard?.pos || '',
+    position: player.leagues?.standard?.pos || '',
     photo: player.photo || null,
   };
 }
