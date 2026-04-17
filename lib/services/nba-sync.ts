@@ -148,7 +148,7 @@ function createApiProvider(signal: AbortSignal): ApiProvider {
   return {
     source: 'real',
     getGamesByDate: async (date) => {
-      const response = await apiGet<ApiSportsGame>(`/games?date=${date}&league=standard`, apiKey, signal);
+      const response = await apiGet<ApiSportsGame>(`/games?date=${date}&league=Standard`, apiKey, signal);
       return response.response || [];
     },
     getPlayersByTeam: async (teamId, season) => {
@@ -191,7 +191,7 @@ function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: stri
     name: composedName || `Player ${player.id}`,
     team: teamName,
     team_id: teamId,
-    position: player.leagues?.standard?.pos || '',
+    position: player.leagues?.Standard?.pos || '',
     photo: player.photo || null,
   };
 }
