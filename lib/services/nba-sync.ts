@@ -581,11 +581,33 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     distributedLockState = lockState;
     if (lockState === 'locked') {
       const recoveryResult = await tryRecoverStaleDistributedLock(lockValue);
-      const retryLockState = await upstashSetNxEx(REDIS_SYNC_LOCK_KEY, lockValue, lockTtlSeconds);
-      distributedLockState = retryLockState;
-      if (retryLockState === 'acquired' || recoveryResult === 'recovered') {
-        distributedLockAcquired = true;
-      } else {
+      if (recoveryResult === 'missing') {
+        const retryLockState = await upstashSetNxEx(REDIS_SYNC_LOCK_KEY, lockValue, lockTtlSeconds);
+        distributedLockState = retryLockState;
+        if (retryLockState === 'acquired') {
+          distributedLockAcquired = true;
+        } else {
+          const finishedAt = nowIso();
+          inProcessRun = false;
+          return {
+            status: 'skipped',
+            message: 'Sync skipped because another sync lock is active.',
+            gamesSynced: 0,
+            teamsSynced: 0,
+            playersSynced: 0,
+            playerStatsSynced: 0,
+            errors: [],
+            startedAt,
+            finishedAt,
+            debug: {
+              ...debugBase,
+              hasRunningSync: hasRunningSyncResult,
+              inProcessRunAlready: false,
+              distributedLock: distributedLockState,
+            },
+          };
+        }
+      } else if (recoveryResult !== 'recovered') {
         const finishedAt = nowIso();
         inProcessRun = false;
         return {
@@ -605,6 +627,8 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
             distributedLock: distributedLockState,
           },
         };
+      } else {
+        distributedLockAcquired = true;
       }
     } else {
       distributedLockAcquired = lockState === 'acquired';
