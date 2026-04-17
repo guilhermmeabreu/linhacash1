@@ -510,8 +510,21 @@ async function runSyncCore(supabase: SupabaseClient, signal: AbortSignal): Promi
   } else {
     const selectedGameIds = [...uniqueGameMap.keys()];
     let loggedFirstRealGameStatsDebug = false;
+    
     for (const gameId of selectedGameIds) {
       const statsRaw = await apiProvider.getPlayerStatisticsByGame(gameId, statsSeason, signal);
+      
+      if (!isMock && !loggedFirstRealGameStatsDebug) {
+  console.log('DEBUG GAME STATS:', { 
+    gameId,
+    statsLength: statsRaw?.length,
+    firstItemKeys: statsRaw?.[0] ? Object.keys(statsRaw[0]) : null,
+    hasPlayerId: (statsRaw?.[0] as any)?.player?.id ?? null,
+    hasGameId: (statsRaw?.[0] as any)?.game?.id ?? null,
+    hasGameDate: (statsRaw?.[0] as any)?.game?.date ?? null,
+  });
+  loggedFirstRealGameStatsDebug = true;
+}
 
       const statsRows = statsRaw
         .map((stat) => {
