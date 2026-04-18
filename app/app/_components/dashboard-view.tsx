@@ -68,14 +68,6 @@ import styles from './dashboard-view.module.css';
 
 const STATS = ['PTS', 'AST', 'REB', '3PM', 'PA', 'PR', 'PRA', 'AR', 'DD', 'TD', 'STEAL', 'BLOCKS', 'SB', 'FG2A', 'FG3A'] as const;
 const FREE_STATS = ['PTS', '3PM'] as const;
-const PLAYER_ROW_STATS = [
-  { label: 'PTS', stat: 'PTS' },
-  { label: 'REB', stat: 'REB' },
-  { label: 'AST', stat: 'AST' },
-  { label: 'STL', stat: 'STEAL' },
-  { label: 'BLK', stat: 'BLOCKS' },
-] as const;
-
 type Stat = (typeof STATS)[number];
 const SPLITS = ['L5', 'L10', 'L20', 'L30', 'Season', 'H2H'] as const;
 type Split = (typeof SPLITS)[number];
@@ -139,6 +131,10 @@ type PlayerGameSample = {
 type MetricsPayload = {
   metrics: PlayerMetrics | null;
   games: PlayerGameSample[];
+};
+type TimedCacheEntry<T> = {
+  payload: T;
+  expiresAt: number;
 };
 
 type ProfileData = {
@@ -267,15 +263,14 @@ function resolveH2HOpponentContext(game: Game | null, player: Player | null): { 
   return { opponent: null, opponentTeamId: null, gameId: game.id };
 }
 
-function buildMetricsScope(split: Split, game: Game | null, player: Player | null, lineContext = 0) {
+function buildMetricsScope(split: Split, game: Game | null, player: Player | null) {
   const window = resolveMetricsWindow(split);
   const h2hContext = split === 'H2H' ? resolveH2HOpponentContext(game, player) : null;
   const opponent = h2hContext?.opponent ?? null;
   const opponentTeamId = h2hContext?.opponentTeamId ?? null;
   const gameId = h2hContext?.gameId ?? null;
-  const safeLineContext = Number.isFinite(lineContext) ? Number(lineContext.toFixed(1)) : 0;
   const scopeKey = `${split}:${window}:${opponentTeamId || 0}:${opponent?.trim().toLowerCase() || 'all'}`;
-  return { split, window, opponent, opponentTeamId, gameId, lineContext: safeLineContext, scopeKey };
+  return { split, window, opponent, opponentTeamId, gameId, scopeKey };
 }
 
 function buildMetricsCacheKey(playerId: number, stat: Stat, scopeKey: string) {
@@ -297,6 +292,10 @@ function PlayerAvatar({ playerName }: PlayerAvatarProps) {
 }
 
 const SPLIT_CARD_ORDER: Split[] = ['Season', 'H2H', 'L5', 'L10', 'L20', 'L30'];
+const PLAYERS_CACHE_TTL_MS = 5 * 60 * 1000;
+const METRICS_CACHE_TTL_MS = 3 * 60 * 1000;
+const PLAYERS_PREFETCH_LIMIT = 6;
+const PLAYERS_PREFETCH_CONCURRENCY = 2;
 
 export function DashboardView() {
   const router = useRouter();
@@ -319,7 +318,6 @@ export function DashboardView() {
     return 'games';
   });
   const [lineAdjustment, setLineAdjustment] = useState(0);
-  const [debouncedLineAdjustment, setDebouncedLineAdjustment] = useState(0);
 
   const [games, setGames] = useState<Game[]>([]);
   const [playersByGame, setPlayersByGame] = useState<Record<number, Player[]>>({});
@@ -365,10 +363,11 @@ export function DashboardView() {
   const playersRequestRef = useRef<Record<number, number>>({});
   const metricsRequestRef = useRef<Record<string, number>>({});
   const playersStatusRef = useRef<Record<number, ResourceStatus>>({});
-  const playersCacheRef = useRef<Record<number, Player[]>>({});
+  const playersCacheRef = useRef<Record<number, TimedCacheEntry<Player[]>>>({});
   const playersInFlightRef = useRef<Record<number, Promise<void> | null>>({});
   const metricsStatusRef = useRef<Record<string, ResourceStatus>>({});
-  const metricsCacheRef = useRef<Record<string, MetricsPayload>>({});
+  const metricsCacheRef = useRef<Record<string, TimedCacheEntry<MetricsPayload>>>({});
+  const metricsInFlightRef = useRef<Record<string, Promise<void> | null>>({});
   const consumedStripeReturnRef = useRef<string | null>(null);
   const consumedCheckoutStatusRef = useRef<string | null>(null);
 
@@ -410,20 +409,13 @@ export function DashboardView() {
 
   const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
   const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedLineAdjustment(lineAdjustment);
-    }, 180);
-    return () => window.clearTimeout(timer);
-  }, [lineAdjustment]);
-
   const selectedMetricsScope = useMemo(
-    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer, debouncedLineAdjustment),
-    [debouncedLineAdjustment, selectedGame, selectedPlayer, selectedSplit],
+    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer),
+    [selectedGame, selectedPlayer, selectedSplit],
   );
   const splitScopes = useMemo(
-    () => Object.fromEntries(SPLITS.map((split) => [split, buildMetricsScope(split, selectedGame, selectedPlayer, debouncedLineAdjustment)])) as Record<Split, ReturnType<typeof buildMetricsScope>>,
-    [debouncedLineAdjustment, selectedGame, selectedPlayer],
+    () => Object.fromEntries(SPLITS.map((split) => [split, buildMetricsScope(split, selectedGame, selectedPlayer)])) as Record<Split, ReturnType<typeof buildMetricsScope>>,
+    [selectedGame, selectedPlayer],
   );
   const selectedMetricsKey = selectedPlayerId
     ? buildMetricsCacheKey(selectedPlayerId, selectedStat, selectedMetricsScope.scopeKey)
@@ -431,7 +423,7 @@ export function DashboardView() {
   const selectedMetricsResource = selectedMetricsKey ? metricsBySelection[selectedMetricsKey] ?? null : null;
   const selectedMetricsFallbackResource = useMemo(() => {
     if (selectedMetricsResource || !selectedPlayerId) return selectedMetricsResource;
-    const fallbackScope = buildMetricsScope(selectedSplit, selectedGame, selectedPlayer, 0);
+    const fallbackScope = buildMetricsScope(selectedSplit, selectedGame, selectedPlayer);
     const fallbackKey = buildMetricsCacheKey(selectedPlayerId, selectedStat, fallbackScope.scopeKey);
     return metricsBySelection[fallbackKey] ?? null;
   }, [metricsBySelection, selectedGame, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedSplit, selectedStat]);
@@ -449,8 +441,18 @@ export function DashboardView() {
   }, [metricsStatusBySelection]);
 
   useEffect(() => {
-    metricsCacheRef.current = metricsBySelection;
-  }, [metricsBySelection]);
+    const nowTs = Date.now();
+    Object.entries(playersCacheRef.current).forEach(([key, entry]) => {
+      if (entry.expiresAt <= nowTs) {
+        delete playersCacheRef.current[Number(key)];
+      }
+    });
+    Object.entries(metricsCacheRef.current).forEach(([key, entry]) => {
+      if (entry.expiresAt <= nowTs) {
+        delete metricsCacheRef.current[key];
+      }
+    });
+  }, [selectedGameId, selectedPlayerId, selectedStat, selectedSplit]);
 
   useEffect(() => {
     if (searchParams.get('open') === 'checkout' && plan !== 'pro') {
@@ -575,10 +577,19 @@ export function DashboardView() {
   const loadPlayersForGame = useCallback(
     async (game: Game, options?: { force?: boolean }) => {
       const existingStatus = playersStatusRef.current[game.id] ?? 'idle';
-      const hasCachedPayload = Object.prototype.hasOwnProperty.call(playersCacheRef.current, game.id);
+      const cachedPlayers = playersCacheRef.current[game.id];
+      const hasFreshCache = Boolean(cachedPlayers && cachedPlayers.expiresAt > Date.now());
 
       if (!options?.force) {
-        if (hasCachedPayload || existingStatus === 'loading' || existingStatus === 'ready' || existingStatus === 'empty' || existingStatus === 'error') {
+        if (hasFreshCache) {
+          const payload = cachedPlayers?.payload ?? [];
+          const nextStatus = payload.length ? 'ready' : 'empty';
+          playersStatusRef.current[game.id] = nextStatus;
+          setPlayersByGame((prev) => (prev[game.id] === payload ? prev : { ...prev, [game.id]: payload }));
+          setPlayersStatusByGame((prev) => (prev[game.id] === nextStatus ? prev : { ...prev, [game.id]: nextStatus }));
+          return;
+        }
+        if (existingStatus === 'loading' || existingStatus === 'ready' || existingStatus === 'empty' || existingStatus === 'error') {
           return;
         }
         if (playersInFlightRef.current[game.id]) return;
@@ -588,7 +599,7 @@ export function DashboardView() {
       playersRequestRef.current[game.id] = requestId;
 
       playersStatusRef.current[game.id] = 'loading';
-      setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: 'loading' }));
+      setPlayersStatusByGame((prev) => (prev[game.id] === 'loading' ? prev : { ...prev, [game.id]: 'loading' }));
       setPlayersErrorByGame((prev) => ({ ...prev, [game.id]: null }));
       setPlayersRateLimitedByGame((prev) => ({ ...prev, [game.id]: false }));
 
@@ -622,11 +633,14 @@ export function DashboardView() {
           jersey: player.jersey || null,
         }));
 
-        playersCacheRef.current[game.id] = mappedPlayers;
+        playersCacheRef.current[game.id] = {
+          payload: mappedPlayers,
+          expiresAt: Date.now() + PLAYERS_CACHE_TTL_MS,
+        };
         const nextStatus = mappedPlayers.length ? 'ready' : 'empty';
         playersStatusRef.current[game.id] = nextStatus;
-        setPlayersByGame((prev) => ({ ...prev, [game.id]: mappedPlayers }));
-        setPlayersStatusByGame((prev) => ({ ...prev, [game.id]: nextStatus }));
+        setPlayersByGame((prev) => (prev[game.id] === mappedPlayers ? prev : { ...prev, [game.id]: mappedPlayers }));
+        setPlayersStatusByGame((prev) => (prev[game.id] === nextStatus ? prev : { ...prev, [game.id]: nextStatus }));
       })();
 
       playersInFlightRef.current[game.id] = request;
@@ -645,10 +659,12 @@ export function DashboardView() {
       const scope = options?.scope ?? buildMetricsScope(resolvedSplit, options?.game ?? null, options?.player ?? null);
       const key = buildMetricsCacheKey(playerId, stat, scope.scopeKey);
       const existingStatus = metricsStatusRef.current[key];
-      const hasCachedPayload = Object.prototype.hasOwnProperty.call(metricsCacheRef.current, key);
-      const shouldFetch = options?.force || !(hasCachedPayload || existingStatus === 'ready' || existingStatus === 'empty');
+      const cachedMetrics = metricsCacheRef.current[key];
+      const hasFreshCache = Boolean(cachedMetrics && cachedMetrics.expiresAt > Date.now());
+      const shouldFetch = options?.force || !(hasFreshCache || existingStatus === 'ready' || existingStatus === 'empty');
 
       if (!shouldFetch || existingStatus === 'loading') return;
+      if (metricsInFlightRef.current[key]) return;
 
       const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
       metricsRequestRef.current[key] = requestId;
@@ -657,33 +673,44 @@ export function DashboardView() {
       if (scope.opponent) query.set('opponent', scope.opponent);
       if (scope.opponentTeamId) query.set('opponentTeamId', String(scope.opponentTeamId));
       if (scope.gameId) query.set('gameId', String(scope.gameId));
-      query.set('lineContext', String(scope.lineContext));
 
       metricsStatusRef.current[key] = 'loading';
-      setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'loading' }));
-      setMetricsErrorBySelection((prev) => ({ ...prev, [key]: null }));
+      setMetricsStatusBySelection((prev) => (prev[key] === 'loading' ? prev : { ...prev, [key]: 'loading' }));
+      setMetricsErrorBySelection((prev) => (prev[key] === null ? prev : { ...prev, [key]: null }));
 
-      const result = await apiFetch<{ metrics: PlayerMetrics | null; games: PlayerGameSample[] }>(`/api/metrics?${query.toString()}`);
+      const request = (async () => {
+        const result = await apiFetch<{ metrics: PlayerMetrics | null; games: PlayerGameSample[] }>(`/api/metrics?${query.toString()}`);
 
-      if (metricsRequestRef.current[key] !== requestId) return;
+        if (metricsRequestRef.current[key] !== requestId) return;
 
-      if (!result.ok) {
-        metricsStatusRef.current[key] = 'error';
-        setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'error' }));
-        setMetricsErrorBySelection((prev) => ({ ...prev, [key]: result.message }));
-        return;
+        if (!result.ok) {
+          metricsStatusRef.current[key] = 'error';
+          setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'error' }));
+          setMetricsErrorBySelection((prev) => ({ ...prev, [key]: result.message }));
+          return;
+        }
+
+        const payload = {
+          metrics: result.data.metrics ?? null,
+          games: Array.isArray(result.data.games) ? result.data.games : [],
+        };
+
+        const nextStatus = payload.games.length || payload.metrics ? 'ready' : 'empty';
+        metricsCacheRef.current[key] = {
+          payload,
+          expiresAt: Date.now() + METRICS_CACHE_TTL_MS,
+        };
+        metricsStatusRef.current[key] = nextStatus;
+        setMetricsBySelection((prev) => ({ ...prev, [key]: payload }));
+        setMetricsStatusBySelection((prev) => ({ ...prev, [key]: nextStatus }));
+      })();
+
+      metricsInFlightRef.current[key] = request;
+      try {
+        await request;
+      } finally {
+        metricsInFlightRef.current[key] = null;
       }
-
-      const payload = {
-        metrics: result.data.metrics ?? null,
-        games: Array.isArray(result.data.games) ? result.data.games : [],
-      };
-
-      const nextStatus = payload.games.length || payload.metrics ? 'ready' : 'empty';
-      metricsCacheRef.current[key] = payload;
-      metricsStatusRef.current[key] = nextStatus;
-      setMetricsBySelection((prev) => ({ ...prev, [key]: payload }));
-      setMetricsStatusBySelection((prev) => ({ ...prev, [key]: nextStatus }));
     },
     [],
   );
@@ -807,14 +834,12 @@ export function DashboardView() {
           opponent: selectedMetricsOpponent,
           opponentTeamId: selectedMetricsOpponentTeamId,
           gameId: selectedMetricsGameId,
-          lineContext: debouncedLineAdjustment,
           scopeKey: selectedMetricsScopeKey,
         },
       });
     }, 0);
     return () => window.clearTimeout(timer);
   }, [
-    debouncedLineAdjustment,
     loadMetricsForPlayer,
     marketLocked,
     selectedPlayerId,
@@ -841,38 +866,25 @@ export function DashboardView() {
 
   useEffect(() => {
     if (view !== 'players' || marketLocked) return;
-    const hotPlayers = players.slice(0, 12);
+    const hotPlayers = players.slice(0, PLAYERS_PREFETCH_LIMIT);
     if (!hotPlayers.length) return;
-    const statsToWarm = Array.from(new Set<Stat>([selectedStat, ...PLAYER_ROW_STATS.map((item) => item.stat)]));
     const timer = window.setTimeout(() => {
-      hotPlayers.forEach((player) => {
-        statsToWarm.forEach((stat) => {
-          void loadMetricsForPlayer(player.id, stat);
-        });
-      });
+      let cursor = 0;
+      const prefetchWorker = async () => {
+        while (cursor < hotPlayers.length) {
+          const currentIndex = cursor;
+          cursor += 1;
+          const player = hotPlayers[currentIndex];
+          if (!player) continue;
+          await loadMetricsForPlayer(player.id, selectedStat);
+        }
+      };
+      for (let workerIndex = 0; workerIndex < PLAYERS_PREFETCH_CONCURRENCY; workerIndex += 1) {
+        void prefetchWorker();
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadMetricsForPlayer, marketLocked, players, selectedStat, view]);
-
-  useEffect(() => {
-    if (!selectedPlayerId) return;
-    const availableStats = plan === 'pro' ? STATS : FREE_STATS;
-    if (typeof window === 'undefined') return;
-    const schedule = window.requestIdleCallback ?? ((cb: IdleRequestCallback) => window.setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 } as IdleDeadline), 120));
-    const handle = schedule(() => {
-      availableStats.forEach((stat) => {
-        if (stat === selectedStat) return;
-        void loadMetricsForPlayer(selectedPlayerId, stat);
-      });
-    });
-    return () => {
-      if ('cancelIdleCallback' in window && typeof window.cancelIdleCallback === 'function' && typeof handle === 'number') {
-        window.cancelIdleCallback(handle);
-      } else {
-        window.clearTimeout(handle as number);
-      }
-    };
-  }, [loadMetricsForPlayer, plan, selectedPlayerId, selectedStat]);
 
   useEffect(() => {
     syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null, mode: view });

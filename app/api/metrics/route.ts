@@ -63,19 +63,20 @@ export async function GET(req: Request) {
     const parsedPlayerId = parseInt(playerId, 10);
     const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponentTeamId || 0}:${selectedGameId || 0}:${opponent || 'all'}`;
     const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
-      const { data: playerRow } = await supabase
-        .from('players')
-        .select('team_id')
-        .eq('id', parsedPlayerId)
-        .maybeSingle();
+      const [{ data: playerRow }, { data: recentStats, error }] = await Promise.all([
+        supabase
+          .from('players')
+          .select('team_id')
+          .eq('id', parsedPlayerId)
+          .maybeSingle(),
+        supabase
+          .from('player_stats')
+          .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
+          .eq('player_id', parsedPlayerId)
+          .order('game_date', { ascending: false })
+          .limit(300),
+      ]);
       const playerTeamId = asNumber(playerRow?.team_id) || null;
-
-      const { data: recentStats, error } = await supabase
-        .from('player_stats')
-        .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
-        .eq('player_id', parsedPlayerId)
-        .order('game_date', { ascending: false })
-        .limit(300);
 
       if (error) throw error;
 

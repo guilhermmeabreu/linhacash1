@@ -123,7 +123,7 @@ export async function GET(req: Request) {
     const result = await getCachedValue(`players:${gameId}:${session.plan}`, 120_000, async () => {
       const { data: game, error: gameError } = await supabase
         .from('games')
-        .select('id, home_team_id, away_team_id, game_date')
+        .select('id, home_team_id, away_team_id')
         .eq('id', gameId)
         .single();
 
@@ -133,8 +133,7 @@ export async function GET(req: Request) {
       const { data: players, error: playersError } = await supabase
         .from('players')
         .select('id, api_id, name, team_id, position, photo')
-        .in('team_id', [game.home_team_id, game.away_team_id])
-        .order('name');
+        .in('team_id', [game.home_team_id, game.away_team_id]);
 
       if (playersError) throw playersError;
 
