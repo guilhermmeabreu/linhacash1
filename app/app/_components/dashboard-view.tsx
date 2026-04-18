@@ -79,6 +79,7 @@ const PLAYER_ROW_STATS = [
 type Stat = (typeof STATS)[number];
 const SPLITS = ['24/25', 'L5', 'L10', 'L20', 'L30', 'Season', 'H2H'] as const;
 type Split = (typeof SPLITS)[number];
+type MetricsWindow = 'L5' | 'L10' | 'L20' | 'L30' | 'SEASON';
 
 type Plan = 'free' | 'pro';
 type UpgradePlan = 'monthly' | 'annual' | 'playoff';
@@ -238,6 +239,25 @@ function resolveInitialStat(value: string | null): Stat {
 
 function isLockedStat(stat: Stat, plan: Plan) {
   return plan !== 'pro' && !FREE_STATS.includes(stat as (typeof FREE_STATS)[number]);
+}
+
+function resolveMetricsWindow(split: Split): MetricsWindow {
+  if (split === 'L5' || split === 'L10' || split === 'L20' || split === 'L30') return split;
+  return 'SEASON';
+}
+
+function isSeasonLikeSplit(split: Split) {
+  return split === 'Season' || split === '24/25';
+}
+
+function resolveH2HOpponent(game: Game | null, player: Player | null): string | null {
+  if (!game || !player) return null;
+  if (player.team_id === game.home_team_id) return game.away_team;
+  if (player.team_id === game.away_team_id) return game.home_team;
+  const normalizedTeam = player.team.trim().toLowerCase();
+  if (normalizedTeam && game.home_team.trim().toLowerCase().includes(normalizedTeam)) return game.away_team;
+  if (normalizedTeam && game.away_team.trim().toLowerCase().includes(normalizedTeam)) return game.home_team;
+  return null;
 }
 
 export function DashboardView() {
@@ -542,13 +562,18 @@ export function DashboardView() {
   );
 
   const loadMetricsForPlayer = useCallback(
-    async (playerId: number, stat: Stat, options?: { force?: boolean }) => {
+    async (playerId: number, stat: Stat, options?: { force?: boolean; split?: Split; game?: Game | null; player?: Player | null }) => {
       const existingStatus = metricsStatusByPlayer[playerId]?.[stat];
-      if (!options?.force && (existingStatus === 'ready' || existingStatus === 'loading')) return;
+      if (!options?.force && existingStatus === 'loading') return;
 
       const key = `${playerId}:${stat}`;
       const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
       metricsRequestRef.current[key] = requestId;
+      const split = options?.split ?? 'L10';
+      const window = resolveMetricsWindow(split);
+      const opponent = split === 'H2H' ? resolveH2HOpponent(options?.game ?? null, options?.player ?? null) : null;
+      const query = new URLSearchParams({ playerId: String(playerId), stat, window });
+      if (opponent) query.set('opponent', opponent);
 
       setMetricsStatusByPlayer((prev) => ({
         ...prev,
@@ -559,7 +584,7 @@ export function DashboardView() {
         [playerId]: { ...(prev[playerId] ?? {}), [stat]: null },
       }));
 
-      const result = await apiFetch<{ metrics: PlayerMetrics | null; games: PlayerGameSample[] }>(`/api/metrics?playerId=${playerId}&stat=${stat}`);
+      const result = await apiFetch<{ metrics: PlayerMetrics | null; games: PlayerGameSample[] }>(`/api/metrics?${query.toString()}`);
 
       if (metricsRequestRef.current[key] !== requestId) return;
 
@@ -704,10 +729,10 @@ export function DashboardView() {
   useEffect(() => {
     if (!selectedPlayerId || marketLocked) return;
     const timer = window.setTimeout(() => {
-      void loadMetricsForPlayer(selectedPlayerId, selectedStat);
+      void loadMetricsForPlayer(selectedPlayerId, selectedStat, { split: selectedSplit, game: selectedGame, player: selectedPlayer });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadMetricsForPlayer, marketLocked, selectedPlayerId, selectedStat]);
+  }, [loadMetricsForPlayer, marketLocked, selectedGame, selectedPlayer, selectedPlayerId, selectedSplit, selectedStat]);
 
   useEffect(() => {
     if (view !== 'players' || marketLocked) return;
@@ -931,32 +956,22 @@ export function DashboardView() {
   const playerDetailModel = useMemo(() => {
     if (!selectedPlayer) return null;
     const payload = selectedMetricsResource;
-    const allGames = (payload?.games ?? []).map((sample) => ({
+    const scopedGames = (payload?.games ?? []).map((sample) => ({
       date: sample.date,
       value: Number(sample.value ?? 0),
       minutes: Number(sample.minutes ?? 0),
     }));
-    const splitGames = (() => {
-      if (selectedSplit === 'Season') return allGames;
-      if (selectedSplit === '24/25') {
-        return allGames.filter((sample) => {
-          if (!sample.date) return false;
-          const date = new Date(sample.date);
-          const start = new Date('2024-07-01');
-          const end = new Date('2025-06-30');
-          return date >= start && date <= end;
-        });
-      }
-      if (selectedSplit === 'H2H') return allGames.slice(0, 4);
-      const sampleSizeMap: Record<Extract<Split, 'L5' | 'L10' | 'L20' | 'L30'>, number> = { L5: 5, L10: 10, L20: 20, L30: 30 };
-      return allGames.slice(0, sampleSizeMap[selectedSplit as Extract<Split, 'L5' | 'L10' | 'L20' | 'L30'>]);
-    })();
-    const games = splitGames.length ? splitGames : allGames;
+    const games = scopedGames;
     const values = games.map((sample) => sample.value);
     const lineBase = Number(payload?.metrics?.line ?? payload?.metrics?.avg_l10 ?? 0);
     const apiLine = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
     const line = Math.max(0, apiLine + lineAdjustment);
-    const average = values.length ? Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1)) : null;
+    const selectedAverage = Number(payload?.metrics?.selected_avg);
+    const average = Number.isFinite(selectedAverage)
+      ? selectedAverage
+      : values.length
+        ? Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1))
+        : null;
     const bars: PlayerDetailChartBar[] = games.slice().reverse().map((sample) => {
       const tone: ChartBarTone = sample.value > line ? 'hit' : sample.value === line ? 'tie' : 'miss';
       const date = sample.date ? new Date(sample.date) : null;
@@ -973,33 +988,29 @@ export function DashboardView() {
         L30: metrics?.avg_l30,
         Season: metrics?.avg_season,
       };
-
-      const scopedGames = split === 'Season'
-        ? allGames
-        : split === '24/25'
-          ? allGames.filter((sample) => sample.date && new Date(sample.date) >= new Date('2024-07-01') && new Date(sample.date) <= new Date('2025-06-30'))
-          : split === 'H2H'
-            ? allGames.slice(0, 4)
-            : allGames.slice(0, Number(split.slice(1)));
-      const hits = scopedGames.filter((sample) => sample.value >= line).length;
-      const pct = scopedGames.length ? Math.round((hits / scopedGames.length) * 100) : null;
-      const hitRateNote = scopedGames.length
-        ? (split === 'Season' || split === '24/25')
-          ? `${pct}% (${hits}/${scopedGames.length})`
-          : `${hits}/${scopedGames.length}`
+      const selectedHitRate = Number(metrics?.selected_hit_rate);
+      const selectedSampleSize = Number(metrics?.sample_size);
+      const hasSelectedHitRate = Number.isFinite(selectedHitRate) && selectedSampleSize > 0;
+      const selectedHits = hasSelectedHitRate ? Math.round((selectedHitRate / 100) * selectedSampleSize) : null;
+      const selectedSplitMatchesCard = split === selectedSplit
+        || (isSeasonLikeSplit(split) && isSeasonLikeSplit(selectedSplit));
+      const selectedNote = hasSelectedHitRate && selectedHits !== null
+        ? (isSeasonLikeSplit(split) ? `${Math.round(selectedHitRate)}% (${selectedHits}/${selectedSampleSize})` : `${selectedHits}/${selectedSampleSize}`)
         : null;
       const rawAverage = averageBySplit[split as keyof typeof averageBySplit];
       const averageValue = Number(rawAverage);
       if (Number.isFinite(averageValue)) {
         const seasonSampleSize = Number(metrics?.season_sample_size);
-        const note = hitRateNote
+        const note = (selectedSplitMatchesCard ? selectedNote : null)
           ?? ((split === 'Season' || split === '24/25') && Number.isFinite(seasonSampleSize) && seasonSampleSize > 0
             ? `0/${seasonSampleSize}`
             : 'Sem dados');
         return { label: split, value: averageValue.toFixed(1), note };
       }
-      if (!scopedGames.length || pct === null) return { label: split, value: '—', note: 'Sem dados' };
-      return { label: split, value: `${pct}%`, note: `${hits}/${scopedGames.length}` };
+      if (split === 'H2H' && selectedSplit === 'H2H' && hasSelectedHitRate && selectedHits !== null) {
+        return { label: split, value: `${Math.round(selectedHitRate)}%`, note: `${selectedHits}/${selectedSampleSize}` };
+      }
+      return { label: split, value: '—', note: 'Sem dados' };
     });
     const summaryMetricMap: Record<string, PlayerDetailSplitMetric> = {};
     splitMetrics.forEach((metric) => {
@@ -1015,7 +1026,7 @@ export function DashboardView() {
       summaryMetricMap['24/25'] ?? { label: '24/25', value: '—', note: 'Sem dados' },
     ];
     return {
-      allGames,
+      allGames: scopedGames,
       games,
       line,
       average,
@@ -1338,7 +1349,11 @@ export function DashboardView() {
                   heading="Não foi possível carregar o detalhe do jogador"
                   description={selectedMetricsError || 'Tente novamente em instantes.'}
                   action={selectedPlayerId ? (
-                    <Button size="sm" variant="secondary" onClick={() => loadMetricsForPlayer(selectedPlayerId, selectedStat, { force: true })}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => loadMetricsForPlayer(selectedPlayerId, selectedStat, { force: true, split: selectedSplit, game: selectedGame, player: selectedPlayer })}
+                    >
                       <RefreshCw size={14} /> Recarregar
                     </Button>
                   ) : null}
