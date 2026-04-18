@@ -155,7 +155,7 @@ type BillingData = {
   subscriptionStatus?: string | null;
 };
 
-type ChartBarTone = 'hit' | 'miss' | 'tie';
+type ChartBarTone = 'hit' | 'miss';
 
 type PlayerDetailChartBar = {
   date: string | null;
@@ -1040,7 +1040,7 @@ export function DashboardView() {
         ? Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1))
         : null;
     const bars: PlayerDetailChartBar[] = games.slice().reverse().map((sample) => {
-      const tone: ChartBarTone = sample.value > line ? 'hit' : sample.value === line ? 'tie' : 'miss';
+      const tone: ChartBarTone = sample.value >= line ? 'hit' : 'miss';
       const date = sample.date ? new Date(sample.date) : null;
       const label = date ? `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}` : '—';
       return { ...sample, tone, label };
@@ -1058,7 +1058,7 @@ export function DashboardView() {
         ? Math.round(sampleSizeFromMetrics)
         : gamesForSplit.length;
       if (sampleSize > 0) {
-        const hitsFromGames = gamesForSplit.filter((value) => value > line).length;
+        const hitsFromGames = gamesForSplit.filter((value) => value >= line).length;
         const selectedHitRate = Number(splitPayload?.metrics?.selected_hit_rate);
         const hits = gamesForSplit.length === sampleSize
           ? hitsFromGames
@@ -1482,7 +1482,7 @@ export function DashboardView() {
                               {playerDetailModel.bars.map((bar, index) => (
                                 <Cell
                                   key={`${bar.label}-${index}`}
-                                  fill={bar.tone === 'hit' ? '#24e880' : bar.tone === 'tie' ? '#9fa6b2' : '#d7263d'}
+                                  fill={bar.tone === 'hit' ? '#24e880' : '#d7263d'}
                                 />
                               ))}
                             </Bar>
