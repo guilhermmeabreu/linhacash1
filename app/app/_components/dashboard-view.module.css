@@ -475,6 +475,14 @@
   position: relative;
   z-index: 1;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--lc-surface) 88%, transparent);
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .playerName {

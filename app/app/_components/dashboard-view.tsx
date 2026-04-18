@@ -108,6 +108,11 @@ type Player = {
   jersey: string | number | null;
 };
 
+type PlayerAvatarProps = {
+  playerId: number;
+  playerName: string;
+};
+
 type PlayerMetrics = {
   player_id: number;
   stat: Stat;
@@ -263,7 +268,10 @@ function buildTeamIdentityHints(value: string | null | undefined): string[] {
   const words = raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   const initials = words.map((part) => part[0]).join('');
   const lastWord = words.at(-1) || '';
-  const hints = [compact, initials, lastWord];
+  const firstWord = words[0] || '';
+  const cityAbbrev = firstWord.slice(0, 3);
+  const nicknameAbbrev = lastWord.slice(0, 3);
+  const hints = [compact, initials, lastWord, cityAbbrev, nicknameAbbrev];
   return Array.from(new Set(hints.filter(Boolean)));
 }
 
@@ -295,6 +303,29 @@ function buildMetricsScope(split: Split, game: Game | null, player: Player | nul
 
 function buildMetricsCacheKey(playerId: number, stat: Stat, scopeKey: string) {
   return `${playerId}:${stat}:${scopeKey}`;
+}
+
+function buildPlayerHeadshotUrl(playerId: number): string {
+  return `https://cdn.nba.com/headshots/nba/latest/1040x760/${playerId}.png`;
+}
+
+function PlayerAvatar({ playerId, playerName }: PlayerAvatarProps) {
+  const [hasImageError, setHasImageError] = useState(false);
+  const initial = playerName.slice(0, 1).toUpperCase();
+
+  return (
+    <div className={styles.avatar}>
+      {!hasImageError ? (
+        <img
+          src={buildPlayerHeadshotUrl(playerId)}
+          alt={playerName}
+          loading="lazy"
+          onError={() => setHasImageError(true)}
+        />
+      ) : null}
+      {hasImageError ? initial : null}
+    </div>
+  );
 }
 
 const SPLIT_CARD_ORDER: Split[] = ['Season', 'H2H', 'L5', 'L10', 'L20', 'L30'];
@@ -430,6 +461,12 @@ export function DashboardView() {
     ? buildMetricsCacheKey(selectedPlayerId, selectedStat, selectedMetricsScope.scopeKey)
     : null;
   const selectedMetricsResource = selectedMetricsKey ? metricsBySelection[selectedMetricsKey] ?? null : null;
+  const selectedMetricsFallbackResource = useMemo(() => {
+    if (selectedMetricsResource || !selectedPlayerId) return selectedMetricsResource;
+    const fallbackScope = buildMetricsScope(selectedSplit, selectedGame, selectedPlayer, 0);
+    const fallbackKey = buildMetricsCacheKey(selectedPlayerId, selectedStat, fallbackScope.scopeKey);
+    return metricsBySelection[fallbackKey] ?? null;
+  }, [metricsBySelection, selectedGame, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedSplit, selectedStat]);
   const selectedMetricsStatus = selectedMetricsKey ? metricsStatusBySelection[selectedMetricsKey] ?? 'idle' : 'idle';
   const selectedMetricsError = selectedMetricsKey ? metricsErrorBySelection[selectedMetricsKey] ?? null : null;
   const selectedMetricsWindow = selectedMetricsScope.window;
@@ -646,6 +683,7 @@ export function DashboardView() {
       const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
       metricsRequestRef.current[key] = requestId;
       const query = new URLSearchParams({ playerId: String(playerId), stat, window: scope.window });
+      query.set('split', resolvedSplit);
       if (scope.opponent) query.set('opponent', scope.opponent);
       query.set('lineContext', String(scope.lineContext));
 
@@ -1048,10 +1086,14 @@ export function DashboardView() {
     if (!isDesktopCheckoutViewport && selectedSplit === 'L30') return false;
     return true;
   }, [isDesktopCheckoutViewport, selectedSplit]);
+  const hideChartDateLabels = useMemo(() => {
+    if (isDesktopCheckoutViewport) return selectedSplit === 'Season';
+    return selectedSplit === 'L20' || selectedSplit === 'L30' || selectedSplit === 'Season';
+  }, [isDesktopCheckoutViewport, selectedSplit]);
 
   const playerDetailModel = useMemo(() => {
     if (!selectedPlayer) return null;
-    const payload = selectedMetricsResource;
+    const payload = selectedMetricsResource ?? selectedMetricsFallbackResource;
     const scopedGames = (payload?.games ?? []).map((sample) => ({
       date: sample.date,
       value: Number(sample.value ?? 0),
@@ -1116,7 +1158,7 @@ export function DashboardView() {
       metrics: payload?.metrics ?? null,
       splitMetrics,
     };
-  }, [lineAdjustment, metricsBySelection, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedStat, splitScopes]);
+  }, [lineAdjustment, metricsBySelection, selectedMetricsFallbackResource, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedStat, splitScopes]);
 
   const topTitle = useMemo(() => {
     if (view === 'profile') return 'Meu Perfil';
@@ -1352,7 +1394,7 @@ export function DashboardView() {
                             >
                               <div className={styles.playerRowMobile}>
                                 <div className={styles.playerMobileLeft}>
-                                  <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
+                                  <PlayerAvatar playerId={player.id} playerName={player.name} />
                                   <div className={styles.playerMobileIdentity}>
                                     <p className={styles.playerName}>{player.name}</p>
                                     <p className={styles.playerMeta}>{player.position} • {player.team}</p>
@@ -1367,7 +1409,7 @@ export function DashboardView() {
                               <div className={styles.playerRowDesktop}>
                                 <div className={styles.playerMain}>
                                   <div className={styles.playerIdentityWrap}>
-                                    <div className={styles.avatar}>{player.name.slice(0, 1).toUpperCase()}</div>
+                                    <PlayerAvatar playerId={player.id} playerName={player.name} />
                                     <div className={styles.playerIdentity}>
                                       <p className={styles.playerName}>{player.name}</p>
                                       <p className={styles.playerMeta}>{player.position} • {player.team}</p>
@@ -1427,6 +1469,9 @@ export function DashboardView() {
               {selectedMetricsStatus === 'loading' && !playerDetailModel ? (
                 <Surface className={styles.statePanelInline}><p className={styles.stateText}>Carregando métricas e histórico...</p></Surface>
               ) : null}
+              {selectedMetricsStatus === 'loading' && playerDetailModel ? (
+                <Surface className={styles.statePanelInline}><p className={styles.stateText}>Atualizando dados...</p></Surface>
+              ) : null}
               {selectedMetricsStatus === 'error' ? (
                 <EmptyState
                   heading="Não foi possível carregar o detalhe do jogador"
@@ -1474,7 +1519,13 @@ export function DashboardView() {
                             barCategoryGap={playerDetailModel.bars.length <= 5 ? '6%' : playerDetailModel.bars.length <= 10 ? '8%' : playerDetailModel.bars.length <= 20 ? '10%' : '12%'}
                           >
                             <CartesianGrid stroke="color-mix(in srgb, var(--lc-border) 55%, transparent)" strokeDasharray="2 4" vertical={false} />
-                            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: 'var(--lc-muted)', fontSize: 11 }} />
+                            <XAxis
+                              dataKey="label"
+                              hide={hideChartDateLabels}
+                              tickLine={false}
+                              axisLine={false}
+                              tick={{ fill: 'var(--lc-muted)', fontSize: 11 }}
+                            />
                             <YAxis
                               hide
                               tickLine={false}

@@ -248,7 +248,10 @@ function buildTeamMatchHints(team: string | null | undefined): string[] {
   const parts = raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   const initials = parts.map((part) => part[0]).join('');
   const nickname = parts.at(-1) || '';
-  return Array.from(new Set([compact, initials, nickname].filter(Boolean)));
+  const city = parts[0] || '';
+  const cityAbbrev = city.slice(0, 3);
+  const nicknameAbbrev = nickname.slice(0, 3);
+  return Array.from(new Set([compact, initials, nickname, cityAbbrev, nicknameAbbrev].filter(Boolean)));
 }
 
 function matchesOpponent(candidate: string | null | undefined, opponentHints: string[]): boolean {
