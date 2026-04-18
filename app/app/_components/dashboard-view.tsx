@@ -101,19 +101,15 @@ type Game = {
 
 type Player = {
   id: number;
-  api_id: number | null;
   name: string;
   team_id: number;
   team: string;
   position: string;
   jersey: string | number | null;
-  photo: string | null;
 };
 
 type PlayerAvatarProps = {
   playerName: string;
-  externalPlayerId?: number | null;
-  photoUrl?: string | null;
 };
 
 type PlayerMetrics = {
@@ -260,75 +256,42 @@ function resolveMetricsWindow(split: Split): MetricsWindow {
   return 'SEASON';
 }
 
-function normalizeTeamIdentity(value: string | null | undefined): string {
-  return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function buildTeamIdentityHints(value: string | null | undefined): string[] {
-  const raw = (value || '').trim();
-  if (!raw) return [];
-  const compact = normalizeTeamIdentity(raw);
-  const words = raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  const initials = words.map((part) => part[0]).join('');
-  const lastWord = words.at(-1) || '';
-  const firstWord = words[0] || '';
-  const cityAbbrev = firstWord.slice(0, 3);
-  const nicknameAbbrev = lastWord.slice(0, 3);
-  const hints = [compact, initials, lastWord, cityAbbrev, nicknameAbbrev];
-  return Array.from(new Set(hints.filter(Boolean)));
-}
-
-function teamIdentityMatches(left: string | null | undefined, right: string | null | undefined): boolean {
-  const leftHints = buildTeamIdentityHints(left);
-  const rightHints = buildTeamIdentityHints(right);
-  if (!leftHints.length || !rightHints.length) return false;
-  return leftHints.some((leftHint) =>
-    rightHints.some((rightHint) =>
-      leftHint === rightHint || leftHint.includes(rightHint) || rightHint.includes(leftHint)));
-}
-
-function resolveH2HOpponent(game: Game | null, player: Player | null): string | null {
+function resolveH2HOpponentContext(game: Game | null, player: Player | null): { opponent: string | null; opponentTeamId: number | null; gameId: number | null } | null {
   if (!game || !player) return null;
-  if (player.team_id === game.home_team_id) return game.away_team;
-  if (player.team_id === game.away_team_id) return game.home_team;
-  if (teamIdentityMatches(player.team, game.home_team)) return game.away_team;
-  if (teamIdentityMatches(player.team, game.away_team)) return game.home_team;
-  return null;
+  if (player.team_id === game.home_team_id) {
+    return { opponent: game.away_team, opponentTeamId: game.away_team_id, gameId: game.id };
+  }
+  if (player.team_id === game.away_team_id) {
+    return { opponent: game.home_team, opponentTeamId: game.home_team_id, gameId: game.id };
+  }
+  return { opponent: null, opponentTeamId: null, gameId: game.id };
 }
 
 function buildMetricsScope(split: Split, game: Game | null, player: Player | null, lineContext = 0) {
   const window = resolveMetricsWindow(split);
-  const opponent = split === 'H2H' ? resolveH2HOpponent(game, player) : null;
+  const h2hContext = split === 'H2H' ? resolveH2HOpponentContext(game, player) : null;
+  const opponent = h2hContext?.opponent ?? null;
+  const opponentTeamId = h2hContext?.opponentTeamId ?? null;
+  const gameId = h2hContext?.gameId ?? null;
   const safeLineContext = Number.isFinite(lineContext) ? Number(lineContext.toFixed(1)) : 0;
-  const scopeKey = `${split}:${window}:${opponent?.trim().toLowerCase() || 'all'}`;
-  return { split, window, opponent, lineContext: safeLineContext, scopeKey };
+  const scopeKey = `${split}:${window}:${opponentTeamId || 0}:${opponent?.trim().toLowerCase() || 'all'}`;
+  return { split, window, opponent, opponentTeamId, gameId, lineContext: safeLineContext, scopeKey };
 }
 
 function buildMetricsCacheKey(playerId: number, stat: Stat, scopeKey: string) {
   return `${playerId}:${stat}:${scopeKey}`;
 }
 
-function buildPlayerHeadshotUrl(externalPlayerId: number | null | undefined): string | null {
-  if (!Number.isFinite(externalPlayerId) || !externalPlayerId || externalPlayerId <= 0) return null;
-  return `https://cdn.nba.com/headshots/nba/latest/1040x760/${externalPlayerId}.png`;
-}
-
-function PlayerAvatar({ playerName, externalPlayerId, photoUrl }: PlayerAvatarProps) {
-  const [hasImageError, setHasImageError] = useState(false);
-  const initial = playerName.slice(0, 1).toUpperCase();
-  const imageUrl = photoUrl || buildPlayerHeadshotUrl(externalPlayerId) || null;
-
+function PlayerAvatar({ playerName }: PlayerAvatarProps) {
+  const initials = playerName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || '?';
   return (
     <div className={styles.avatar}>
-      {!hasImageError && imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={playerName}
-          loading="lazy"
-          onError={() => setHasImageError(true)}
-        />
-      ) : null}
-      {hasImageError || !imageUrl ? initial : null}
+      {initials}
     </div>
   );
 }
@@ -476,6 +439,8 @@ export function DashboardView() {
   const selectedMetricsError = selectedMetricsKey ? metricsErrorBySelection[selectedMetricsKey] ?? null : null;
   const selectedMetricsWindow = selectedMetricsScope.window;
   const selectedMetricsOpponent = selectedMetricsScope.opponent;
+  const selectedMetricsOpponentTeamId = selectedMetricsScope.opponentTeamId;
+  const selectedMetricsGameId = selectedMetricsScope.gameId;
   const selectedMetricsScopeKey = selectedMetricsScope.scopeKey;
   const marketLocked = isLockedStat(selectedStat, plan);
 
@@ -628,7 +593,7 @@ export function DashboardView() {
       setPlayersRateLimitedByGame((prev) => ({ ...prev, [game.id]: false }));
 
       const request = (async () => {
-        const result = await apiFetch<{ players: Array<{ id: number; api_id?: number | null; name: string; team_id: number; position: string; jersey: string | number | null; photo?: string | null }> }>(
+        const result = await apiFetch<{ players: Array<{ id: number; name: string; team_id: number; position: string; jersey: string | number | null }> }>(
           `/api/players?gameId=${game.id}`,
         );
 
@@ -645,7 +610,6 @@ export function DashboardView() {
 
         const mappedPlayers = (result.data.players || []).map((player) => ({
           id: player.id,
-          api_id: Number.isFinite(Number(player.api_id)) ? Number(player.api_id) : null,
           name: player.name || 'Jogador',
           team_id: Number(player.team_id || 0),
           team:
@@ -656,7 +620,6 @@ export function DashboardView() {
                 : 'Time não informado',
           position: player.position || 'N/A',
           jersey: player.jersey || null,
-          photo: typeof player.photo === 'string' && player.photo.trim().length ? player.photo : null,
         }));
 
         playersCacheRef.current[game.id] = mappedPlayers;
@@ -692,6 +655,8 @@ export function DashboardView() {
       const query = new URLSearchParams({ playerId: String(playerId), stat, window: scope.window });
       query.set('split', resolvedSplit);
       if (scope.opponent) query.set('opponent', scope.opponent);
+      if (scope.opponentTeamId) query.set('opponentTeamId', String(scope.opponentTeamId));
+      if (scope.gameId) query.set('gameId', String(scope.gameId));
       query.set('lineContext', String(scope.lineContext));
 
       metricsStatusRef.current[key] = 'loading';
@@ -840,6 +805,8 @@ export function DashboardView() {
           split: selectedSplit,
           window: selectedMetricsWindow,
           opponent: selectedMetricsOpponent,
+          opponentTeamId: selectedMetricsOpponentTeamId,
+          gameId: selectedMetricsGameId,
           lineContext: debouncedLineAdjustment,
           scopeKey: selectedMetricsScopeKey,
         },
@@ -855,6 +822,8 @@ export function DashboardView() {
     selectedSplit,
     selectedMetricsWindow,
     selectedMetricsOpponent,
+    selectedMetricsOpponentTeamId,
+    selectedMetricsGameId,
     selectedMetricsScopeKey,
   ]);
 
@@ -1401,7 +1370,7 @@ export function DashboardView() {
                             >
                               <div className={styles.playerRowMobile}>
                                 <div className={styles.playerMobileLeft}>
-                                  <PlayerAvatar playerName={player.name} externalPlayerId={player.api_id} photoUrl={player.photo} />
+                                  <PlayerAvatar playerName={player.name} />
                                   <div className={styles.playerMobileIdentity}>
                                     <p className={styles.playerName}>{player.name}</p>
                                     <p className={styles.playerMeta}>{player.position} • {player.team}</p>
@@ -1416,7 +1385,7 @@ export function DashboardView() {
                               <div className={styles.playerRowDesktop}>
                                 <div className={styles.playerMain}>
                                   <div className={styles.playerIdentityWrap}>
-                                    <PlayerAvatar playerName={player.name} externalPlayerId={player.api_id} photoUrl={player.photo} />
+                                    <PlayerAvatar playerName={player.name} />
                                     <div className={styles.playerIdentity}>
                                       <p className={styles.playerName}>{player.name}</p>
                                       <p className={styles.playerMeta}>{player.position} • {player.team}</p>
@@ -1460,7 +1429,7 @@ export function DashboardView() {
               </div>
               <div className={styles.playerHero}>
                 <div className={styles.playerIdentityWrap}>
-                  <PlayerAvatar playerName={selectedPlayer.name} externalPlayerId={selectedPlayer.api_id} photoUrl={selectedPlayer.photo} />
+                  <PlayerAvatar playerName={selectedPlayer.name} />
                   <div>
                     <p className={styles.playerHeroMeta}>{selectedPlayer.team} • {selectedPlayer.position}</p>
                     <h2 className={styles.playerHeroName}>{selectedPlayer.name}</h2>

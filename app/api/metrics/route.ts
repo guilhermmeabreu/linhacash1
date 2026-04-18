@@ -47,6 +47,8 @@ export async function GET(req: Request) {
     const window = normalizeWindow(searchParams.get('window') || searchParams.get('split'));
     const split = normalizeSplit(searchParams.get('location') || searchParams.get('venue') || searchParams.get('ha'));
     const opponent = normalizeOpponent(searchParams.get('opponent') || searchParams.get('vs'));
+    const opponentTeamId = normalizeEntityId(searchParams.get('opponentTeamId'));
+    const selectedGameId = normalizeEntityId(searchParams.get('gameId'));
 
     if (!playerId || !/^\d+$/.test(playerId)) return errorResponse('playerId inválido');
 
@@ -59,7 +61,7 @@ export async function GET(req: Request) {
     }
 
     const parsedPlayerId = parseInt(playerId, 10);
-    const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponent || 'all'}`;
+    const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponentTeamId || 0}:${selectedGameId || 0}:${opponent || 'all'}`;
     const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
       const { data: playerRow } = await supabase
         .from('players')
@@ -102,13 +104,13 @@ export async function GET(req: Request) {
       const allGames = (recentStats || []).map((row) => ({
         game_id: asNumber(row.game_id) || null,
         date: row.game_date,
-        opponent: resolveOpponentName(row, playerTeamId, gameById),
+        ...resolveOpponentContext(row, playerTeamId, gameById),
         is_home: row.is_home ?? null,
         value: getStatValue(row, stat),
         minutes: row.minutes,
       }));
 
-      const filteredGames = applySplitAndOpponent(allGames, split, opponent);
+      const filteredGames = applySplitAndOpponent(allGames, split, opponent, opponentTeamId, selectedGameId);
       const scopedGames = applyWindow(filteredGames, window);
       const scopedValues = scopedGames.map((row) => row.value);
 
@@ -172,6 +174,12 @@ function normalizeOpponent(rawOpponent: string | null): string | null {
   return value ? value.toLowerCase() : null;
 }
 
+function normalizeEntityId(rawValue: string | null): number | null {
+  if (!rawValue || !/^\d+$/.test(rawValue)) return null;
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 type PlayerStatRow = {
   points: number | null;
   rebounds: number | null;
@@ -194,6 +202,7 @@ type RuntimeGame = {
   game_id?: number | null;
   date: string | null;
   opponent: string | null;
+  opponent_team_id: number | null;
   is_home: boolean | null;
   value: number;
   minutes: number | null;
@@ -257,13 +266,20 @@ function avg(values: number[]): number {
   return Number((values.reduce((acc, value) => acc + value, 0) / values.length).toFixed(1));
 }
 
-function applySplitAndOpponent(rows: RuntimeGame[], split: MetricsSplit, opponent: string | null): RuntimeGame[] {
-  const normalizedOpponent = opponent ? opponent.trim().toLowerCase() : null;
-  const opponentHints = buildTeamMatchHints(normalizedOpponent);
+function applySplitAndOpponent(
+  rows: RuntimeGame[],
+  split: MetricsSplit,
+  opponent: string | null,
+  opponentTeamId: number | null,
+  selectedGameId: number | null,
+): RuntimeGame[] {
+  const normalizedOpponent = normalizeTeamToken(opponent);
   return rows.filter((row) => {
     if (split === 'HOME' && row.is_home !== true) return false;
     if (split === 'AWAY' && row.is_home !== false) return false;
-    if (normalizedOpponent && !matchesOpponent(row.opponent, opponentHints)) return false;
+    if (selectedGameId && row.game_id === selectedGameId) return false;
+    if (opponentTeamId && row.opponent_team_id !== opponentTeamId) return false;
+    if (!opponentTeamId && normalizedOpponent && normalizeTeamToken(row.opponent) !== normalizedOpponent) return false;
     return true;
   });
 }
@@ -272,46 +288,32 @@ function normalizeTeamToken(value: string | null | undefined): string {
   return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function buildTeamMatchHints(team: string | null | undefined): string[] {
-  const raw = (team || '').trim();
-  if (!raw) return [];
-  const compact = normalizeTeamToken(raw);
-  const parts = raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  const initials = parts.map((part) => part[0]).join('');
-  const nickname = parts.at(-1) || '';
-  const city = parts[0] || '';
-  const cityAbbrev = city.slice(0, 3);
-  const nicknameAbbrev = nickname.slice(0, 3);
-  return Array.from(new Set([compact, initials, nickname, cityAbbrev, nicknameAbbrev].filter(Boolean)));
-}
-
-function matchesOpponent(candidate: string | null | undefined, opponentHints: string[]): boolean {
-  if (!opponentHints.length) return true;
-  const candidateHints = buildTeamMatchHints(candidate);
-  if (!candidateHints.length) return false;
-  return candidateHints.some((candidateHint) =>
-    opponentHints.some((opponentHint) =>
-      candidateHint === opponentHint || candidateHint.includes(opponentHint) || opponentHint.includes(candidateHint)));
-}
-
-function resolveOpponentName(
+function resolveOpponentContext(
   row: { game_id?: number | null; opponent?: string | null; is_home?: boolean | null },
   playerTeamId: number | null,
   gameById: Map<number, { home_team: string | null; away_team: string | null; home_team_id: number | null; away_team_id: number | null }>,
-): string | null {
+): { opponent: string | null; opponent_team_id: number | null } {
   const explicitOpponent = row.opponent?.trim() || null;
   const gameId = asNumber(row.game_id) || null;
-  if (!gameId) return explicitOpponent;
+  if (!gameId) return { opponent: explicitOpponent, opponent_team_id: null };
   const game = gameById.get(gameId);
-  if (!game) return explicitOpponent;
+  if (!game) return { opponent: explicitOpponent, opponent_team_id: null };
 
-  if (row.is_home === true && game.away_team) return game.away_team;
-  if (row.is_home === false && game.home_team) return game.home_team;
+  if (row.is_home === true) {
+    return { opponent: game.away_team || explicitOpponent, opponent_team_id: game.away_team_id };
+  }
+  if (row.is_home === false) {
+    return { opponent: game.home_team || explicitOpponent, opponent_team_id: game.home_team_id };
+  }
 
-  if (playerTeamId && game.home_team_id && playerTeamId === game.home_team_id && game.away_team) return game.away_team;
-  if (playerTeamId && game.away_team_id && playerTeamId === game.away_team_id && game.home_team) return game.home_team;
+  if (playerTeamId && game.home_team_id && playerTeamId === game.home_team_id) {
+    return { opponent: game.away_team || explicitOpponent, opponent_team_id: game.away_team_id };
+  }
+  if (playerTeamId && game.away_team_id && playerTeamId === game.away_team_id) {
+    return { opponent: game.home_team || explicitOpponent, opponent_team_id: game.home_team_id };
+  }
 
-  return explicitOpponent;
+  return { opponent: explicitOpponent, opponent_team_id: null };
 }
 
 function getSeasonStartYear(gameDate: string | null | undefined): number | null {
