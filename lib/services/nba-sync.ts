@@ -212,6 +212,10 @@ function normalizeGame(game: ApiSportsGame, fallbackDate: string) {
   };
 }
 
+function gameLogicalKey(gameDate: string, homeTeam: string, awayTeam: string): string {
+  return `${gameDate}__${homeTeam}__${awayTeam}`;
+}
+
 function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: string) {
   const first = (player.firstname || '').trim();
   const last = (player.lastname || '').trim();
@@ -228,6 +232,7 @@ function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: stri
 
 type OpponentContext = {
   playerTeamId?: number | null;
+  playerTeamName?: string | null;
   homeTeamId?: number | null;
   awayTeamId?: number | null;
   homeTeamName?: string | null;
@@ -239,40 +244,53 @@ function resolveOpponentFromGameContext(
   opponentContext?: OpponentContext
 ): { opponent: string; isHome: boolean | null } {
   const playerTeamId = toNumber(opponentContext?.playerTeamId);
+  const playerTeamName = (opponentContext?.playerTeamName || '').trim();
   const homeTeamId = toNumber(opponentContext?.homeTeamId);
   const awayTeamId = toNumber(opponentContext?.awayTeamId);
   const homeTeamName = (opponentContext?.homeTeamName || '').trim();
   const awayTeamName = (opponentContext?.awayTeamName || '').trim();
   const statTeamName = (stat.team?.name || '').trim();
   const statTeamId = toNumber((stat as { team?: { id?: number | null } }).team?.id);
+  const ownTeamName = playerTeamName || statTeamName;
+
+  const safeOpponent = (candidate: string, isHome: boolean | null): { opponent: string; isHome: boolean | null } => {
+    const normalizedCandidate = candidate.trim();
+    if (!normalizedCandidate) return { opponent: '', isHome: null };
+    if (ownTeamName && normalizedCandidate === ownTeamName) return { opponent: '', isHome: null };
+    return { opponent: normalizedCandidate, isHome };
+  };
+
+  if (homeTeamId > 0 && awayTeamId > 0 && homeTeamId === awayTeamId) {
+    return { opponent: '', isHome: null };
+  }
 
   // 1) Best source: player's known internal team against game home/away ids
   if (playerTeamId > 0 && homeTeamId > 0 && awayTeamId > 0) {
     if (playerTeamId === homeTeamId) {
-      return { opponent: awayTeamName, isHome: true };
+      return safeOpponent(awayTeamName, true);
     }
     if (playerTeamId === awayTeamId) {
-      return { opponent: homeTeamName, isHome: false };
+      return safeOpponent(homeTeamName, false);
     }
   }
 
   // 2) Fallback: team id returned by stat payload
   if (statTeamId > 0 && homeTeamId > 0 && awayTeamId > 0) {
     if (statTeamId === homeTeamId) {
-      return { opponent: awayTeamName, isHome: true };
+      return safeOpponent(awayTeamName, true);
     }
     if (statTeamId === awayTeamId) {
-      return { opponent: homeTeamName, isHome: false };
+      return safeOpponent(homeTeamName, false);
     }
   }
 
   // 3) Fallback: team name returned by stat payload
   if (statTeamName && homeTeamName && awayTeamName) {
     if (statTeamName === homeTeamName) {
-      return { opponent: awayTeamName, isHome: true };
+      return safeOpponent(awayTeamName, true);
     }
     if (statTeamName === awayTeamName) {
-      return { opponent: homeTeamName, isHome: false };
+      return safeOpponent(homeTeamName, false);
     }
   }
 
@@ -283,6 +301,7 @@ function resolveOpponentFromGameContext(
 
 function normalizePlayerStat(
   playerId: number,
+  internalGameId: number | null,
   stat: ApiSportsPlayerStat,
   fallbackGameDate: string | null = null,
   opponentContext?: OpponentContext
@@ -290,7 +309,7 @@ function normalizePlayerStat(
   const opponentInfo = resolveOpponentFromGameContext(stat, opponentContext);
   return {
     player_id: playerId,
-    game_id: toNumber(stat.game?.id) || null,
+    game_id: internalGameId,
     game_date: stat.game?.date ? stat.game.date.slice(0, 10) : fallbackGameDate,
     opponent: opponentInfo.opponent,
     is_home: opponentInfo.isHome,
@@ -630,11 +649,12 @@ async function runSyncCore(
   }
 
   const normalizedGames = [...uniqueGameMap.values()].map((entry) => normalizeGame(entry.game, entry.day));
+  const apiGameToInternalGameId = new Map<number, number>();
   if (normalizedGames.length > 0) {
     const dedupedNormalizedGames = (() => {
       const byLogicalKey = new Map<string, (typeof normalizedGames)[number]>();
       for (const game of normalizedGames) {
-        const logicalKey = `${game.game_date}__${game.home_team}__${game.away_team}`;
+        const logicalKey = gameLogicalKey(game.game_date, game.home_team, game.away_team);
         byLogicalKey.set(logicalKey, game);
       }
       return [...byLogicalKey.values()];
@@ -649,6 +669,40 @@ async function runSyncCore(
 
     if (error) {
       throw new Error(`games upsert failed: ${error.message}`);
+    }
+
+    const relevantDates = [...new Set(dedupedNormalizedGames.map((game) => game.game_date).filter(Boolean))];
+    if (relevantDates.length > 0) {
+      const { data: gameRows, error: gameRowsError } = await supabase
+        .from('games')
+        .select('id,game_date,home_team,away_team')
+        .in('game_date', relevantDates);
+
+      if (gameRowsError) {
+        throw new Error(`games lookup failed after upsert: ${gameRowsError.message}`);
+      }
+
+      const internalGameIdByLogicalKey = new Map<string, number>();
+      for (const row of (gameRows || []) as Array<{ id: number | null; game_date: string | null; home_team: string | null; away_team: string | null }>) {
+        const internalId = toNumber(row.id);
+        const gameDate = row.game_date || '';
+        const homeTeam = row.home_team || '';
+        const awayTeam = row.away_team || '';
+        if (!internalId || !gameDate || !homeTeam || !awayTeam) continue;
+        internalGameIdByLogicalKey.set(gameLogicalKey(gameDate, homeTeam, awayTeam), internalId);
+      }
+
+      for (const [apiGameId, entry] of uniqueGameMap.entries()) {
+        const logicalKey = gameLogicalKey(
+          entry.day,
+          entry.game.teams?.home?.name || 'Unknown',
+          entry.game.teams?.visitors?.name || 'Unknown'
+        );
+        const internalGameId = internalGameIdByLogicalKey.get(logicalKey);
+        if (internalGameId) {
+          apiGameToInternalGameId.set(apiGameId, internalGameId);
+        }
+      }
     }
   }
 
@@ -692,10 +746,11 @@ async function runSyncCore(
 
   const uniqueSyncedApiIds = [...new Set(syncedPlayerApiIds)];
   const { data: allPlayerRows } = uniqueSyncedApiIds.length
-    ? await supabase.from('players').select('id,api_id,team_id').in('api_id', uniqueSyncedApiIds)
-    : { data: [] as Array<{ id: number; api_id: number; team_id: number | null }> };
+    ? await supabase.from('players').select('id,api_id,team_id,team').in('api_id', uniqueSyncedApiIds)
+    : { data: [] as Array<{ id: number; api_id: number; team_id: number | null; team: string | null }> };
   const playerIdByApi = new Map<number, number>((allPlayerRows || []).map((row) => [toNumber(row.api_id), toNumber(row.id)]));
   const playerTeamIdByApi = new Map<number, number>((allPlayerRows || []).map((row) => [toNumber(row.api_id), toNumber(row.team_id)]));
+  const playerTeamNameByApi = new Map<number, string>((allPlayerRows || []).map((row) => [toNumber(row.api_id), (row.team || '').trim()]));
   const metricPlayerIds = new Set<number>();
 
   if (isMock) {
@@ -711,11 +766,13 @@ async function runSyncCore(
       }
 
       const statsRows = statsRaw
-        .map((stat) =>
-          normalizePlayerStat(internalPlayerId, stat, null, {
+        .map((stat) => {
+          const apiGameId = toNumber(stat.game?.id);
+          return normalizePlayerStat(internalPlayerId, apiGameToInternalGameId.get(apiGameId) ?? null, stat, null, {
             playerTeamId: playerTeamIdByApi.get(apiId) ?? null,
-          })
-        )
+            playerTeamName: playerTeamNameByApi.get(apiId) ?? null,
+          });
+        })
         .filter((row) => row.game_id && row.game_date)
         .slice(0, isMock ? MOCK_MAX_PLAYER_STATS : 30);
 
@@ -791,7 +848,9 @@ async function runSyncCore(
           if (!internalPlayerId) {
             return null;
           }
-          return normalizePlayerStat(internalPlayerId, stat, fallbackGameDate, {
+          const statGameApiId = toNumber(stat.game?.id);
+          return normalizePlayerStat(internalPlayerId, apiGameToInternalGameId.get(statGameApiId) ?? null, stat, fallbackGameDate, {
+            playerTeamName: playerTeamNameByApi.get(statPlayerApiId) ?? null,
             playerTeamId: playerTeamIdByApi.get(statPlayerApiId) ?? null,
             homeTeamId,
             awayTeamId,
