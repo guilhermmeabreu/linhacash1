@@ -75,7 +75,7 @@ export async function GET(req: Request) {
         .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
         .eq('player_id', parsedPlayerId)
         .order('game_date', { ascending: false })
-        .limit(120);
+        .limit(300);
 
       if (error) throw error;
 

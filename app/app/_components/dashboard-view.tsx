@@ -1429,7 +1429,6 @@ export function DashboardView() {
               </div>
               <div className={styles.playerHero}>
                 <div className={styles.playerIdentityWrap}>
-                  <PlayerAvatar playerName={selectedPlayer.name} />
                   <div>
                     <p className={styles.playerHeroMeta}>{selectedPlayer.team} • {selectedPlayer.position}</p>
                     <h2 className={styles.playerHeroName}>{selectedPlayer.name}</h2>
