@@ -148,7 +148,15 @@ export async function GET(req: Request) {
           .order('game_date', { ascending: false })
           .limit(3000);
         if (statsError) throw statsError;
-        rankedPlayers = rankPlayersForProps(typedPlayers, (statRows || []) as PlayerStatRow[]);
+
+        const typedStats = (statRows || []) as PlayerStatRow[];
+        const homePlayers = typedPlayers.filter((player) => player.team_id === game.home_team_id);
+        const awayPlayers = typedPlayers.filter((player) => player.team_id === game.away_team_id);
+
+        rankedPlayers = [
+          ...rankPlayersForProps(homePlayers, typedStats),
+          ...rankPlayersForProps(awayPlayers, typedStats),
+        ];
       }
 
       return rankedPlayers.map(sanitizePlayer);
