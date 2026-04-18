@@ -279,8 +279,14 @@ function applySplitAndOpponent(
     if (split === 'HOME' && row.is_home !== true) return false;
     if (split === 'AWAY' && row.is_home !== false) return false;
     if (selectedGameId && row.game_id === selectedGameId) return false;
-    if (opponentTeamId && row.opponent_team_id !== opponentTeamId) return false;
-    if (!opponentTeamId && normalizedOpponent && normalizeTeamToken(row.opponent) !== normalizedOpponent) return false;
+    if (opponentTeamId) {
+      if (row.opponent_team_id === opponentTeamId) return true;
+      if (row.opponent_team_id === null && normalizedOpponent) {
+        return normalizeTeamToken(row.opponent) === normalizedOpponent;
+      }
+      return false;
+    }
+    if (normalizedOpponent && normalizeTeamToken(row.opponent) !== normalizedOpponent) return false;
     return true;
   });
 }
