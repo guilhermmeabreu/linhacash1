@@ -63,49 +63,19 @@ export async function GET(req: Request) {
     const parsedPlayerId = parseInt(playerId, 10);
     const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponentTeamId || 0}:${selectedGameId || 0}:${opponent || 'all'}`;
     const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
-      const [{ data: playerRow }, { data: recentStats, error }] = await Promise.all([
-        supabase
-          .from('players')
-          .select('team_id')
-          .eq('id', parsedPlayerId)
-          .maybeSingle(),
-        supabase
-          .from('player_stats')
-          .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
-          .eq('player_id', parsedPlayerId)
-          .order('game_date', { ascending: false })
-          .limit(300),
-      ]);
-      const playerTeamId = asNumber(playerRow?.team_id) || null;
+      const { data: recentStats, error } = await supabase
+        .from('player_stats')
+        .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
+        .eq('player_id', parsedPlayerId)
+        .order('game_date', { ascending: false })
+        .limit(300);
 
       if (error) throw error;
-
-      const gameIds = Array.from(new Set((recentStats || [])
-        .map((row) => asNumber(row.game_id))
-        .filter((value) => value > 0)));
-      const gameById = new Map<number, { home_team: string | null; away_team: string | null; home_team_id: number | null; away_team_id: number | null }>();
-      if (gameIds.length) {
-        const { data: gamesRows, error: gamesError } = await supabase
-          .from('games')
-          .select('id,home_team,away_team,home_team_id,away_team_id')
-          .in('id', gameIds);
-        if (gamesError) throw gamesError;
-        (gamesRows || []).forEach((game) => {
-          const gameId = asNumber(game.id);
-          if (!gameId) return;
-          gameById.set(gameId, {
-            home_team: game.home_team || null,
-            away_team: game.away_team || null,
-            home_team_id: asNumber(game.home_team_id) || null,
-            away_team_id: asNumber(game.away_team_id) || null,
-          });
-        });
-      }
 
       const allGames = (recentStats || []).map((row) => ({
         game_id: asNumber(row.game_id) || null,
         date: row.game_date,
-        ...resolveOpponentContext(row, playerTeamId, gameById),
+        opponent: row.opponent?.trim() || null,
         is_home: row.is_home ?? null,
         value: getStatValue(row, stat),
         minutes: row.minutes,
@@ -203,7 +173,6 @@ type RuntimeGame = {
   game_id?: number | null;
   date: string | null;
   opponent: string | null;
-  opponent_team_id: number | null;
   is_home: boolean | null;
   value: number;
   minutes: number | null;
@@ -271,57 +240,90 @@ function applySplitAndOpponent(
   rows: RuntimeGame[],
   split: MetricsSplit,
   opponent: string | null,
-  opponentTeamId: number | null,
+  _opponentTeamId: number | null,
   selectedGameId: number | null,
 ): RuntimeGame[] {
-  const normalizedOpponent = normalizeTeamToken(opponent);
+  const normalizedOpponent = normalizeOpponentForH2H(opponent);
   return rows.filter((row) => {
     if (split === 'HOME' && row.is_home !== true) return false;
     if (split === 'AWAY' && row.is_home !== false) return false;
     if (selectedGameId && row.game_id === selectedGameId) return false;
-    if (opponentTeamId) {
-      if (row.opponent_team_id === opponentTeamId) return true;
-      if (row.opponent_team_id === null && normalizedOpponent) {
-        return normalizeTeamToken(row.opponent) === normalizedOpponent;
-      }
-      return false;
-    }
-    if (normalizedOpponent && normalizeTeamToken(row.opponent) !== normalizedOpponent) return false;
+    if (normalizedOpponent && normalizeOpponentForH2H(row.opponent) !== normalizedOpponent) return false;
     return true;
   });
 }
 
-function normalizeTeamToken(value: string | null | undefined): string {
-  return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function normalizeOpponentForH2H(value: string | null | undefined): string {
+  const normalized = (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return TEAM_OPPONENT_ALIASES[normalized] || normalized;
 }
 
-function resolveOpponentContext(
-  row: { game_id?: number | null; opponent?: string | null; is_home?: boolean | null },
-  playerTeamId: number | null,
-  gameById: Map<number, { home_team: string | null; away_team: string | null; home_team_id: number | null; away_team_id: number | null }>,
-): { opponent: string | null; opponent_team_id: number | null } {
-  const explicitOpponent = row.opponent?.trim() || null;
-  const gameId = asNumber(row.game_id) || null;
-  if (!gameId) return { opponent: explicitOpponent, opponent_team_id: null };
-  const game = gameById.get(gameId);
-  if (!game) return { opponent: explicitOpponent, opponent_team_id: null };
-
-  if (row.is_home === true) {
-    return { opponent: game.away_team || explicitOpponent, opponent_team_id: game.away_team_id };
-  }
-  if (row.is_home === false) {
-    return { opponent: game.home_team || explicitOpponent, opponent_team_id: game.home_team_id };
-  }
-
-  if (playerTeamId && game.home_team_id && playerTeamId === game.home_team_id) {
-    return { opponent: game.away_team || explicitOpponent, opponent_team_id: game.away_team_id };
-  }
-  if (playerTeamId && game.away_team_id && playerTeamId === game.away_team_id) {
-    return { opponent: game.home_team || explicitOpponent, opponent_team_id: game.home_team_id };
-  }
-
-  return { opponent: explicitOpponent, opponent_team_id: null };
-}
+const TEAM_OPPONENT_ALIASES: Record<string, string> = {
+  hawks: 'atlantahawks',
+  atlantahawks: 'atlantahawks',
+  celtics: 'bostonceltics',
+  bostonceltics: 'bostonceltics',
+  nets: 'brooklynnets',
+  brooklynnets: 'brooklynnets',
+  hornets: 'charlottehornets',
+  charlottehornets: 'charlottehornets',
+  bulls: 'chicagobulls',
+  chicagobulls: 'chicagobulls',
+  cavaliers: 'clevelandcavaliers',
+  clevelandcavaliers: 'clevelandcavaliers',
+  mavericks: 'dallasmavericks',
+  dallasmavericks: 'dallasmavericks',
+  nuggets: 'denvernuggets',
+  denvernuggets: 'denvernuggets',
+  pistons: 'detroitpistons',
+  detroitpistons: 'detroitpistons',
+  warriors: 'goldenstatewarriors',
+  goldenstatewarriors: 'goldenstatewarriors',
+  rockets: 'houstonrockets',
+  houstonrockets: 'houstonrockets',
+  pacers: 'indianapacers',
+  indianapacers: 'indianapacers',
+  clippers: 'losangelesclippers',
+  laclippers: 'losangelesclippers',
+  losangelesclippers: 'losangelesclippers',
+  lakers: 'losangeleslakers',
+  lalakers: 'losangeleslakers',
+  losangeleslakers: 'losangeleslakers',
+  grizzlies: 'memphisgrizzlies',
+  memphisgrizzlies: 'memphisgrizzlies',
+  heat: 'miamiheat',
+  miamiheat: 'miamiheat',
+  bucks: 'milwaukeebucks',
+  milwaukeebucks: 'milwaukeebucks',
+  timberwolves: 'minnesotatimberwolves',
+  minnesotatimberwolves: 'minnesotatimberwolves',
+  pelicans: 'neworleanspelicans',
+  neworleanspelicans: 'neworleanspelicans',
+  knicks: 'newyorkknicks',
+  newyorkknicks: 'newyorkknicks',
+  thunder: 'oklahomacitythunder',
+  oklahomacitythunder: 'oklahomacitythunder',
+  magic: 'orlandomagic',
+  orlandomagic: 'orlandomagic',
+  sixers: 'philadelphia76ers',
+  philadelphia76ers: 'philadelphia76ers',
+  seventysixers: 'philadelphia76ers',
+  suns: 'phoenixsuns',
+  phoenixsuns: 'phoenixsuns',
+  blazers: 'portlandtrailblazers',
+  trailblazers: 'portlandtrailblazers',
+  portlandtrailblazers: 'portlandtrailblazers',
+  kings: 'sacramentokings',
+  sacramentokings: 'sacramentokings',
+  spurs: 'sanantoniospurs',
+  sanantoniospurs: 'sanantoniospurs',
+  raptors: 'torontoraptors',
+  torontoraptors: 'torontoraptors',
+  jazz: 'utahjazz',
+  utahjazz: 'utahjazz',
+  wizards: 'washingtonwizards',
+  washingtonwizards: 'washingtonwizards',
+};
 
 function getSeasonStartYear(gameDate: string | null | undefined): number | null {
   if (!gameDate) return null;

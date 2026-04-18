@@ -254,10 +254,22 @@ function resolveMetricsWindow(split: Split): MetricsWindow {
 
 function resolveH2HOpponentContext(game: Game | null, player: Player | null): { opponent: string | null; opponentTeamId: number | null; gameId: number | null } | null {
   if (!game || !player) return null;
-  if (player.team_id === game.home_team_id) {
+
+  const playerTeamId = Number(player.team_id || 0);
+  const playerTeamName = player.team?.trim().toLowerCase() || '';
+  const homeTeamName = game.home_team.trim().toLowerCase();
+  const awayTeamName = game.away_team.trim().toLowerCase();
+  const isHomePlayer = playerTeamId > 0
+    ? playerTeamId === game.home_team_id
+    : playerTeamName.length > 0 && playerTeamName === homeTeamName;
+  const isAwayPlayer = playerTeamId > 0
+    ? playerTeamId === game.away_team_id
+    : playerTeamName.length > 0 && playerTeamName === awayTeamName;
+
+  if (isHomePlayer) {
     return { opponent: game.away_team, opponentTeamId: game.away_team_id, gameId: game.id };
   }
-  if (player.team_id === game.away_team_id) {
+  if (isAwayPlayer) {
     return { opponent: game.home_team, opponentTeamId: game.home_team_id, gameId: game.id };
   }
   return { opponent: null, opponentTeamId: null, gameId: game.id };
@@ -667,7 +679,17 @@ export function DashboardView() {
       const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
       metricsRequestRef.current[key] = requestId;
       const query = new URLSearchParams({ playerId: String(playerId), stat, window: scope.window });
-      if (scope.opponent) query.set('opponent', scope.opponent);
+      if (scope.split === 'H2H') {
+        if (!scope.opponent) {
+          metricsStatusRef.current[key] = 'empty';
+          setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'empty' }));
+          setMetricsBySelection((prev) => ({ ...prev, [key]: { metrics: null, games: [] } }));
+          return;
+        }
+        query.set('opponent', scope.opponent);
+      } else if (scope.opponent) {
+        query.set('opponent', scope.opponent);
+      }
       if (scope.opponentTeamId) query.set('opponentTeamId', String(scope.opponentTeamId));
       if (scope.gameId) query.set('gameId', String(scope.gameId));
 
@@ -1596,20 +1618,6 @@ export function DashboardView() {
                       </div>
                       {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
                     </button>
-                    {canManageSubscription ? (
-                      <button
-                        type="button"
-                        className={`${styles.profileRow} technical-item`}
-                        onClick={handleManageSubscription}
-                        disabled={manageLoading}
-                      >
-                        <div className={styles.profileRowContent}>
-                          <span>Gerenciar assinatura</span>
-                          <small>Abra o portal seguro para alterar ou cancelar sua assinatura.</small>
-                        </div>
-                        <ChevronRight size={14} />
-                      </button>
-                    ) : null}
                   </div>
                 </Surface>
 
