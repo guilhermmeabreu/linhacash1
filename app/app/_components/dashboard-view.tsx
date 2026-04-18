@@ -261,11 +261,12 @@ function resolveH2HOpponent(game: Game | null, player: Player | null): string | 
   return null;
 }
 
-function buildMetricsScope(split: Split, game: Game | null, player: Player | null) {
+function buildMetricsScope(split: Split, game: Game | null, player: Player | null, lineContext = 0) {
   const window = resolveMetricsWindow(split);
   const opponent = split === 'H2H' ? resolveH2HOpponent(game, player) : null;
-  const scopeKey = `${split}:${opponent?.toLowerCase() || 'all'}`;
-  return { split, window, opponent, scopeKey };
+  const safeLineContext = Number.isFinite(lineContext) ? Number(lineContext.toFixed(1)) : 0;
+  const scopeKey = `${split}:${opponent?.toLowerCase() || 'all'}:line:${safeLineContext}`;
+  return { split, window, opponent, lineContext: safeLineContext, scopeKey };
 }
 
 function buildMetricsCacheKey(playerId: number, stat: Stat, scopeKey: string) {
@@ -386,12 +387,12 @@ export function DashboardView() {
   const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
   const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
   const selectedMetricsScope = useMemo(
-    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer),
-    [selectedGame, selectedPlayer, selectedSplit],
+    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer, lineAdjustment),
+    [lineAdjustment, selectedGame, selectedPlayer, selectedSplit],
   );
   const splitScopes = useMemo(
-    () => Object.fromEntries(SPLITS.map((split) => [split, buildMetricsScope(split, selectedGame, selectedPlayer)])) as Record<Split, ReturnType<typeof buildMetricsScope>>,
-    [selectedGame, selectedPlayer],
+    () => Object.fromEntries(SPLITS.map((split) => [split, buildMetricsScope(split, selectedGame, selectedPlayer, lineAdjustment)])) as Record<Split, ReturnType<typeof buildMetricsScope>>,
+    [lineAdjustment, selectedGame, selectedPlayer],
   );
   const selectedMetricsKey = selectedPlayerId
     ? buildMetricsCacheKey(selectedPlayerId, selectedStat, selectedMetricsScope.scopeKey)
@@ -614,6 +615,7 @@ export function DashboardView() {
       metricsRequestRef.current[key] = requestId;
       const query = new URLSearchParams({ playerId: String(playerId), stat, window: scope.window });
       if (scope.opponent) query.set('opponent', scope.opponent);
+      query.set('lineContext', String(scope.lineContext));
 
       metricsStatusRef.current[key] = 'loading';
       setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'loading' }));
@@ -757,11 +759,18 @@ export function DashboardView() {
     if (!selectedPlayerId || marketLocked) return;
     const timer = window.setTimeout(() => {
       void loadMetricsForPlayer(selectedPlayerId, selectedStat, {
-        scope: { split: selectedSplit, window: selectedMetricsWindow, opponent: selectedMetricsOpponent, scopeKey: selectedMetricsScopeKey },
+        scope: {
+          split: selectedSplit,
+          window: selectedMetricsWindow,
+          opponent: selectedMetricsOpponent,
+          lineContext: lineAdjustment,
+          scopeKey: selectedMetricsScopeKey,
+        },
       });
     }, 0);
     return () => window.clearTimeout(timer);
   }, [
+    lineAdjustment,
     loadMetricsForPlayer,
     marketLocked,
     selectedPlayerId,
@@ -1033,11 +1042,11 @@ export function DashboardView() {
       const scope = splitScopes[split];
       const cacheKey = buildMetricsCacheKey(selectedPlayerId, selectedStat, scope.scopeKey);
       const splitPayload = metricsBySelection[cacheKey];
-      const metrics = splitPayload?.metrics;
-      const hitRate = Number(metrics?.selected_hit_rate);
-      const sampleSize = Number(metrics?.sample_size);
-      if (Number.isFinite(hitRate) && Number.isFinite(sampleSize) && sampleSize > 0) {
-        const hits = Math.round((hitRate / 100) * sampleSize);
+      const gamesForSplit = (splitPayload?.games ?? []).map((sample) => Number(sample.value ?? 0)).filter((value) => Number.isFinite(value));
+      const sampleSize = gamesForSplit.length;
+      if (sampleSize > 0) {
+        const hits = gamesForSplit.filter((value) => value > line).length;
+        const hitRate = Math.round((hits / sampleSize) * 100);
         return { label: split, value: `${Math.round(hitRate)}%`, note: `${hits}/${sampleSize}` };
       }
       return { label: split, value: '—', note: 'Sem dados' };
