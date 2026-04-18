@@ -265,7 +265,7 @@ function buildMetricsScope(split: Split, game: Game | null, player: Player | nul
   const window = resolveMetricsWindow(split);
   const opponent = split === 'H2H' ? resolveH2HOpponent(game, player) : null;
   const safeLineContext = Number.isFinite(lineContext) ? Number(lineContext.toFixed(1)) : 0;
-  const scopeKey = `${split}:${opponent?.toLowerCase() || 'all'}:line:${safeLineContext}`;
+  const scopeKey = `${split}:${opponent?.toLowerCase() || 'all'}`;
   return { split, window, opponent, lineContext: safeLineContext, scopeKey };
 }
 
@@ -296,6 +296,7 @@ export function DashboardView() {
     return 'games';
   });
   const [lineAdjustment, setLineAdjustment] = useState(0);
+  const [debouncedLineAdjustment, setDebouncedLineAdjustment] = useState(0);
 
   const [games, setGames] = useState<Game[]>([]);
   const [playersByGame, setPlayersByGame] = useState<Record<number, Player[]>>({});
@@ -386,13 +387,20 @@ export function DashboardView() {
 
   const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
   const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedLineAdjustment(lineAdjustment);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [lineAdjustment]);
+
   const selectedMetricsScope = useMemo(
-    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer, lineAdjustment),
-    [lineAdjustment, selectedGame, selectedPlayer, selectedSplit],
+    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer, debouncedLineAdjustment),
+    [debouncedLineAdjustment, selectedGame, selectedPlayer, selectedSplit],
   );
   const splitScopes = useMemo(
-    () => Object.fromEntries(SPLITS.map((split) => [split, buildMetricsScope(split, selectedGame, selectedPlayer, lineAdjustment)])) as Record<Split, ReturnType<typeof buildMetricsScope>>,
-    [lineAdjustment, selectedGame, selectedPlayer],
+    () => Object.fromEntries(SPLITS.map((split) => [split, buildMetricsScope(split, selectedGame, selectedPlayer, debouncedLineAdjustment)])) as Record<Split, ReturnType<typeof buildMetricsScope>>,
+    [debouncedLineAdjustment, selectedGame, selectedPlayer],
   );
   const selectedMetricsKey = selectedPlayerId
     ? buildMetricsCacheKey(selectedPlayerId, selectedStat, selectedMetricsScope.scopeKey)
@@ -763,14 +771,14 @@ export function DashboardView() {
           split: selectedSplit,
           window: selectedMetricsWindow,
           opponent: selectedMetricsOpponent,
-          lineContext: lineAdjustment,
+          lineContext: debouncedLineAdjustment,
           scopeKey: selectedMetricsScopeKey,
         },
       });
     }, 0);
     return () => window.clearTimeout(timer);
   }, [
-    lineAdjustment,
+    debouncedLineAdjustment,
     loadMetricsForPlayer,
     marketLocked,
     selectedPlayerId,
@@ -1042,12 +1050,24 @@ export function DashboardView() {
       const scope = splitScopes[split];
       const cacheKey = buildMetricsCacheKey(selectedPlayerId, selectedStat, scope.scopeKey);
       const splitPayload = metricsBySelection[cacheKey];
-      const gamesForSplit = (splitPayload?.games ?? []).map((sample) => Number(sample.value ?? 0)).filter((value) => Number.isFinite(value));
-      const sampleSize = gamesForSplit.length;
+      const gamesForSplit = (splitPayload?.games ?? [])
+        .map((sample) => Number(sample.value ?? 0))
+        .filter((value) => Number.isFinite(value));
+      const sampleSizeFromMetrics = Number(splitPayload?.metrics?.sample_size);
+      const sampleSize = Number.isFinite(sampleSizeFromMetrics) && sampleSizeFromMetrics > 0
+        ? Math.round(sampleSizeFromMetrics)
+        : gamesForSplit.length;
       if (sampleSize > 0) {
-        const hits = gamesForSplit.filter((value) => value > line).length;
-        const hitRate = Math.round((hits / sampleSize) * 100);
-        return { label: split, value: `${Math.round(hitRate)}%`, note: `${hits}/${sampleSize}` };
+        const hitsFromGames = gamesForSplit.filter((value) => value > line).length;
+        const selectedHitRate = Number(splitPayload?.metrics?.selected_hit_rate);
+        const hits = gamesForSplit.length === sampleSize
+          ? hitsFromGames
+          : Number.isFinite(selectedHitRate)
+            ? Math.round((selectedHitRate / 100) * sampleSize)
+            : hitsFromGames;
+        const safeHits = Math.max(0, Math.min(sampleSize, hits));
+        const hitRate = Math.round((safeHits / sampleSize) * 100);
+        return { label: split, value: `${hitRate}%`, note: `${safeHits}/${sampleSize}` };
       }
       return { label: split, value: '—', note: 'Sem dados' };
     });
