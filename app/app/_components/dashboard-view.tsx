@@ -132,6 +132,11 @@ type PlayerGameSample = {
   minutes: number | null;
 };
 
+type MetricsPayload = {
+  metrics: PlayerMetrics | null;
+  games: PlayerGameSample[];
+};
+
 type ProfileData = {
   id: string;
   name: string | null;
@@ -260,6 +265,17 @@ function resolveH2HOpponent(game: Game | null, player: Player | null): string | 
   return null;
 }
 
+function buildMetricsScope(split: Split, game: Game | null, player: Player | null) {
+  const window = resolveMetricsWindow(split);
+  const opponent = split === 'H2H' ? resolveH2HOpponent(game, player) : null;
+  const scopeKey = `${split}:${opponent?.toLowerCase() || 'all'}`;
+  return { split, window, opponent, scopeKey };
+}
+
+function buildMetricsCacheKey(playerId: number, stat: Stat, scopeKey: string) {
+  return `${playerId}:${stat}:${scopeKey}`;
+}
+
 export function DashboardView() {
   const router = useRouter();
   const pathname = usePathname();
@@ -297,9 +313,9 @@ export function DashboardView() {
   const [selectedSplit, setSelectedSplit] = useState<Split>('L10');
   const [gamesStatus, setGamesStatus] = useState<ResourceStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [metricsByPlayer, setMetricsByPlayer] = useState<Record<number, Partial<Record<Stat, { metrics: PlayerMetrics | null; games: PlayerGameSample[] }>>>>({});
-  const [metricsStatusByPlayer, setMetricsStatusByPlayer] = useState<Record<number, Partial<Record<Stat, ResourceStatus>>>>({});
-  const [metricsErrorByPlayer, setMetricsErrorByPlayer] = useState<Record<number, Partial<Record<Stat, string | null>>>>({});
+  const [metricsBySelection, setMetricsBySelection] = useState<Record<string, MetricsPayload>>({});
+  const [metricsStatusBySelection, setMetricsStatusBySelection] = useState<Record<string, ResourceStatus>>({});
+  const [metricsErrorBySelection, setMetricsErrorBySelection] = useState<Record<string, string | null>>({});
   const [plan, setPlan] = useState<Plan>('free');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -369,9 +385,16 @@ export function DashboardView() {
 
   const selectedGamePlayersStatus = selectedGameId ? playersStatusByGame[selectedGameId] ?? 'idle' : 'idle';
   const selectedGamePlayersError = selectedGameId ? playersErrorByGame[selectedGameId] ?? null : null;
-  const selectedMetricsResource = selectedPlayerId ? metricsByPlayer[selectedPlayerId]?.[selectedStat] : null;
-  const selectedMetricsStatus = selectedPlayerId ? metricsStatusByPlayer[selectedPlayerId]?.[selectedStat] ?? 'idle' : 'idle';
-  const selectedMetricsError = selectedPlayerId ? metricsErrorByPlayer[selectedPlayerId]?.[selectedStat] ?? null : null;
+  const selectedMetricsScope = useMemo(
+    () => buildMetricsScope(selectedSplit, selectedGame, selectedPlayer),
+    [selectedGame, selectedPlayer, selectedSplit],
+  );
+  const selectedMetricsKey = selectedPlayerId
+    ? buildMetricsCacheKey(selectedPlayerId, selectedStat, selectedMetricsScope.scopeKey)
+    : null;
+  const selectedMetricsResource = selectedMetricsKey ? metricsBySelection[selectedMetricsKey] ?? null : null;
+  const selectedMetricsStatus = selectedMetricsKey ? metricsStatusBySelection[selectedMetricsKey] ?? 'idle' : 'idle';
+  const selectedMetricsError = selectedMetricsKey ? metricsErrorBySelection[selectedMetricsKey] ?? null : null;
   const marketLocked = isLockedStat(selectedStat, plan);
 
   useEffect(() => {
@@ -563,40 +586,27 @@ export function DashboardView() {
 
   const loadMetricsForPlayer = useCallback(
     async (playerId: number, stat: Stat, options?: { force?: boolean; split?: Split; game?: Game | null; player?: Player | null }) => {
-      const existingStatus = metricsStatusByPlayer[playerId]?.[stat];
+      const resolvedSplit = options?.split ?? 'L10';
+      const scope = buildMetricsScope(resolvedSplit, options?.game ?? null, options?.player ?? null);
+      const key = buildMetricsCacheKey(playerId, stat, scope.scopeKey);
+      const existingStatus = metricsStatusBySelection[key];
       if (!options?.force && existingStatus === 'loading') return;
 
-      const key = `${playerId}:${stat}`;
       const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
       metricsRequestRef.current[key] = requestId;
-      const split = options?.split ?? 'L10';
-      const window = resolveMetricsWindow(split);
-      const opponent = split === 'H2H' ? resolveH2HOpponent(options?.game ?? null, options?.player ?? null) : null;
-      const query = new URLSearchParams({ playerId: String(playerId), stat, window });
-      if (opponent) query.set('opponent', opponent);
+      const query = new URLSearchParams({ playerId: String(playerId), stat, window: scope.window });
+      if (scope.opponent) query.set('opponent', scope.opponent);
 
-      setMetricsStatusByPlayer((prev) => ({
-        ...prev,
-        [playerId]: { ...(prev[playerId] ?? {}), [stat]: 'loading' },
-      }));
-      setMetricsErrorByPlayer((prev) => ({
-        ...prev,
-        [playerId]: { ...(prev[playerId] ?? {}), [stat]: null },
-      }));
+      setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'loading' }));
+      setMetricsErrorBySelection((prev) => ({ ...prev, [key]: null }));
 
       const result = await apiFetch<{ metrics: PlayerMetrics | null; games: PlayerGameSample[] }>(`/api/metrics?${query.toString()}`);
 
       if (metricsRequestRef.current[key] !== requestId) return;
 
       if (!result.ok) {
-        setMetricsStatusByPlayer((prev) => ({
-          ...prev,
-          [playerId]: { ...(prev[playerId] ?? {}), [stat]: 'error' },
-        }));
-        setMetricsErrorByPlayer((prev) => ({
-          ...prev,
-          [playerId]: { ...(prev[playerId] ?? {}), [stat]: result.message },
-        }));
+        setMetricsStatusBySelection((prev) => ({ ...prev, [key]: 'error' }));
+        setMetricsErrorBySelection((prev) => ({ ...prev, [key]: result.message }));
         return;
       }
 
@@ -605,16 +615,10 @@ export function DashboardView() {
         games: Array.isArray(result.data.games) ? result.data.games : [],
       };
 
-      setMetricsByPlayer((prev) => ({
-        ...prev,
-        [playerId]: { ...(prev[playerId] ?? {}), [stat]: payload },
-      }));
-      setMetricsStatusByPlayer((prev) => ({
-        ...prev,
-        [playerId]: { ...(prev[playerId] ?? {}), [stat]: payload.games.length || payload.metrics ? 'ready' : 'empty' },
-      }));
+      setMetricsBySelection((prev) => ({ ...prev, [key]: payload }));
+      setMetricsStatusBySelection((prev) => ({ ...prev, [key]: payload.games.length || payload.metrics ? 'ready' : 'empty' }));
     },
-    [metricsStatusByPlayer],
+    [metricsStatusBySelection],
   );
 
   const loadGames = useCallback(async () => {
@@ -1255,7 +1259,9 @@ export function DashboardView() {
                     {!marketLocked ? (
                       <div className={`${styles.playerList} technical-grid`}>
                         {players.map((player) => {
-                          const line = metricsByPlayer[player.id]?.[selectedStat]?.metrics?.line;
+                          const defaultScopeKey = buildMetricsScope('L10', null, null).scopeKey;
+                          const listMetricsKey = buildMetricsCacheKey(player.id, selectedStat, defaultScopeKey);
+                          const line = metricsBySelection[listMetricsKey]?.metrics?.line;
                           return (
                             <button
                               key={player.id}
