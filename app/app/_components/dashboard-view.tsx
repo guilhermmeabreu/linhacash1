@@ -79,7 +79,7 @@ const PLAYER_ROW_STATS = [
 type Stat = (typeof STATS)[number];
 const SPLITS = ['24/25', 'L5', 'L10', 'L20', 'L30', 'Season', 'H2H'] as const;
 type Split = (typeof SPLITS)[number];
-type MetricsWindow = 'L5' | 'L10' | 'L20' | 'L30' | 'SEASON';
+type MetricsWindow = 'L5' | 'L10' | 'L20' | 'L30' | 'SEASON' | 'CURRENT_SEASON' | 'PREV_SEASON';
 
 type Plan = 'free' | 'pro';
 type UpgradePlan = 'monthly' | 'annual' | 'playoff';
@@ -248,16 +248,41 @@ function isLockedStat(stat: Stat, plan: Plan) {
 
 function resolveMetricsWindow(split: Split): MetricsWindow {
   if (split === 'L5' || split === 'L10' || split === 'L20' || split === 'L30') return split;
+  if (split === 'Season') return 'CURRENT_SEASON';
+  if (split === '24/25') return 'PREV_SEASON';
   return 'SEASON';
+}
+
+function normalizeTeamIdentity(value: string | null | undefined): string {
+  return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function buildTeamIdentityHints(value: string | null | undefined): string[] {
+  const raw = (value || '').trim();
+  if (!raw) return [];
+  const compact = normalizeTeamIdentity(raw);
+  const words = raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const initials = words.map((part) => part[0]).join('');
+  const lastWord = words.at(-1) || '';
+  const hints = [compact, initials, lastWord];
+  return Array.from(new Set(hints.filter(Boolean)));
+}
+
+function teamIdentityMatches(left: string | null | undefined, right: string | null | undefined): boolean {
+  const leftHints = buildTeamIdentityHints(left);
+  const rightHints = buildTeamIdentityHints(right);
+  if (!leftHints.length || !rightHints.length) return false;
+  return leftHints.some((leftHint) =>
+    rightHints.some((rightHint) =>
+      leftHint === rightHint || leftHint.includes(rightHint) || rightHint.includes(leftHint)));
 }
 
 function resolveH2HOpponent(game: Game | null, player: Player | null): string | null {
   if (!game || !player) return null;
   if (player.team_id === game.home_team_id) return game.away_team;
   if (player.team_id === game.away_team_id) return game.home_team;
-  const normalizedTeam = player.team.trim().toLowerCase();
-  if (normalizedTeam && game.home_team.trim().toLowerCase().includes(normalizedTeam)) return game.away_team;
-  if (normalizedTeam && game.away_team.trim().toLowerCase().includes(normalizedTeam)) return game.home_team;
+  if (teamIdentityMatches(player.team, game.home_team)) return game.away_team;
+  if (teamIdentityMatches(player.team, game.away_team)) return game.home_team;
   return null;
 }
 

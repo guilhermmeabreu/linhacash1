@@ -19,7 +19,7 @@ const LEGACY_STAT_ALIASES: Record<string, string> = {
   'A+R': 'AR',
 };
 
-const SUPPORTED_WINDOWS = ['L5', 'L10', 'L20', 'L30', 'SEASON'] as const;
+const SUPPORTED_WINDOWS = ['L5', 'L10', 'L20', 'L30', 'SEASON', 'CURRENT_SEASON', 'PREV_SEASON'] as const;
 type MetricsWindow = (typeof SUPPORTED_WINDOWS)[number];
 
 const SUPPORTED_SPLITS = ['ALL', 'HOME', 'AWAY'] as const;
@@ -228,17 +228,64 @@ function avg(values: number[]): number {
 
 function applySplitAndOpponent(rows: RuntimeGame[], split: MetricsSplit, opponent: string | null): RuntimeGame[] {
   const normalizedOpponent = opponent ? opponent.trim().toLowerCase() : null;
+  const opponentHints = buildTeamMatchHints(normalizedOpponent);
   return rows.filter((row) => {
     if (split === 'HOME' && row.is_home !== true) return false;
     if (split === 'AWAY' && row.is_home !== false) return false;
-    if (normalizedOpponent && !(row.opponent || '').trim().toLowerCase().includes(normalizedOpponent)) return false;
+    if (normalizedOpponent && !matchesOpponent(row.opponent, opponentHints)) return false;
     return true;
   });
 }
 
+function normalizeTeamToken(value: string | null | undefined): string {
+  return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function buildTeamMatchHints(team: string | null | undefined): string[] {
+  const raw = (team || '').trim();
+  if (!raw) return [];
+  const compact = normalizeTeamToken(raw);
+  const parts = raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const initials = parts.map((part) => part[0]).join('');
+  const nickname = parts.at(-1) || '';
+  return Array.from(new Set([compact, initials, nickname].filter(Boolean)));
+}
+
+function matchesOpponent(candidate: string | null | undefined, opponentHints: string[]): boolean {
+  if (!opponentHints.length) return true;
+  const candidateHints = buildTeamMatchHints(candidate);
+  if (!candidateHints.length) return false;
+  return candidateHints.some((candidateHint) =>
+    opponentHints.some((opponentHint) =>
+      candidateHint === opponentHint || candidateHint.includes(opponentHint) || opponentHint.includes(candidateHint)));
+}
+
+function getSeasonStartYear(gameDate: string | null | undefined): number | null {
+  if (!gameDate) return null;
+  const parsed = new Date(gameDate);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const month = parsed.getUTCMonth() + 1;
+  const year = parsed.getUTCFullYear();
+  return month >= 9 ? year : year - 1;
+}
+
+function resolveCurrentSeasonStartYear(rows: RuntimeGame[]): number {
+  const latestRowWithDate = rows.find((row) => Boolean(row.date));
+  const latestSeason = latestRowWithDate ? getSeasonStartYear(latestRowWithDate.date) : null;
+  if (latestSeason !== null) return latestSeason;
+  const now = new Date();
+  const month = now.getUTCMonth() + 1;
+  return month >= 9 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+}
+
 function applyWindow(rows: RuntimeGame[], window: MetricsWindow): RuntimeGame[] {
   if (window === 'SEASON') return rows;
-  const sizeMap: Record<Exclude<MetricsWindow, 'SEASON'>, number> = {
+  if (window === 'CURRENT_SEASON' || window === 'PREV_SEASON') {
+    const currentSeasonStart = resolveCurrentSeasonStartYear(rows);
+    const targetSeasonStart = window === 'CURRENT_SEASON' ? currentSeasonStart : currentSeasonStart - 1;
+    return rows.filter((row) => getSeasonStartYear(row.date) === targetSeasonStart);
+  }
+  const sizeMap: Record<Exclude<MetricsWindow, 'SEASON' | 'CURRENT_SEASON' | 'PREV_SEASON'>, number> = {
     L5: 5,
     L10: 10,
     L20: 20,
@@ -249,7 +296,7 @@ function applyWindow(rows: RuntimeGame[], window: MetricsWindow): RuntimeGame[] 
 
 function hitRate(values: number[], line: number): number {
   if (!values.length) return 0;
-  const hits = values.filter((value) => value > line).length;
+  const hits = values.filter((value) => value >= line).length;
   return Number(((hits / values.length) * 100).toFixed(1));
 }
 
