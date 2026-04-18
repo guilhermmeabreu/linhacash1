@@ -291,11 +291,9 @@ function PlayerAvatar({ playerName }: PlayerAvatarProps) {
   );
 }
 
-const SPLIT_CARD_ORDER: Split[] = ['Season', 'H2H', 'L5', 'L10', 'L20', 'L30'];
+const SPLIT_CARD_ORDER: Split[] = ['Season', 'L5', 'L10', 'L20', 'L30', 'H2H'];
 const PLAYERS_CACHE_TTL_MS = 5 * 60 * 1000;
 const METRICS_CACHE_TTL_MS = 3 * 60 * 1000;
-const PLAYERS_PREFETCH_LIMIT = 6;
-const PLAYERS_PREFETCH_CONCURRENCY = 2;
 
 export function DashboardView() {
   const router = useRouter();
@@ -669,7 +667,6 @@ export function DashboardView() {
       const requestId = (metricsRequestRef.current[key] ?? 0) + 1;
       metricsRequestRef.current[key] = requestId;
       const query = new URLSearchParams({ playerId: String(playerId), stat, window: scope.window });
-      query.set('split', resolvedSplit);
       if (scope.opponent) query.set('opponent', scope.opponent);
       if (scope.opponentTeamId) query.set('opponentTeamId', String(scope.opponentTeamId));
       if (scope.gameId) query.set('gameId', String(scope.gameId));
@@ -863,28 +860,6 @@ export function DashboardView() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadMetricsForPlayer, marketLocked, selectedPlayerId, selectedStat, splitScopes, view]);
-
-  useEffect(() => {
-    if (view !== 'players' || marketLocked) return;
-    const hotPlayers = players.slice(0, PLAYERS_PREFETCH_LIMIT);
-    if (!hotPlayers.length) return;
-    const timer = window.setTimeout(() => {
-      let cursor = 0;
-      const prefetchWorker = async () => {
-        while (cursor < hotPlayers.length) {
-          const currentIndex = cursor;
-          cursor += 1;
-          const player = hotPlayers[currentIndex];
-          if (!player) continue;
-          await loadMetricsForPlayer(player.id, selectedStat);
-        }
-      };
-      for (let workerIndex = 0; workerIndex < PLAYERS_PREFETCH_CONCURRENCY; workerIndex += 1) {
-        void prefetchWorker();
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadMetricsForPlayer, marketLocked, players, selectedStat, view]);
 
   useEffect(() => {
     syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null, mode: view });
@@ -1150,10 +1125,10 @@ export function DashboardView() {
 
   const topTitle = useMemo(() => {
     if (view === 'profile') return 'Meu Perfil';
-    if (view === 'detail') return selectedPlayer?.name || 'Detalhe';
+    if (view === 'detail') return null;
     if (view === 'players') return selectedGame ? `${selectedGame.away_team} vs ${selectedGame.home_team}` : 'Jogadores';
     return 'Jogos de Hoje';
-  }, [selectedGame, selectedPlayer, view]);
+  }, [selectedGame, view]);
 
   const canGoBack = view === 'players' || view === 'detail';
   const activeSidebarKey = view === 'profile' ? 'perfil' : 'dashboard';
@@ -1164,6 +1139,7 @@ export function DashboardView() {
   const profileEmail = profile?.email?.trim() || 'E-mail não disponível';
   const profileInitial = profileName.slice(0, 1).toUpperCase();
   const profilePlanLabel = plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito';
+  const canManageSubscription = plan === 'pro';
 
   const handleLogout = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -1365,53 +1341,40 @@ export function DashboardView() {
 
                     {!marketLocked ? (
                       <div className={`${styles.playerList} technical-grid`}>
-                        {players.map((player) => {
-                          const defaultScopeKey = buildMetricsScope('L10', null, null).scopeKey;
-                          const listMetricsKey = buildMetricsCacheKey(player.id, selectedStat, defaultScopeKey);
-                          const line = metricsBySelection[listMetricsKey]?.metrics?.line;
-                          return (
-                            <button
-                              key={player.id}
-                              className={styles.playerRow}
-                              type="button"
-                              onClick={() => {
-                                setSelectedPlayerId(player.id);
-                                setLineAdjustment(0);
-                                setView('detail');
-                              }}
-                            >
-                              <div className={styles.playerRowMobile}>
-                                <div className={styles.playerMobileLeft}>
+                        {players.map((player) => (
+                          <button
+                            key={player.id}
+                            className={styles.playerRow}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPlayerId(player.id);
+                              setLineAdjustment(0);
+                              setView('detail');
+                            }}
+                          >
+                            <div className={styles.playerRowMobile}>
+                              <div className={styles.playerMobileLeft}>
+                                <PlayerAvatar playerName={player.name} />
+                                <div className={styles.playerMobileIdentity}>
+                                  <p className={styles.playerName}>{player.name}</p>
+                                  <p className={styles.playerMeta}>{player.position} • {player.team}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={styles.playerRowDesktop}>
+                              <div className={styles.playerMain}>
+                                <div className={styles.playerIdentityWrap}>
                                   <PlayerAvatar playerName={player.name} />
-                                  <div className={styles.playerMobileIdentity}>
+                                  <div className={styles.playerIdentity}>
                                     <p className={styles.playerName}>{player.name}</p>
                                     <p className={styles.playerMeta}>{player.position} • {player.team}</p>
                                   </div>
                                 </div>
-                                <div className={styles.playerMobileRight}>
-                                  <small>Line</small>
-                                  <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
-                                </div>
                               </div>
-
-                              <div className={styles.playerRowDesktop}>
-                                <div className={styles.playerMain}>
-                                  <div className={styles.playerIdentityWrap}>
-                                    <PlayerAvatar playerName={player.name} />
-                                    <div className={styles.playerIdentity}>
-                                      <p className={styles.playerName}>{player.name}</p>
-                                      <p className={styles.playerMeta}>{player.position} • {player.team}</p>
-                                    </div>
-                                  </div>
-                                  <div className={styles.playerLineBlock}>
-                                    <small>Line</small>
-                                    <strong>{line ? Number(line).toFixed(1) : '—'}</strong>
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                            </div>
+                          </button>
+                        ))}
                       </div>
                     ) : null}
                   </TabsContent>
@@ -1633,6 +1596,20 @@ export function DashboardView() {
                       </div>
                       {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
                     </button>
+                    {canManageSubscription ? (
+                      <button
+                        type="button"
+                        className={`${styles.profileRow} technical-item`}
+                        onClick={handleManageSubscription}
+                        disabled={manageLoading}
+                      >
+                        <div className={styles.profileRowContent}>
+                          <span>Gerenciar assinatura</span>
+                          <small>Abra o portal seguro para alterar ou cancelar sua assinatura.</small>
+                        </div>
+                        <ChevronRight size={14} />
+                      </button>
+                    ) : null}
                   </div>
                 </Surface>
 
@@ -1759,7 +1736,7 @@ export function DashboardView() {
                           ? 'Plano atual: PRO pago ativo.'
                           : 'Plano atual: PRO ativo.'}
                     </p>
-                    {billing?.isPaidPro ? (
+                    {canManageSubscription ? (
                       <Button size="lg" onClick={handleManageSubscription} disabled={manageLoading}>
                         {manageLoading ? 'Abrindo portal...' : 'Gerenciar assinatura'}
                       </Button>
@@ -1781,7 +1758,7 @@ export function DashboardView() {
                       </button>
                       <button type="button" className={`${styles.upgradePlanBtn} ${upgradePlan === 'playoff' ? styles.isSelected : ''}`} onClick={() => setUpgradePlan('playoff')}>
                         <span>Pack Playoff</span>
-                        <strong>Acesso especial</strong>
+                        <strong>R$ 29,90</strong>
                         <small>Compra única para o período decisivo dos playoffs.</small>
                       </button>
                     </section>
@@ -1852,7 +1829,7 @@ export function DashboardView() {
                         </p>
                       </header>
                       <footer className={styles.upgradeFooter}>
-                        {billing?.isPaidPro ? (
+                        {canManageSubscription ? (
                           <Button size="lg" onClick={handleManageSubscription} disabled={manageLoading}>
                             {manageLoading ? 'Abrindo portal...' : 'Gerenciar assinatura'}
                           </Button>
