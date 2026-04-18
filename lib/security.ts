@@ -94,6 +94,7 @@ export function sanitizeGame(game: any) {
 export function sanitizePlayer(player: any) {
   return {
     id: player.id,
+    api_id: player.api_id,
     name: player.name,
     team_id: player.team_id,
     position: player.position,

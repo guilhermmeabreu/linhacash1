@@ -101,16 +101,19 @@ type Game = {
 
 type Player = {
   id: number;
+  api_id: number | null;
   name: string;
   team_id: number;
   team: string;
   position: string;
   jersey: string | number | null;
+  photo: string | null;
 };
 
 type PlayerAvatarProps = {
-  playerId: number;
   playerName: string;
+  externalPlayerId?: number | null;
+  photoUrl?: string | null;
 };
 
 type PlayerMetrics = {
@@ -305,25 +308,27 @@ function buildMetricsCacheKey(playerId: number, stat: Stat, scopeKey: string) {
   return `${playerId}:${stat}:${scopeKey}`;
 }
 
-function buildPlayerHeadshotUrl(playerId: number): string {
-  return `https://cdn.nba.com/headshots/nba/latest/1040x760/${playerId}.png`;
+function buildPlayerHeadshotUrl(externalPlayerId: number | null | undefined): string | null {
+  if (!Number.isFinite(externalPlayerId) || !externalPlayerId || externalPlayerId <= 0) return null;
+  return `https://cdn.nba.com/headshots/nba/latest/1040x760/${externalPlayerId}.png`;
 }
 
-function PlayerAvatar({ playerId, playerName }: PlayerAvatarProps) {
+function PlayerAvatar({ playerName, externalPlayerId, photoUrl }: PlayerAvatarProps) {
   const [hasImageError, setHasImageError] = useState(false);
   const initial = playerName.slice(0, 1).toUpperCase();
+  const imageUrl = photoUrl || buildPlayerHeadshotUrl(externalPlayerId) || null;
 
   return (
     <div className={styles.avatar}>
-      {!hasImageError ? (
+      {!hasImageError && imageUrl ? (
         <img
-          src={buildPlayerHeadshotUrl(playerId)}
+          src={imageUrl}
           alt={playerName}
           loading="lazy"
           onError={() => setHasImageError(true)}
         />
       ) : null}
-      {hasImageError ? initial : null}
+      {hasImageError || !imageUrl ? initial : null}
     </div>
   );
 }
@@ -623,7 +628,7 @@ export function DashboardView() {
       setPlayersRateLimitedByGame((prev) => ({ ...prev, [game.id]: false }));
 
       const request = (async () => {
-        const result = await apiFetch<{ players: Array<{ id: number; name: string; team_id: number; position: string; jersey: string | number | null }> }>(
+        const result = await apiFetch<{ players: Array<{ id: number; api_id?: number | null; name: string; team_id: number; position: string; jersey: string | number | null; photo?: string | null }> }>(
           `/api/players?gameId=${game.id}`,
         );
 
@@ -640,6 +645,7 @@ export function DashboardView() {
 
         const mappedPlayers = (result.data.players || []).map((player) => ({
           id: player.id,
+          api_id: Number.isFinite(Number(player.api_id)) ? Number(player.api_id) : null,
           name: player.name || 'Jogador',
           team_id: Number(player.team_id || 0),
           team:
@@ -650,6 +656,7 @@ export function DashboardView() {
                 : 'Time não informado',
           position: player.position || 'N/A',
           jersey: player.jersey || null,
+          photo: typeof player.photo === 'string' && player.photo.trim().length ? player.photo : null,
         }));
 
         playersCacheRef.current[game.id] = mappedPlayers;
@@ -671,7 +678,7 @@ export function DashboardView() {
 
   const loadMetricsForPlayer = useCallback(
     async (playerId: number, stat: Stat, options?: { force?: boolean; split?: Split; game?: Game | null; player?: Player | null; scope?: ReturnType<typeof buildMetricsScope> }) => {
-      const resolvedSplit = options?.split ?? 'L10';
+      const resolvedSplit = options?.split ?? options?.scope?.split ?? 'L10';
       const scope = options?.scope ?? buildMetricsScope(resolvedSplit, options?.game ?? null, options?.player ?? null);
       const key = buildMetricsCacheKey(playerId, stat, scope.scopeKey);
       const existingStatus = metricsStatusRef.current[key];
@@ -1394,7 +1401,7 @@ export function DashboardView() {
                             >
                               <div className={styles.playerRowMobile}>
                                 <div className={styles.playerMobileLeft}>
-                                  <PlayerAvatar playerId={player.id} playerName={player.name} />
+                                  <PlayerAvatar playerName={player.name} externalPlayerId={player.api_id} photoUrl={player.photo} />
                                   <div className={styles.playerMobileIdentity}>
                                     <p className={styles.playerName}>{player.name}</p>
                                     <p className={styles.playerMeta}>{player.position} • {player.team}</p>
@@ -1409,7 +1416,7 @@ export function DashboardView() {
                               <div className={styles.playerRowDesktop}>
                                 <div className={styles.playerMain}>
                                   <div className={styles.playerIdentityWrap}>
-                                    <PlayerAvatar playerId={player.id} playerName={player.name} />
+                                    <PlayerAvatar playerName={player.name} externalPlayerId={player.api_id} photoUrl={player.photo} />
                                     <div className={styles.playerIdentity}>
                                       <p className={styles.playerName}>{player.name}</p>
                                       <p className={styles.playerMeta}>{player.position} • {player.team}</p>
@@ -1452,9 +1459,12 @@ export function DashboardView() {
                 </TabsRoot>
               </div>
               <div className={styles.playerHero}>
-                <div>
-                  <p className={styles.playerHeroMeta}>{selectedPlayer.team} • {selectedPlayer.position}</p>
-                  <h2 className={styles.playerHeroName}>{selectedPlayer.name}</h2>
+                <div className={styles.playerIdentityWrap}>
+                  <PlayerAvatar playerName={selectedPlayer.name} externalPlayerId={selectedPlayer.api_id} photoUrl={selectedPlayer.photo} />
+                  <div>
+                    <p className={styles.playerHeroMeta}>{selectedPlayer.team} • {selectedPlayer.position}</p>
+                    <h2 className={styles.playerHeroName}>{selectedPlayer.name}</h2>
+                  </div>
                 </div>
                 <div className={`${styles.lineAdjustBox} ${styles.lineAdjustDesktop}`}>
                   <p>Ajustar linha</p>

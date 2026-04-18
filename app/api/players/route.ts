@@ -13,9 +13,11 @@ const supabase = createClient(
 
 type PlayerRow = {
   id: number;
+  api_id: number | null;
   name: string;
   team_id: number;
   position: string | null;
+  photo: string | null;
 };
 
 type PlayerStatRow = {
@@ -130,7 +132,7 @@ export async function GET(req: Request) {
 
       const { data: players, error: playersError } = await supabase
         .from('players')
-        .select('id, name, team_id, position')
+        .select('id, api_id, name, team_id, position, photo')
         .in('team_id', [game.home_team_id, game.away_team_id])
         .order('name');
 

@@ -61,18 +61,48 @@ export async function GET(req: Request) {
     const parsedPlayerId = parseInt(playerId, 10);
     const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponent || 'all'}`;
     const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
+      const { data: playerRow } = await supabase
+        .from('players')
+        .select('team_id')
+        .eq('id', parsedPlayerId)
+        .maybeSingle();
+      const playerTeamId = asNumber(playerRow?.team_id) || null;
+
       const { data: recentStats, error } = await supabase
         .from('player_stats')
-        .select('game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
+        .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
         .eq('player_id', parsedPlayerId)
         .order('game_date', { ascending: false })
         .limit(120);
 
       if (error) throw error;
 
+      const gameIds = Array.from(new Set((recentStats || [])
+        .map((row) => asNumber(row.game_id))
+        .filter((value) => value > 0)));
+      const gameById = new Map<number, { home_team: string | null; away_team: string | null; home_team_id: number | null; away_team_id: number | null }>();
+      if (gameIds.length) {
+        const { data: gamesRows, error: gamesError } = await supabase
+          .from('games')
+          .select('id,home_team,away_team,home_team_id,away_team_id')
+          .in('id', gameIds);
+        if (gamesError) throw gamesError;
+        (gamesRows || []).forEach((game) => {
+          const gameId = asNumber(game.id);
+          if (!gameId) return;
+          gameById.set(gameId, {
+            home_team: game.home_team || null,
+            away_team: game.away_team || null,
+            home_team_id: asNumber(game.home_team_id) || null,
+            away_team_id: asNumber(game.away_team_id) || null,
+          });
+        });
+      }
+
       const allGames = (recentStats || []).map((row) => ({
+        game_id: asNumber(row.game_id) || null,
         date: row.game_date,
-        opponent: row.opponent ?? null,
+        opponent: resolveOpponentName(row, playerTeamId, gameById),
         is_home: row.is_home ?? null,
         value: getStatValue(row, stat),
         minutes: row.minutes,
@@ -161,6 +191,7 @@ type PlayerStatRow = {
 };
 
 type RuntimeGame = {
+  game_id?: number | null;
   date: string | null;
   opponent: string | null;
   is_home: boolean | null;
@@ -261,6 +292,26 @@ function matchesOpponent(candidate: string | null | undefined, opponentHints: st
   return candidateHints.some((candidateHint) =>
     opponentHints.some((opponentHint) =>
       candidateHint === opponentHint || candidateHint.includes(opponentHint) || opponentHint.includes(candidateHint)));
+}
+
+function resolveOpponentName(
+  row: { game_id?: number | null; opponent?: string | null; is_home?: boolean | null },
+  playerTeamId: number | null,
+  gameById: Map<number, { home_team: string | null; away_team: string | null; home_team_id: number | null; away_team_id: number | null }>,
+): string | null {
+  const explicitOpponent = row.opponent?.trim() || null;
+  const gameId = asNumber(row.game_id) || null;
+  if (!gameId) return explicitOpponent;
+  const game = gameById.get(gameId);
+  if (!game) return explicitOpponent;
+
+  if (row.is_home === true && game.away_team) return game.away_team;
+  if (row.is_home === false && game.home_team) return game.home_team;
+
+  if (playerTeamId && game.home_team_id && playerTeamId === game.home_team_id && game.away_team) return game.away_team;
+  if (playerTeamId && game.away_team_id && playerTeamId === game.away_team_id && game.home_team) return game.home_team;
+
+  return explicitOpponent;
 }
 
 function getSeasonStartYear(gameDate: string | null | undefined): number | null {
