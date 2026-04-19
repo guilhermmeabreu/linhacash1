@@ -14,7 +14,7 @@ type SyncMode = 'bootstrap' | 'daily';
 function requireSyncBearerSecret(req: Request) {
   const syncSecret = process.env.SYNC_SECRET?.trim();
   if (!syncSecret) {
-    throw new AppError('SYNC_SECRET_MISSING', 500, 'SYNC_SECRET is not configured');
+    throw new Error('SYNC_SECRET is not configured');
   }
 
   const authHeader = req.headers.get('authorization') || '';
