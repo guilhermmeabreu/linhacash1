@@ -82,6 +82,7 @@ const SUPPORT_SUBJECT_OPTIONS = ['Assinatura / cobrança', 'Acesso / conta', 'Er
 
 type Game = {
   id: number;
+  game_date?: string | null;
   home_team: string;
   away_team: string;
   home_team_id: number;
@@ -236,6 +237,44 @@ function formatTodayLabel() {
     day: 'numeric',
     month: 'long',
   });
+}
+
+function getNBADayKey(date: Date): string {
+  const shifted = new Date(date.getTime() - 6 * 60 * 60 * 1000);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(shifted);
+
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
+function buildGameDateTime(game: Game): Date | null {
+  if (game.game_time) {
+    const parsedGameTime = new Date(game.game_time);
+    if (Number.isFinite(parsedGameTime.getTime())) return parsedGameTime;
+  }
+
+  if (!game.game_date || !game.game_time) return null;
+
+  const dateMatch = game.game_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const timeMatch = game.game_time.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!dateMatch || !timeMatch) return null;
+
+  const year = Number(dateMatch[1]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[3]);
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  const second = Number(timeMatch[3] ?? '0');
+
+  // game_date/game_time are treated as BRT wall-clock values.
+  return new Date(Date.UTC(year, month - 1, day, hour + 3, minute, second));
 }
 
 function parseCalendarDate(value: string | null | undefined): { year: number; month: number; day: number } | null {
@@ -792,9 +831,17 @@ export function DashboardView() {
     }
 
     const nextGames = Array.isArray(result.data.games) ? result.data.games : [];
-    setGames(nextGames);
+    const todayKey = getNBADayKey(new Date());
+    const gamesForNBADay = nextGames.filter((game) => {
+      const gameDateTime = buildGameDateTime(game);
+      if (!gameDateTime) return false;
+      const gameKey = getNBADayKey(gameDateTime);
+      return gameKey === todayKey;
+    });
 
-    if (!nextGames.length) {
+    setGames(gamesForNBADay);
+
+    if (!gamesForNBADay.length) {
       setSelectedGameId(null);
       setSelectedPlayerId(null);
       setGamesStatus('empty');
@@ -802,9 +849,9 @@ export function DashboardView() {
     }
 
     setSelectedGameId((current) => {
-      if (current && nextGames.some((game) => game.id === current)) return current;
-      if (initialGameId && nextGames.some((game) => game.id === initialGameId)) return initialGameId;
-      return nextGames[0].id;
+      if (current && gamesForNBADay.some((game) => game.id === current)) return current;
+      if (initialGameId && gamesForNBADay.some((game) => game.id === initialGameId)) return initialGameId;
+      return gamesForNBADay[0].id;
     });
 
     setGamesStatus('ready');
