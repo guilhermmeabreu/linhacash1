@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSyncExecutionAccess } from '@/lib/auth/authorization';
+import { timingSafeEqualString } from '@/lib/auth/secure-compare';
 import { AppError } from '@/lib/http/errors';
 import { fail, options } from '@/lib/http/responses';
 import { getIP, rateLimit } from '@/lib/rate-limit';
@@ -10,6 +10,23 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 const REDIS_SYNC_LOCK_KEY = 'lock:nba_sync';
 type SyncMode = 'bootstrap' | 'daily';
+
+function requireSyncBearerSecret(req: Request) {
+  const syncSecret = process.env.SYNC_SECRET?.trim();
+  if (!syncSecret) {
+    throw new AppError('SYNC_SECRET_MISSING', 500, 'SYNC_SECRET is not configured');
+  }
+
+  const authHeader = req.headers.get('authorization') || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    throw new AppError('UNAUTHORIZED', 401, 'Unauthorized');
+  }
+
+  const token = authHeader.slice(7).trim();
+  if (!token || !timingSafeEqualString(token, syncSecret)) {
+    throw new AppError('UNAUTHORIZED', 401, 'Unauthorized');
+  }
+}
 
 function resolveSyncModeFromRequest(req: Request): SyncMode {
   const { searchParams } = new URL(req.url);
@@ -73,7 +90,7 @@ async function executeSync(req: Request) {
       return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many sync requests'), origin);
     }
 
-    await requireSyncExecutionAccess(req);
+    requireSyncBearerSecret(req);
     const result = await runNbaSyncJob({ requestId, routeSource: 'manual', syncMode, bootstrapTeamIds });
     const responsePayload = await withLockDiagnostics(result as Record<string, unknown>);
     const statusCode = result.status === 'error' ? 500 : result.status === 'skipped' ? 202 : 200;

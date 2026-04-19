@@ -51,8 +51,6 @@ const DEFAULT_BOOTSTRAP_TEAM_IDS = [
   16, 17, 20, 21, 24, 25, 26, 27, 28, 29,
 ];
 
-let inProcessRun = false;
-
 type ApiProvider = {
   source: 'real' | 'mock';
   getGamesByDate: (date: string, signal: AbortSignal) => Promise<ApiSportsGame[]>;
@@ -380,7 +378,16 @@ function pickColumns<T extends Record<string, unknown>>(payload: T, columns: Set
 async function createSyncLog(
   supabase: SupabaseClient,
   columns: Set<string>,
-  payload: { jobType: string; status: SyncStatus; message: string; startedAt: string; log?: string }
+  payload: {
+    jobType: string;
+    status: SyncStatus;
+    message: string;
+    startedAt: string;
+    finishedAt?: string;
+    log?: string;
+    gamesSynced?: number;
+    errors?: string[];
+  }
 ): Promise<SyncLogRecord | null> {
   const row = pickColumns(
     {
@@ -388,8 +395,12 @@ async function createSyncLog(
       status: payload.status,
       message: payload.message,
       started_at: payload.startedAt,
+      finished_at: payload.finishedAt ?? null,
       created_at: payload.startedAt,
+      updated_at: payload.finishedAt ?? payload.startedAt,
       log: payload.log ?? payload.message,
+      errors: payload.errors?.length ? payload.errors.join(' | ') : null,
+      games_synced: payload.gamesSynced ?? 0,
     },
     columns
   );
@@ -402,12 +413,22 @@ async function updateSyncLog(
   supabase: SupabaseClient,
   columns: Set<string>,
   logId: number | string | null,
-  payload: { status: SyncStatus; message: string; finishedAt: string; errors: string[]; gamesSynced: number }
+  payload: {
+    status: SyncStatus;
+    message: string;
+    finishedAt: string;
+    errors: string[];
+    gamesSynced: number;
+    startedAt?: string;
+    jobType?: string;
+  }
 ) {
   const row = pickColumns(
     {
+      job_type: payload.jobType,
       status: payload.status,
       message: payload.message,
+      started_at: payload.startedAt,
       finished_at: payload.finishedAt,
       updated_at: payload.finishedAt,
       log: payload.message,
@@ -469,6 +490,29 @@ async function hasRunningSync(supabase: SupabaseClient, columns: Set<string>, no
     .gte(timestampColumn, cutoff);
 
   return (count || 0) > 0;
+}
+
+async function hasOtherRunningSync(
+  supabase: SupabaseClient,
+  columns: Set<string>,
+  now: Date,
+  currentLogId: number | string | null
+): Promise<boolean> {
+  if (!columns.has('status') || currentLogId === null) return false;
+  const timestampColumn = columns.has('started_at') ? 'started_at' : columns.has('created_at') ? 'created_at' : null;
+  if (!timestampColumn) return false;
+
+  const cutoff = new Date(now.getTime() - LOCK_WINDOW_MS).toISOString();
+  const { data } = await supabase
+    .from('sync_logs')
+    .select(`id,${timestampColumn}`)
+    .in('status', [...RUNNING_STATUSES])
+    .gte(timestampColumn, cutoff)
+    .order(timestampColumn, { ascending: true })
+    .limit(10);
+
+  const currentLogIdString = String(currentLogId);
+  return (data || []).some((row) => String((row as { id: number | string | null }).id) !== currentLogIdString);
 }
 
 type PlayerStatMetricsRow = {
@@ -965,30 +1009,8 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     syncMode,
   };
 
-  if (inProcessRun) {
-    const timestamp = nowIso();
-    return {
-      status: 'skipped',
-      message: 'Sync skipped because another run is already in progress.',
-      gamesSynced: 0,
-      teamsSynced: 0,
-      playersSynced: 0,
-      playerStatsSynced: 0,
-      errors: [],
-      startedAt: timestamp,
-      finishedAt: timestamp,
-      debug: {
-        ...debugBase,
-        hasRunningSync: null,
-        inProcessRunAlready: true,
-        distributedLock: null,
-      },
-    };
-  }
-
-  inProcessRun = true;
   const startedAt = nowIso();
-  const distributedLockState: 'acquired' | 'locked' | 'unavailable' | null = 'unavailable';
+  let distributedLockState: 'acquired' | 'locked' | 'unavailable' | null = 'unavailable';
   let hasRunningSyncResult: boolean | null = null;
 
   const supabase = getSupabaseAdmin();
@@ -1001,6 +1023,16 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     hasRunningSyncResult = await hasRunningSync(supabase, syncLogColumns, now);
     if (hasRunningSyncResult) {
       const finishedAt = nowIso();
+      await createSyncLog(supabase, syncLogColumns, {
+        jobType: 'nba_incremental_sync',
+        status: 'skipped',
+        message: 'Sync skipped because a recent running sync exists.',
+        startedAt,
+        finishedAt,
+        errors: [],
+        gamesSynced: 0,
+      });
+
       const skippedSummary: SyncSummary = {
         status: 'skipped',
         message: 'Sync skipped because a recent running sync exists.',
@@ -1015,17 +1047,9 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
           ...debugBase,
           hasRunningSync: hasRunningSyncResult,
           inProcessRunAlready: false,
-          distributedLock: distributedLockState,
+          distributedLock: 'locked',
         },
       };
-
-      await updateSyncLog(supabase, syncLogColumns, null, {
-        status: 'skipped',
-        message: skippedSummary.message,
-        finishedAt,
-        errors: [],
-        gamesSynced: 0,
-      });
       return skippedSummary;
     }
 
@@ -1041,6 +1065,39 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       log: `Sync started ${startLogContext}`,
     });
     logId = log?.id ?? null;
+    distributedLockState = 'acquired';
+
+    const hasConcurrentRunningSync = await hasOtherRunningSync(supabase, syncLogColumns, new Date(), logId);
+    if (hasConcurrentRunningSync) {
+      distributedLockState = 'locked';
+      const finishedAt = nowIso();
+      const message = 'Sync skipped because another distributed sync run is already in progress.';
+      await updateSyncLog(supabase, syncLogColumns, logId, {
+        status: 'skipped',
+        message,
+        finishedAt,
+        errors: [],
+        gamesSynced: 0,
+      });
+
+      return {
+        status: 'skipped',
+        message,
+        gamesSynced: 0,
+        teamsSynced: 0,
+        playersSynced: 0,
+        playerStatsSynced: 0,
+        errors: [],
+        startedAt,
+        finishedAt,
+        debug: {
+          ...debugBase,
+          hasRunningSync: true,
+          inProcessRunAlready: false,
+          distributedLock: distributedLockState,
+        },
+      };
+    }
 
     const controller = new AbortController();
     const timeoutHandle = setTimeout(() => controller.abort('sync_timeout'), SYNC_TIMEOUT_MS);
@@ -1081,6 +1138,8 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       finishedAt,
       errors: [message],
       gamesSynced: 0,
+      startedAt,
+      jobType: 'nba_incremental_sync',
     });
 
     return {
@@ -1101,6 +1160,6 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       },
     };
   } finally {
-    inProcessRun = false;
+    // no-op; distributed lock is represented by sync_logs rows
   }
 }
