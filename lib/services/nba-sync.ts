@@ -299,6 +299,26 @@ function resolveOpponentFromGameContext(
   return { opponent: '', isHome: null };
 }
 
+function extractThreePointAttempts(stat: ApiSportsPlayerStat): number {
+  const flatStat = stat as ApiSportsPlayerStat & { tpa?: number | string | null };
+  if (flatStat.p3a !== undefined && flatStat.p3a !== null) {
+    return toNumber(flatStat.p3a);
+  }
+  if (flatStat.tpa !== undefined && flatStat.tpa !== null) {
+    return toNumber(flatStat.tpa);
+  }
+
+  const nestedStats = (stat as { statistics?: Array<{ p3a?: number | string | null; tpa?: number | string | null }> }).statistics;
+  const firstStatBlock = nestedStats?.[0];
+  if (firstStatBlock?.p3a !== undefined && firstStatBlock?.p3a !== null) {
+    return toNumber(firstStatBlock.p3a);
+  }
+  if (firstStatBlock?.tpa !== undefined && firstStatBlock?.tpa !== null) {
+    return toNumber(firstStatBlock.tpa);
+  }
+  return 0;
+}
+
 function normalizePlayerStat(
   playerId: number,
   internalGameId: number | null,
@@ -307,6 +327,7 @@ function normalizePlayerStat(
   opponentContext?: OpponentContext
 ) {
   const opponentInfo = resolveOpponentFromGameContext(stat, opponentContext);
+  const threePointAttempts = extractThreePointAttempts(stat);
   return {
     player_id: playerId,
     game_id: internalGameId,
@@ -322,8 +343,8 @@ function normalizePlayerStat(
     steals: toNumber(stat.steals),
     blocks: toNumber(stat.blocks),
     fg2a: toNumber(stat.p2a),
-    fg3a: toNumber(stat.p3a),
-    three_pa: toNumber(stat.p3a),
+    fg3a: threePointAttempts,
+    three_pa: threePointAttempts,
     minutes: parseMinutes(stat.min),
   };
 }
