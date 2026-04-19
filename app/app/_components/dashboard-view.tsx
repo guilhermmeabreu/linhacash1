@@ -281,26 +281,39 @@ function resolveMetricsWindow(split: Split): MetricsWindow {
   return 'SEASON';
 }
 
-function resolveH2HOpponentContext(game: Game | null, player: Player | null): { opponent: string | null; opponentTeamId: number | null; gameId: number | null } | null {
+function resolveH2HOpponentContext(
+  game: Game | null,
+  player: Player | null,
+): { opponent: string | null; opponentTeamId: number | null; gameId: number | null } | null {
   if (!game || !player) return null;
 
   const playerTeamId = Number(player.team_id || 0);
   const playerTeamName = player.team?.trim().toLowerCase() || '';
+
   const homeTeamName = game.home_team.trim().toLowerCase();
   const awayTeamName = game.away_team.trim().toLowerCase();
-  const isHomePlayer = playerTeamId > 0
-    ? playerTeamId === game.home_team_id
-    : playerTeamName.length > 0 && playerTeamName === homeTeamName;
-  const isAwayPlayer = playerTeamId > 0
-    ? playerTeamId === game.away_team_id
-    : playerTeamName.length > 0 && playerTeamName === awayTeamName;
 
-  if (isHomePlayer) {
-    return { opponent: game.away_team, opponentTeamId: game.away_team_id, gameId: game.id };
+  // 1. Try by ID (ideal)
+  if (playerTeamId > 0) {
+    if (playerTeamId === game.home_team_id) {
+      return { opponent: game.away_team, opponentTeamId: game.away_team_id, gameId: game.id };
+    }
+    if (playerTeamId === game.away_team_id) {
+      return { opponent: game.home_team, opponentTeamId: game.home_team_id, gameId: game.id };
+    }
   }
-  if (isAwayPlayer) {
-    return { opponent: game.home_team, opponentTeamId: game.home_team_id, gameId: game.id };
+
+  // 2. Fallback by name (CRUCIAL FIX)
+  if (playerTeamName) {
+    if (playerTeamName === homeTeamName) {
+      return { opponent: game.away_team, opponentTeamId: game.away_team_id, gameId: game.id };
+    }
+    if (playerTeamName === awayTeamName) {
+      return { opponent: game.home_team, opponentTeamId: game.home_team_id, gameId: game.id };
+    }
   }
+
+  // 3. Safe fallback
   return { opponent: null, opponentTeamId: null, gameId: game.id };
 }
 
