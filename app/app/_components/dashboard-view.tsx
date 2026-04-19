@@ -279,17 +279,32 @@ function getBrazilDashboardDayKey(date: Date): string {
   return toCalendarKey(localParts.year, localParts.month, localParts.day);
 }
 
+function getBrazilVisibleDashboardDayKey(now: Date, cutoffHour = 4): string {
+  const localParts = getSaoPauloDateParts(now);
+  if (!localParts) return '';
+
+  if (localParts.hour < cutoffHour) {
+    const previousDay = new Date(Date.UTC(localParts.year, localParts.month - 1, localParts.day - 1));
+    return toCalendarKey(previousDay.getUTCFullYear(), previousDay.getUTCMonth() + 1, previousDay.getUTCDate());
+  }
+
+  return toCalendarKey(localParts.year, localParts.month, localParts.day);
+}
+
 function parseGameTime(gameTime: string): Date | null {
   const value = gameTime?.trim();
   if (!value) return null;
 
   const hasTimezone = /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(value);
-  const normalized = !hasTimezone && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)
-    ? value.replace(' ', 'T') + 'Z'
-    : value;
+  if (hasTimezone) {
+    const parsed = new Date(value);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  }
 
+  const normalized = value.replace(' ', 'T');
   const parsed = new Date(normalized);
   if (!Number.isFinite(parsed.getTime())) return null;
+
   return parsed;
 }
 
@@ -851,7 +866,7 @@ export function DashboardView() {
     }
 
     const nextGames = Array.isArray(result.data.games) ? result.data.games : [];
-    const todayKey = getBrazilDashboardDayKey(new Date());
+    const todayKey = getBrazilVisibleDashboardDayKey(new Date(), 4);
     const gamesForDashboardDay = nextGames.filter((game) => {
       const gameDateTime = buildGameDateTime(game);
       if (!gameDateTime) return false;
