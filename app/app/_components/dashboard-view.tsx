@@ -284,12 +284,15 @@ function parseGameTime(gameTime: string): Date | null {
   if (!value) return null;
 
   const hasTimezone = /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(value);
-  const normalized = !hasTimezone && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)
-    ? value.replace(' ', 'T') + 'Z'
-    : value;
+  if (hasTimezone) {
+    const parsed = new Date(value);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  }
 
+  const normalized = value.replace(' ', 'T');
   const parsed = new Date(normalized);
   if (!Number.isFinite(parsed.getTime())) return null;
+
   return parsed;
 }
 
