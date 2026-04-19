@@ -239,13 +239,14 @@ function formatTodayLabel() {
   });
 }
 
-function getSaoPauloDateParts(date: Date): { year: number; month: number; day: number; hour: number } | null {
+function getSaoPauloDateParts(date: Date): { year: number; month: number; day: number; hour: number; minute: number } | null {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
+    minute: '2-digit',
     hourCycle: 'h23',
   }).formatToParts(date);
 
@@ -253,28 +254,29 @@ function getSaoPauloDateParts(date: Date): { year: number; month: number; day: n
   const month = Number(parts.find((part) => part.type === 'month')?.value);
   const day = Number(parts.find((part) => part.type === 'day')?.value);
   const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
 
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(hour)) {
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(hour) || !Number.isFinite(minute)) {
     return null;
   }
 
-  return { year, month, day, hour };
+  return { year, month, day, hour, minute };
 }
 
 function toCalendarKey(year: number, month: number, day: number): string {
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function getNBADayKey(date: Date): string {
+function getBrazilDashboardDayKey(date: Date): string {
   const localParts = getSaoPauloDateParts(date);
   if (!localParts) return '';
 
-  if (localParts.hour >= 6) {
-    return toCalendarKey(localParts.year, localParts.month, localParts.day);
+  if (localParts.hour === 0 && localParts.minute <= 50) {
+    const previousDay = new Date(Date.UTC(localParts.year, localParts.month - 1, localParts.day - 1));
+    return toCalendarKey(previousDay.getUTCFullYear(), previousDay.getUTCMonth() + 1, previousDay.getUTCDate());
   }
 
-  const previousDay = new Date(Date.UTC(localParts.year, localParts.month - 1, localParts.day - 1));
-  return toCalendarKey(previousDay.getUTCFullYear(), previousDay.getUTCMonth() + 1, previousDay.getUTCDate());
+  return toCalendarKey(localParts.year, localParts.month, localParts.day);
 }
 
 function parseGameTime(gameTime: string): Date | null {
@@ -849,17 +851,17 @@ export function DashboardView() {
     }
 
     const nextGames = Array.isArray(result.data.games) ? result.data.games : [];
-    const todayKey = getNBADayKey(new Date());
-    const gamesForNBADay = nextGames.filter((game) => {
+    const todayKey = getBrazilDashboardDayKey(new Date());
+    const gamesForDashboardDay = nextGames.filter((game) => {
       const gameDateTime = buildGameDateTime(game);
       if (!gameDateTime) return false;
-      const gameKey = getNBADayKey(gameDateTime);
+      const gameKey = getBrazilDashboardDayKey(gameDateTime);
       return gameKey === todayKey;
     });
 
-    setGames(gamesForNBADay);
+    setGames(gamesForDashboardDay);
 
-    if (!gamesForNBADay.length) {
+    if (!gamesForDashboardDay.length) {
       setSelectedGameId(null);
       setSelectedPlayerId(null);
       setGamesStatus('empty');
@@ -867,9 +869,9 @@ export function DashboardView() {
     }
 
     setSelectedGameId((current) => {
-      if (current && gamesForNBADay.some((game) => game.id === current)) return current;
-      if (initialGameId && gamesForNBADay.some((game) => game.id === initialGameId)) return initialGameId;
-      return gamesForNBADay[0].id;
+      if (current && gamesForDashboardDay.some((game) => game.id === current)) return current;
+      if (initialGameId && gamesForDashboardDay.some((game) => game.id === initialGameId)) return initialGameId;
+      return gamesForDashboardDay[0].id;
     });
 
     setGamesStatus('ready');
