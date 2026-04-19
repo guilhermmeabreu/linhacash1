@@ -239,42 +239,60 @@ function formatTodayLabel() {
   });
 }
 
-function getNBADayKey(date: Date): string {
-  const shifted = new Date(date.getTime() - 6 * 60 * 60 * 1000);
+function getSaoPauloDateParts(date: Date): { year: number; month: number; day: number; hour: number } | null {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).formatToParts(shifted);
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
 
-  const year = parts.find((part) => part.type === 'year')?.value;
-  const month = parts.find((part) => part.type === 'month')?.value;
-  const day = parts.find((part) => part.type === 'day')?.value;
-  return `${year}-${month}-${day}`;
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+  const day = Number(parts.find((part) => part.type === 'day')?.value);
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(hour)) {
+    return null;
+  }
+
+  return { year, month, day, hour };
+}
+
+function toCalendarKey(year: number, month: number, day: number): string {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function getNBADayKey(date: Date): string {
+  const localParts = getSaoPauloDateParts(date);
+  if (!localParts) return '';
+
+  if (localParts.hour >= 6) {
+    return toCalendarKey(localParts.year, localParts.month, localParts.day);
+  }
+
+  const previousDay = new Date(Date.UTC(localParts.year, localParts.month - 1, localParts.day - 1));
+  return toCalendarKey(previousDay.getUTCFullYear(), previousDay.getUTCMonth() + 1, previousDay.getUTCDate());
+}
+
+function parseGameTime(gameTime: string): Date | null {
+  const value = gameTime?.trim();
+  if (!value) return null;
+
+  const hasTimezone = /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(value);
+  const normalized = !hasTimezone && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)
+    ? value.replace(' ', 'T') + 'Z'
+    : value;
+
+  const parsed = new Date(normalized);
+  if (!Number.isFinite(parsed.getTime())) return null;
+  return parsed;
 }
 
 function buildGameDateTime(game: Game): Date | null {
-  if (game.game_time) {
-    const parsedGameTime = new Date(game.game_time);
-    if (Number.isFinite(parsedGameTime.getTime())) return parsedGameTime;
-  }
-
-  if (!game.game_date || !game.game_time) return null;
-
-  const dateMatch = game.game_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const timeMatch = game.game_time.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
-  if (!dateMatch || !timeMatch) return null;
-
-  const year = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
-  const hour = Number(timeMatch[1]);
-  const minute = Number(timeMatch[2]);
-  const second = Number(timeMatch[3] ?? '0');
-
-  // game_date/game_time are treated as BRT wall-clock values.
-  return new Date(Date.UTC(year, month - 1, day, hour + 3, minute, second));
+  return parseGameTime(game.game_time);
 }
 
 function parseCalendarDate(value: string | null | undefined): { year: number; month: number; day: number } | null {
