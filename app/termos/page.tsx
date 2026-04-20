@@ -26,7 +26,7 @@ export default function TermosPage() {
       <LegalSection title="4. Assinatura, cobrança e pagamentos">
         <ul style={listStyle}>
           <li>A assinatura Pro segue o ciclo contratado até cancelamento.</li>
-          <li>O processamento de pagamento é realizado pelo Mercado Pago.</li>
+          <li>O processamento de pagamento é realizado pela Stripe.</li>
           <li>O acesso ao conteúdo premium é liberado imediatamente após a confirmação do pagamento.</li>
         </ul>
       </LegalSection>

@@ -74,7 +74,7 @@ type Split = (typeof SPLITS)[number];
 type MetricsWindow = 'L5' | 'L10' | 'L20' | 'L30' | 'SEASON' | 'CURRENT_SEASON' | 'PREV_SEASON';
 
 type Plan = 'free' | 'pro';
-type UpgradePlan = 'monthly' | 'annual' | 'playoff';
+type UpgradePlan = 'monthly';
 type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
 type Theme = 'dark' | 'light';
 type SupportSurface = 'faq' | 'support' | 'bug' | 'delete' | null;
@@ -485,7 +485,7 @@ export function DashboardView() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [isDesktopCheckoutViewport, setIsDesktopCheckoutViewport] = useState(false);
-  const [upgradePlan, setUpgradePlan] = useState<UpgradePlan>('annual');
+  const upgradePlan: UpgradePlan = 'monthly';
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
@@ -1896,7 +1896,7 @@ export function DashboardView() {
                         <small>
                           {plan === 'pro'
                             ? `PRO ativo${billing?.isPaidPro ? ' · assinatura Stripe' : billing?.isManualPro ? ' · acesso concedido' : ''}`
-                            : 'R$24,90/mês · R$197/ano com desconto'}
+                            : 'R$24,90/mês · 7 dias grátis no plano mensal'}
                         </small>
                       </div>
                       {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
@@ -2021,11 +2021,9 @@ export function DashboardView() {
                 {plan === 'pro' ? (
                   <div className={styles.upgradeDesktopPro}>
                     <p className={styles.upgradeSubtitle}>
-                      {billing?.playoffPackActive
-                        ? 'Plano atual: Pack Playoff ativo.'
-                        : billing?.isPaidPro
-                          ? 'Plano atual: PRO pago ativo.'
-                          : 'Plano atual: PRO ativo.'}
+                      {billing?.isPaidPro
+                        ? 'Plano atual: PRO pago ativo.'
+                        : 'Plano atual: PRO ativo.'}
                     </p>
                     {canManageSubscription ? (
                       <Button size="lg" onClick={handleManageSubscription} disabled={manageLoading}>
@@ -2036,22 +2034,11 @@ export function DashboardView() {
                 ) : (
                   <>
                     <section className={styles.upgradePlansDesktopGrid}>
-                      <button type="button" className={`${styles.upgradePlanBtn} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`} onClick={() => setUpgradePlan('monthly')}>
-                        <span>Mensal</span>
+                      <div className={`${styles.upgradePlanBtn} ${styles.isSelected}`}>
+                        <span>Mensal Pro</span>
                         <strong>R$24,90/mês</strong>
-                        <small>2 dias de teste grátis no mensal.</small>
-                      </button>
-                      <button type="button" className={`${styles.upgradePlanBtn} ${styles.upgradePlanAnnual} ${upgradePlan === 'annual' ? styles.isSelected : ''}`} onClick={() => setUpgradePlan('annual')}>
-                        <span>Anual</span>
-                        <strong>R$197/ano</strong>
-                        <small>Equivale a R$16,41/mês · melhor custo-benefício.</small>
-                        <em className={styles.upgradePopular}>Mais popular</em>
-                      </button>
-                      <button type="button" className={`${styles.upgradePlanBtn} ${upgradePlan === 'playoff' ? styles.isSelected : ''}`} onClick={() => setUpgradePlan('playoff')}>
-                        <span>Pack Playoff</span>
-                        <strong>R$ 29,90</strong>
-                        <small>Compra única para o período decisivo dos playoffs.</small>
-                      </button>
+                        <small>7 dias grátis para experimentar todos os recursos.</small>
+                      </div>
                     </section>
 
                     <section className={styles.upgradeDesktopLower}>
@@ -2084,9 +2071,9 @@ export function DashboardView() {
                         </section>
                         <footer className={styles.upgradeFooterDesktop}>
                           <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
-                            {upgradeLoading ? 'Abrindo checkout...' : 'ASSINAR AGORA'}
+                            {upgradeLoading ? 'Abrindo checkout...' : 'INICIAR 7 DIAS GRÁTIS'}
                           </Button>
-                          <p className={styles.upgradeSupportLine}>ECONOMIZE 34% NO PLANO ANUAL</p>
+                          <p className={styles.upgradeSupportLine}>Depois do período grátis: R$24,90/mês.</p>
                         </footer>
                       </div>
                     </section>
@@ -2112,11 +2099,9 @@ export function DashboardView() {
                         <p className={styles.upgradeKicker}>LinhaCash Pro</p>
                         <h3>PRO ativo</h3>
                         <p className={styles.upgradeSubtitle}>
-                          {billing?.playoffPackActive
-                            ? 'Plano atual: Pack Playoff ativo.'
-                            : billing?.isPaidPro
-                              ? 'Plano atual: PRO pago ativo.'
-                              : 'Plano atual: PRO ativo.'}
+                          {billing?.isPaidPro
+                            ? 'Plano atual: PRO pago ativo.'
+                            : 'Plano atual: PRO ativo.'}
                         </p>
                       </header>
                       <footer className={styles.upgradeFooter}>
@@ -2137,40 +2122,15 @@ export function DashboardView() {
 
                       <div className={styles.upgradeSheetBody}>
                         <section className={styles.upgradePlanSelector}>
-                          <label className={`${styles.upgradePlanChip} ${upgradePlan === 'monthly' ? styles.isSelected : ''}`}>
-                            <input
-                              type="radio"
-                              name="upgrade-plan-mobile"
-                              checked={upgradePlan === 'monthly'}
-                              onChange={() => setUpgradePlan('monthly')}
-                            />
-                            <span>Mensal</span>
-                          </label>
-                          <label className={`${styles.upgradePlanChip} ${styles.upgradePlanChipAnnual} ${upgradePlan === 'annual' ? styles.isSelected : ''}`}>
-                            <input
-                              type="radio"
-                              name="upgrade-plan-mobile"
-                              checked={upgradePlan === 'annual'}
-                              onChange={() => setUpgradePlan('annual')}
-                            />
-                            <span>Anual</span>
-                            <em className={styles.upgradePopular}>Mais popular</em>
-                          </label>
-                          <label className={`${styles.upgradePlanChip} ${upgradePlan === 'playoff' ? styles.isSelected : ''}`}>
-                            <input
-                              type="radio"
-                              name="upgrade-plan-mobile"
-                              checked={upgradePlan === 'playoff'}
-                              onChange={() => setUpgradePlan('playoff')}
-                            />
-                            <span>Pack Playoff</span>
-                          </label>
+                          <div className={`${styles.upgradePlanChip} ${styles.isSelected}`}>
+                            <span>Mensal Pro</span>
+                          </div>
                         </section>
 
                       <section className={styles.upgradePriceHighlight}>
-                        <small>{upgradePlan === 'monthly' ? 'PLANO MENSAL PRO' : upgradePlan === 'annual' ? 'PLANO ANUAL PRO' : 'PACK PLAYOFF'}</small>
-                        <strong>{upgradePlan === 'monthly' ? 'R$ 24,90' : upgradePlan === 'annual' ? 'R$ 197,00' : 'R$ 29,90'}</strong>
-                        <p>{upgradePlan === 'monthly' ? '2 dias de teste grátis no mensal.' : upgradePlan === 'annual' ? 'Equivale a R$16,41/mês · melhor custo-benefício.' : 'Compra única para o período decisivo dos playoffs.'}</p>
+                        <small>PLANO MENSAL PRO</small>
+                        <strong>R$ 24,90</strong>
+                        <p>7 dias grátis para testar o Pro completo. Depois: cobrança mensal recorrente.</p>
                       </section>
 
                       <section className={styles.upgradeBenefits}>
@@ -2200,9 +2160,9 @@ export function DashboardView() {
 
                       <footer className={styles.upgradeFooter}>
                         <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
-                          {upgradeLoading ? 'Abrindo checkout...' : 'ASSINAR AGORA'}
+                          {upgradeLoading ? 'Abrindo checkout...' : 'INICIAR 7 DIAS GRÁTIS'}
                         </Button>
-                        <p className={styles.upgradeSupportLine}>ECONOMIZE 34% NO PLANO ANUAL</p>
+                        <p className={styles.upgradeSupportLine}>Depois do período grátis: R$24,90/mês.</p>
                       </footer>
                     </div>
                   )}

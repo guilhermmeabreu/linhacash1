@@ -25,7 +25,7 @@ export default function PrivacidadePage() {
       </LegalSection>
 
       <LegalSection title="3. Pagamentos e contexto financeiro">
-        <p>Pagamentos são processados pelo Mercado Pago. O LinhaCash não armazena dados completos de cartão, recebendo apenas os dados necessários para confirmação e gestão da assinatura.</p>
+        <p>Pagamentos são processados pela Stripe. O LinhaCash não armazena dados completos de cartão, recebendo apenas os dados necessários para confirmação e gestão da assinatura.</p>
       </LegalSection>
 
       <LegalSection title="4. Cookies e armazenamento local">
@@ -33,7 +33,7 @@ export default function PrivacidadePage() {
       </LegalSection>
 
       <LegalSection title="5. Compartilhamento com operadores">
-        <p>Podemos compartilhar dados com provedores necessários à operação do serviço, como Supabase, Vercel, Mercado Pago e ferramentas de monitoramento/analytics compatíveis com a operação do produto.</p>
+        <p>Podemos compartilhar dados com provedores necessários à operação do serviço, como Supabase, Vercel, Stripe e ferramentas de monitoramento/analytics compatíveis com a operação do produto.</p>
       </LegalSection>
 
       <LegalSection title="6. Retenção e exclusão">
