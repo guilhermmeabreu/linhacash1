@@ -10,10 +10,40 @@ import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/obse
 
 type StripePlan = 'monthly' | 'annual' | 'playoff';
 
-function getPlanPriceId(plan: StripePlan): string {
-  if (plan === 'monthly') return requireEnv('STRIPE_PRICE_PRO_MONTHLY');
-  if (plan === 'annual') return requireEnv('STRIPE_PRICE_PRO_ANNUAL');
-  return requireEnv('STRIPE_PRICE_PLAYOFF_PACK');
+type PlanPriceConfig = { envVar: 'STRIPE_PRICE_PRO_MONTHLY' | 'STRIPE_PRICE_PRO_ANNUAL' | 'STRIPE_PRICE_PLAYOFF_PACK'; priceId: string };
+
+function getPlanPriceConfig(plan: StripePlan): PlanPriceConfig {
+  if (plan === 'monthly') {
+    return { envVar: 'STRIPE_PRICE_PRO_MONTHLY', priceId: requireEnv('STRIPE_PRICE_PRO_MONTHLY') };
+  }
+  if (plan === 'annual') {
+    return { envVar: 'STRIPE_PRICE_PRO_ANNUAL', priceId: requireEnv('STRIPE_PRICE_PRO_ANNUAL') };
+  }
+  return { envVar: 'STRIPE_PRICE_PLAYOFF_PACK', priceId: requireEnv('STRIPE_PRICE_PLAYOFF_PACK') };
+}
+
+function inferStripeKeyMode(secretKey: string) {
+  if (secretKey.startsWith('sk_live_')) return 'live';
+  if (secretKey.startsWith('sk_test_')) return 'test';
+  return 'unknown';
+}
+
+function extractStripeErrorMetadata(error: unknown): Record<string, unknown> {
+  if (!(error instanceof AppError) || error.code !== 'EXTERNAL_INTEGRATION_ERROR') {
+    return {};
+  }
+
+  const details = (error.details ?? {}) as Record<string, unknown>;
+  const stripeError = (details.error ?? {}) as Record<string, unknown>;
+  return {
+    stripeStatus: typeof details.status === 'number' ? details.status : undefined,
+    stripeStatusText: typeof details.statusText === 'string' ? details.statusText : undefined,
+    stripeMessage: typeof stripeError.message === 'string' ? stripeError.message : undefined,
+    stripeType: typeof stripeError.type === 'string' ? stripeError.type : undefined,
+    stripeCode: typeof stripeError.code === 'string' ? stripeError.code : undefined,
+    stripeParam: typeof stripeError.param === 'string' ? stripeError.param : undefined,
+    stripeRequestId: typeof stripeError.request_id === 'string' ? stripeError.request_id : undefined,
+  };
 }
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
@@ -70,6 +100,8 @@ export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/stripe/checkout' });
   let userId: string | null = null;
+  let plan: StripePlan | null = null;
+  let selectedPrice: PlanPriceConfig | null = null;
 
   try {
     const user = await requireAuthenticatedUser(req);
@@ -82,7 +114,8 @@ export async function POST(req: Request) {
       return fail(new AppError('RATE_LIMIT_ERROR', 429, 'Too many stripe checkout attempts'), origin);
     }
     const body = await readJsonObject(req);
-    const plan = parsePlan(body.plan);
+    plan = parsePlan(body.plan);
+    selectedPrice = getPlanPriceConfig(plan);
 
     const appUrl = requireEnv('NEXT_PUBLIC_APP_URL').replace(/\/$/, '');
     const stripeCustomerId = await resolveStripeCustomerId(user.id, user.email, user.name);
@@ -93,7 +126,7 @@ export async function POST(req: Request) {
       customer: stripeCustomerId,
       success_url: `${appUrl}/app?checkout=success&plan=${plan}`,
       cancel_url: `${appUrl}/app?checkout=cancelled&plan=${plan}`,
-      line_items: [{ price: getPlanPriceId(plan), quantity: 1 }],
+      line_items: [{ price: selectedPrice.priceId, quantity: 1 }],
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
@@ -113,11 +146,30 @@ export async function POST(req: Request) {
     logSecurityEvent('checkout_created', { ...context, userId: user.id, plan, provider: 'stripe' });
     return ok({ url: checkout.url, plan });
   } catch (error) {
+    const stripeDiagnostics = {
+      ...extractStripeErrorMetadata(error),
+      stripeKeyMode: inferStripeKeyMode(process.env.STRIPE_SECRET_KEY || ''),
+      stripePriceEnvVar: selectedPrice?.envVar,
+      stripePriceId: selectedPrice?.priceId,
+      plan,
+    };
+
     if (error instanceof AppError) {
-      logRouteError('/api/stripe/checkout', context.requestId, error, { status: error.status, errorCode: error.code, provider: 'stripe', userId });
+      logRouteError('/api/stripe/checkout', context.requestId, error, {
+        status: error.status,
+        errorCode: error.code,
+        provider: 'stripe',
+        userId,
+        ...stripeDiagnostics,
+      });
       return fail(error, origin);
     }
-    logRouteError('/api/stripe/checkout', context.requestId, error, { status: 500, provider: 'stripe', userId });
+    logRouteError('/api/stripe/checkout', context.requestId, error, {
+      status: 500,
+      provider: 'stripe',
+      userId,
+      ...stripeDiagnostics,
+    });
     return internalError(origin);
   }
 }
