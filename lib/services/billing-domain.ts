@@ -6,6 +6,7 @@ export const PLAN = {
 export const PLAN_SOURCE = {
   FREE: 'free',
   PAID: 'paid',
+  STRIPE: 'stripe',
   ADMIN: 'admin',
 } as const;
 
@@ -79,7 +80,7 @@ function normalizePlan(value: string | null): BillingPlan {
 }
 
 function normalizePlanSource(value: string | null): BillingPlanSource {
-  if (value === PLAN_SOURCE.PAID || value === PLAN_SOURCE.ADMIN) return value;
+  if (value === PLAN_SOURCE.PAID || value === PLAN_SOURCE.STRIPE || value === PLAN_SOURCE.ADMIN) return value;
   return PLAN_SOURCE.FREE;
 }
 
@@ -106,7 +107,7 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
   const hasStripePlayoffAccess = normalizedPlan === 'playoff' && Boolean(row.playoff_pack_active);
   const hasStripeProAccess = hasStripeSubscriptionAccess || hasStripePlayoffAccess;
   const stripeCancelled = isStripePlan && subscriptionStatus === 'canceled';
-  const inferredPlanSource = isStripePlan ? PLAN_SOURCE.PAID : null;
+  const inferredPlanSource = isStripePlan ? PLAN_SOURCE.STRIPE : null;
   const inferredPlanStatus = isStripePlan
     ? hasStripeProAccess
       ? PLAN_STATUS.ACTIVE
@@ -125,13 +126,13 @@ export function resolveBillingState(row: BillingProfileRow): BillingState {
   const planStatus = inferredPlanStatus || normalizePlanStatus(row.plan_status);
   const billingStatus = inferredBillingStatus || normalizeBillingStatus(row.billing_status);
   const hasPaidAccessSignal =
-    planSource === PLAN_SOURCE.PAID &&
+    (planSource === PLAN_SOURCE.STRIPE || planSource === PLAN_SOURCE.PAID) &&
     (subscriptionStatus === 'trialing' || subscriptionStatus === 'active' || planStatus === PLAN_STATUS.ACTIVE);
   const plan = legacyPlan === PLAN.PRO || hasStripeProAccess || hasPaidAccessSignal ? PLAN.PRO : PLAN.FREE;
   const now = Date.now();
   const expiresAt = row.subscription_expires_at ? new Date(row.subscription_expires_at).getTime() : null;
   const paidStillActive =
-    planSource === PLAN_SOURCE.PAID &&
+    (planSource === PLAN_SOURCE.STRIPE || planSource === PLAN_SOURCE.PAID) &&
     (planStatus === PLAN_STATUS.ACTIVE || (planStatus === PLAN_STATUS.CANCELLED && (!expiresAt || expiresAt > now)));
 
   const manualActive =

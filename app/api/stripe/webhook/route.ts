@@ -140,10 +140,7 @@ async function resolveUserId(
 
 async function patchProfile(userId: string, patch: Record<string, unknown>) {
   const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
-
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 }
 
 function asStripePlan(value: string | null): StripePlan | null {
@@ -160,30 +157,36 @@ function buildStripeOwnershipPatch(input: {
   plan: StripePlan | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  cancelAtPeriodEnd?: boolean;
+  isPro?: boolean;
+  clearAccess?: boolean;
   paymentReference?: string | null;
   subscriptionExpiresAt?: string | null;
 }): Record<string, unknown> {
   const planStatus = resolvePlanStatus(input.status);
   const isPlayoff = input.plan === 'playoff';
+  const cancelAtPeriodEnd = Boolean(input.cancelAtPeriodEnd);
+  const isPro = typeof input.isPro === 'boolean' ? input.isPro : input.status !== 'canceled';
+  const shouldClearAccess = Boolean(input.clearAccess);
+
   const patch: Record<string, unknown> = {
     stripe_customer_id: input.stripeCustomerId,
     stripe_subscription_id: input.stripeSubscriptionId,
     subscription_status: input.status,
-    plan_source: 'paid',
-    plan_status: planStatus,
-    billing_status: planStatus === 'active' ? 'active' : 'cancelled',
+    plan: isPro ? 'pro' : 'free',
+    plan_source: isPro ? 'stripe' : 'free',
+    plan_status: isPro ? (cancelAtPeriodEnd ? 'cancelled' : planStatus) : 'none',
+    billing_status: isPro ? (cancelAtPeriodEnd ? 'cancelled' : planStatus) : 'none',
     payment_provider: 'stripe',
     subscription_reference: input.stripeSubscriptionId,
     granted_by_admin: null,
     granted_reason: null,
-    cancelled_at: input.status === 'canceled' ? new Date().toISOString() : null,
-    playoff_pack_active: isPlayoff && input.status !== 'canceled',
+    cancelled_at: cancelAtPeriodEnd || input.status === 'canceled' ? new Date().toISOString() : null,
+    playoff_pack_active: isPro && isPlayoff,
+    cancel_at_period_end: cancelAtPeriodEnd,
+    is_pro: isPro,
     billing_updated_at: new Date().toISOString(),
   };
-
-  if (input.plan) {
-    patch.plan = input.plan;
-  }
 
   if (typeof input.paymentReference !== 'undefined') {
     patch.payment_reference = input.paymentReference;
@@ -191,6 +194,20 @@ function buildStripeOwnershipPatch(input: {
 
   if (typeof input.subscriptionExpiresAt !== 'undefined') {
     patch.subscription_expires_at = input.subscriptionExpiresAt;
+    patch.pro_expires_at = input.subscriptionExpiresAt;
+  }
+
+  if (shouldClearAccess) {
+    patch.plan = 'free';
+    patch.plan_source = 'free';
+    patch.plan_status = 'none';
+    patch.billing_status = 'none';
+    patch.subscription_status = 'canceled';
+    patch.subscription_expires_at = null;
+    patch.pro_expires_at = null;
+    patch.cancel_at_period_end = false;
+    patch.is_pro = false;
+    patch.playoff_pack_active = false;
   }
 
   return patch;
@@ -315,6 +332,8 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
     plan: stripePlan,
     stripeCustomerId,
     stripeSubscriptionId,
+    cancelAtPeriodEnd: false,
+    isPro: status !== 'canceled',
     paymentReference: checkoutPaymentReference,
   }));
 
@@ -347,7 +366,7 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
       status: 422,
       errorCode: 'USER_ID_MISSING',
       provider: 'stripe',
-      eventType: 'invoice.paid',
+      eventType: 'invoice.payment_succeeded',
       ts: new Date().toISOString(),
     }));
     return;
@@ -363,11 +382,14 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
     : invoiceId
       ? `stripe_invoice:${invoiceId}`
       : null;
+
   await patchProfile(userId, buildStripeOwnershipPatch({
     status: 'active',
     plan: stripePlan,
     stripeCustomerId,
     stripeSubscriptionId,
+    isPro: true,
+    cancelAtPeriodEnd: false,
     paymentReference,
     subscriptionExpiresAt: periodEnd,
   }));
@@ -393,6 +415,50 @@ async function handleInvoicePaid(eventObject: Record<string, unknown>) {
   });
 }
 
+async function handleInvoicePaymentFailed(eventObject: Record<string, unknown>) {
+  const {
+    metadata,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    clientReferenceId,
+    customerEmail,
+  } = extractMetadataAndIds(eventObject);
+  const userId = await resolveUserId(metadata.userId, stripeCustomerId, clientReferenceId, customerEmail);
+
+  if (!userId) {
+    console.error('[route-error]', JSON.stringify({
+      route: '/api/stripe/webhook',
+      status: 422,
+      errorCode: 'USER_ID_MISSING',
+      provider: 'stripe',
+      eventType: 'invoice.payment_failed',
+      ts: new Date().toISOString(),
+    }));
+    return;
+  }
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('pro_expires_at')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) throw error;
+
+  const expiresAt = typeof profile?.pro_expires_at === 'string' ? profile.pro_expires_at : null;
+  const stillActive = expiresAt ? new Date(expiresAt).getTime() > Date.now() : false;
+  const stripePlan = asStripePlan(metadata.plan);
+
+  await patchProfile(userId, buildStripeOwnershipPatch({
+    status: stillActive ? 'active' : 'canceled',
+    plan: stripePlan,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    isPro: stillActive,
+    cancelAtPeriodEnd: true,
+    subscriptionExpiresAt: expiresAt,
+  }));
+}
+
 async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
   const {
     metadata,
@@ -415,16 +481,13 @@ async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
     return;
   }
 
-  const stripePlan = asStripePlan(metadata.plan);
-  const periodEnd = typeof eventObject.current_period_end === 'number'
-    ? new Date(eventObject.current_period_end * 1000).toISOString()
-    : null;
   await patchProfile(userId, buildStripeOwnershipPatch({
     status: 'canceled',
-    plan: stripePlan,
+    plan: null,
     stripeCustomerId,
     stripeSubscriptionId,
-    subscriptionExpiresAt: periodEnd,
+    isPro: false,
+    clearAccess: true,
   }));
 }
 
@@ -451,6 +514,7 @@ async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
   }
 
   const subscriptionStatusRaw = typeof eventObject.status === 'string' ? eventObject.status.trim().toLowerCase() : '';
+  const cancelAtPeriodEnd = Boolean(eventObject.cancel_at_period_end);
   const subscriptionStatus: StripeAccessStatus = subscriptionStatusRaw === 'trialing'
     ? 'trialing'
     : subscriptionStatusRaw === 'active'
@@ -461,11 +525,14 @@ async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
   const periodEnd = typeof eventObject.current_period_end === 'number'
     ? new Date(eventObject.current_period_end * 1000).toISOString()
     : undefined;
+
   await patchProfile(userId, buildStripeOwnershipPatch({
-    status: subscriptionStatus,
+    status: subscriptionStatus === 'canceled' && cancelAtPeriodEnd ? 'active' : subscriptionStatus,
     plan: stripePlan,
     stripeCustomerId,
     stripeSubscriptionId: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
+    cancelAtPeriodEnd,
+    isPro: cancelAtPeriodEnd ? true : subscriptionStatus !== 'canceled',
     subscriptionExpiresAt: periodEnd,
   }));
 }
@@ -507,7 +574,11 @@ export async function POST(req: Request) {
           await handleCheckoutSessionCompleted(event.data.object);
           break;
         case 'invoice.paid':
+        case 'invoice.payment_succeeded':
           await handleInvoicePaid(event.data.object);
+          break;
+        case 'invoice.payment_failed':
+          await handleInvoicePaymentFailed(event.data.object);
           break;
         case 'customer.subscription.created':
         case 'customer.subscription.updated':

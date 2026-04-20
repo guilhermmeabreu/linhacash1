@@ -69,6 +69,16 @@ Principais mercados disponíveis no backend incluem: `PTS`, `REB`, `AST`, `3PM`,
 - Checkout: `/api/stripe/checkout`
 - Portal do cliente: `/api/stripe/portal`
 - Webhook: `/api/stripe/webhook`
+- Webhook (alias para produção): `/api/webhooks/stripe`
+
+Variáveis obrigatórias para produção (live):
+
+- `STRIPE_SECRET_KEY`
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_PRO_MONTHLY`
+- `STRIPE_PRICE_PRO_ANNUAL`
+- `STRIPE_PRICE_PLAYOFF_PACK`
 
 O webhook valida assinatura Stripe, reconcilia usuário (metadata/customer/email), atualiza estado de plano no `profiles` e trata atribuição de referral/comissão quando aplicável.
 
