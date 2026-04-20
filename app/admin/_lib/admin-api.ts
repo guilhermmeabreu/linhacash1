@@ -195,8 +195,19 @@ export const adminApi = {
   resetPassword(email: string) {
     return json('/api/admin/users', { method: 'PUT', body: JSON.stringify({ email }) });
   },
-  runSync() {
-    return json<{ status: 'success' | 'skipped' | 'error'; message?: string; error?: string }>('/api/sync/run', { method: 'POST' });
+  runSync(params?: { mode?: 'daily' | 'bootstrap'; syncMode?: 'daily' | 'bootstrap'; teamBatch?: number[] }) {
+    const searchParams = new URLSearchParams();
+    const mode = params?.syncMode || params?.mode;
+    if (mode) {
+      searchParams.set('mode', mode);
+    }
+    if (params?.teamBatch?.length) {
+      searchParams.set('teamBatch', params.teamBatch.join(','));
+    }
+
+    const query = searchParams.toString();
+    const url = query ? `/api/admin/sync/run?${query}` : '/api/admin/sync/run';
+    return json<{ status: 'success' | 'skipped' | 'error'; message?: string; error?: string }>(url, { method: 'POST' });
   },
   createReferral(code: string, influencer_name: string) {
     return json('/api/admin/referrals', {
