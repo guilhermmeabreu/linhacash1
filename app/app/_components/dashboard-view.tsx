@@ -426,6 +426,8 @@ function PlayerAvatar({ playerName }: PlayerAvatarProps) {
 const SPLIT_CARD_ORDER: Split[] = ['Season', 'L5', 'L10', 'L20', 'L30', 'H2H'];
 const PLAYERS_CACHE_TTL_MS = 5 * 60 * 1000;
 const METRICS_CACHE_TTL_MS = 3 * 60 * 1000;
+const SUPPORT_MIN_MESSAGE_LENGTH = 10;
+const DASHBOARD_CACHE_STORAGE_KEY = 'linhacash-dashboard-cache-v1';
 
 export function DashboardView() {
   const router = useRouter();
@@ -447,7 +449,7 @@ export function DashboardView() {
     if (Number.isFinite(gameIdFromQuery) && gameIdFromQuery > 0) return 'players';
     return 'games';
   });
-  const [lineAdjustment, setLineAdjustment] = useState(0);
+  const [manualLineByContext, setManualLineByContext] = useState<Record<string, number>>({});
 
   const [games, setGames] = useState<Game[]>([]);
   const [visibleDashboardDayKey, setVisibleDashboardDayKey] = useState<string>(() => getBrazilVisibleDashboardDayKey(new Date(), 4));
@@ -483,6 +485,7 @@ export function DashboardView() {
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportFeedback, setSupportFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [supportMessageError, setSupportMessageError] = useState<string | null>(null);
   const [deleteConfirmValue, setDeleteConfirmValue] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteFeedback, setDeleteFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
@@ -501,6 +504,17 @@ export function DashboardView() {
   const metricsInFlightRef = useRef<Record<string, Promise<void> | null>>({});
   const consumedStripeReturnRef = useRef<string | null>(null);
   const consumedCheckoutStatusRef = useRef<string | null>(null);
+  const detailModelMemoryRef = useRef<{
+    playerId: number;
+    stat: Stat;
+    model: {
+      average: string;
+      line: number;
+      bars: PlayerDetailChartBar[];
+      summaryMetrics: PlayerDetailSplitMetric[];
+      splitMetrics: PlayerDetailSplitMetric[];
+    };
+  } | null>(null);
 
   const selectedGame = useMemo(
     () => games.find((game) => game.id === selectedGameId) ?? null,
@@ -566,6 +580,7 @@ export function DashboardView() {
   const selectedMetricsGameId = selectedMetricsScope.gameId;
   const selectedMetricsScopeKey = selectedMetricsScope.scopeKey;
   const marketLocked = isLockedStat(selectedStat, plan);
+  const lineContextKey = selectedPlayerId ? `${selectedPlayerId}:${selectedStat}` : null;
 
   useEffect(() => {
     metricsStatusRef.current = metricsStatusBySelection;
@@ -617,6 +632,61 @@ export function DashboardView() {
     const nextUrl = `${pathname}${nextQuery ? `?${nextQuery}` : ''}`;
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [pathname, searchParams]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem(DASHBOARD_CACHE_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as {
+        playersCache?: Record<string, TimedCacheEntry<Player[]>>;
+        metricsCache?: Record<string, TimedCacheEntry<MetricsPayload>>;
+      };
+      const now = Date.now();
+      const hydratedPlayersCache: Record<number, TimedCacheEntry<Player[]>> = {};
+      const hydratedPlayersByGame: Record<number, Player[]> = {};
+      const hydratedPlayersStatus: Record<number, ResourceStatus> = {};
+      const hydratedMetricsCache: Record<string, TimedCacheEntry<MetricsPayload>> = {};
+      const hydratedMetricsBySelection: Record<string, MetricsPayload> = {};
+      const hydratedMetricsStatus: Record<string, ResourceStatus> = {};
+
+      Object.entries(parsed.playersCache ?? {}).forEach(([gameIdKey, entry]) => {
+        const gameId = Number(gameIdKey);
+        if (!Number.isFinite(gameId) || !entry || entry.expiresAt <= now) return;
+        hydratedPlayersCache[gameId] = entry;
+        hydratedPlayersByGame[gameId] = entry.payload;
+        hydratedPlayersStatus[gameId] = entry.payload.length ? 'ready' : 'empty';
+      });
+
+      Object.entries(parsed.metricsCache ?? {}).forEach(([cacheKey, entry]) => {
+        if (!entry || entry.expiresAt <= now) return;
+        hydratedMetricsCache[cacheKey] = entry;
+        hydratedMetricsBySelection[cacheKey] = entry.payload;
+        hydratedMetricsStatus[cacheKey] = entry.payload.games.length || entry.payload.metrics ? 'ready' : 'empty';
+      });
+
+      playersCacheRef.current = hydratedPlayersCache;
+      playersStatusRef.current = hydratedPlayersStatus;
+      metricsCacheRef.current = hydratedMetricsCache;
+      metricsStatusRef.current = hydratedMetricsStatus;
+      setPlayersByGame((prev) => ({ ...prev, ...hydratedPlayersByGame }));
+      setPlayersStatusByGame((prev) => ({ ...prev, ...hydratedPlayersStatus }));
+      setMetricsBySelection((prev) => ({ ...prev, ...hydratedMetricsBySelection }));
+      setMetricsStatusBySelection((prev) => ({ ...prev, ...hydratedMetricsStatus }));
+    } catch {
+      window.sessionStorage.removeItem(DASHBOARD_CACHE_STORAGE_KEY);
+    }
+  }, []);
+
+  const persistDashboardCache = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const payload = {
+      playersCache: playersCacheRef.current,
+      metricsCache: metricsCacheRef.current,
+    };
+    window.sessionStorage.setItem(DASHBOARD_CACHE_STORAGE_KEY, JSON.stringify(payload));
+  }, []);
 
   useEffect(() => {
     const checkoutStatus = (searchParams.get('status') || '').toLowerCase();
@@ -768,6 +838,7 @@ export function DashboardView() {
           payload: mappedPlayers,
           expiresAt: Date.now() + PLAYERS_CACHE_TTL_MS,
         };
+        persistDashboardCache();
         const nextStatus = mappedPlayers.length ? 'ready' : 'empty';
         playersStatusRef.current[game.id] = nextStatus;
         setPlayersByGame((prev) => (prev[game.id] === mappedPlayers ? prev : { ...prev, [game.id]: mappedPlayers }));
@@ -781,7 +852,7 @@ export function DashboardView() {
         playersInFlightRef.current[game.id] = null;
       }
     },
-    [],
+    [persistDashboardCache],
   );
 
   const loadMetricsForPlayer = useCallback(
@@ -840,6 +911,7 @@ export function DashboardView() {
           payload,
           expiresAt: Date.now() + METRICS_CACHE_TTL_MS,
         };
+        persistDashboardCache();
         metricsStatusRef.current[key] = nextStatus;
         setMetricsBySelection((prev) => ({ ...prev, [key]: payload }));
         setMetricsStatusBySelection((prev) => ({ ...prev, [key]: nextStatus }));
@@ -852,7 +924,7 @@ export function DashboardView() {
         metricsInFlightRef.current[key] = null;
       }
     },
-    [],
+    [persistDashboardCache],
   );
 
   const loadGames = useCallback(async () => {
@@ -1014,6 +1086,21 @@ export function DashboardView() {
   }, [loadMetricsForPlayer, marketLocked, selectedPlayerId, selectedStat, splitScopes, view]);
 
   useEffect(() => {
+    if (!selectedPlayerId || marketLocked || view !== 'detail') return;
+    const unlockedStats = STATS.filter((stat) => !isLockedStat(stat, plan) && stat !== selectedStat);
+    const scope = splitScopes[selectedSplit];
+    if (!scope) return;
+    const timer = window.setTimeout(() => {
+      unlockedStats.slice(0, 4).forEach((stat, index) => {
+        window.setTimeout(() => {
+          void loadMetricsForPlayer(selectedPlayerId, stat, { scope });
+        }, index * 120);
+      });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [loadMetricsForPlayer, marketLocked, plan, selectedPlayerId, selectedSplit, selectedStat, splitScopes, view]);
+
+  useEffect(() => {
     syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null, mode: view });
   }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString, view]);
 
@@ -1061,6 +1148,7 @@ export function DashboardView() {
 
   const openSupportSurface = useCallback((surface: Exclude<SupportSurface, null>) => {
     setSupportFeedback(null);
+    setSupportMessageError(null);
     setDeleteFeedback(null);
     if (surface === 'support') {
       setSupportSubject(SUPPORT_SUBJECT_OPTIONS[0]);
@@ -1078,8 +1166,15 @@ export function DashboardView() {
 
   const submitSupport = useCallback(async () => {
     if (!supportSurface || supportSurface === 'faq' || supportSurface === 'delete') return;
+    const trimmedMessage = supportMessage.trim();
+    if (trimmedMessage.length < SUPPORT_MIN_MESSAGE_LENGTH) {
+      setSupportMessageError(`A mensagem deve ter pelo menos ${SUPPORT_MIN_MESSAGE_LENGTH} caracteres.`);
+      setSupportFeedback(null);
+      return;
+    }
     setSupportSubmitting(true);
     setSupportFeedback(null);
+    setSupportMessageError(null);
     try {
       const token = await ensureValidAccessToken();
       const response = await fetch('/api/support', {
@@ -1091,7 +1186,7 @@ export function DashboardView() {
         body: JSON.stringify({
           type: supportSurface === 'bug' ? 'bug' : 'support',
           subject: supportSubject.trim(),
-          message: supportMessage.trim(),
+          message: trimmedMessage,
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -1219,7 +1314,8 @@ export function DashboardView() {
     const values = games.map((sample) => sample.value);
     const lineBase = Number(payload?.metrics?.line ?? payload?.metrics?.avg_l10 ?? 0);
     const apiLine = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
-    const line = Math.max(0, apiLine + lineAdjustment);
+    const manualLine = lineContextKey ? manualLineByContext[lineContextKey] : undefined;
+    const line = typeof manualLine === 'number' ? manualLine : apiLine;
     const selectedAverage = Number(payload?.metrics?.selected_avg);
     const average = Number.isFinite(selectedAverage)
       ? selectedAverage
@@ -1273,7 +1369,24 @@ export function DashboardView() {
       metrics: payload?.metrics ?? null,
       splitMetrics,
     };
-  }, [lineAdjustment, metricsBySelection, selectedMetricsFallbackResource, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedStat, splitScopes]);
+  }, [lineContextKey, manualLineByContext, metricsBySelection, selectedMetricsFallbackResource, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedStat, splitScopes]);
+
+  useEffect(() => {
+    if (!playerDetailModel || !selectedPlayerId) return;
+    detailModelMemoryRef.current = {
+      playerId: selectedPlayerId,
+      stat: selectedStat,
+      model: playerDetailModel,
+    };
+  }, [playerDetailModel, selectedPlayerId, selectedStat]);
+
+  const effectivePlayerDetailModel = useMemo(() => {
+    if (playerDetailModel) return playerDetailModel;
+    const memory = detailModelMemoryRef.current;
+    if (!memory || !selectedPlayerId || memory.playerId !== selectedPlayerId || memory.stat !== selectedStat) return null;
+    if (selectedMetricsStatus !== 'loading') return null;
+    return memory.model;
+  }, [playerDetailModel, selectedMetricsStatus, selectedPlayerId, selectedStat]);
 
   const topTitle = useMemo(() => {
     if (view === 'profile') return 'Meu Perfil';
@@ -1500,7 +1613,6 @@ export function DashboardView() {
                             type="button"
                             onClick={() => {
                               setSelectedPlayerId(player.id);
-                              setLineAdjustment(0);
                               setView('detail');
                             }}
                           >
@@ -1564,9 +1676,27 @@ export function DashboardView() {
                 <div className={`${styles.lineAdjustBox} ${styles.lineAdjustDesktop}`}>
                   <p>Ajustar linha</p>
                   <div className={styles.lineAdjustControls}>
-                    <button type="button" onClick={() => setLineAdjustment((value) => Number((value - 0.5).toFixed(1)))}><Minus size={16} /></button>
-                    <strong>{playerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
-                    <button type="button" onClick={() => setLineAdjustment((value) => Number((value + 0.5).toFixed(1)))}><Plus size={16} /></button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!lineContextKey || !effectivePlayerDetailModel) return;
+                        const nextValue = Math.max(0, Number((effectivePlayerDetailModel.line - 0.5).toFixed(1)));
+                        setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
+                      }}
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <strong>{effectivePlayerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!lineContextKey || !effectivePlayerDetailModel) return;
+                        const nextValue = Number((effectivePlayerDetailModel.line + 0.5).toFixed(1));
+                        setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
+                      }}
+                    >
+                      <Plus size={16} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1596,10 +1726,10 @@ export function DashboardView() {
                 <Surface className={styles.statePanelInline}><p className={styles.stateText}>Sem histórico suficiente para este mercado.</p></Surface>
               ) : null}
 
-              {playerDetailModel ? (
+              {effectivePlayerDetailModel ? (
                 <>
                   <div className={styles.quickStatsGrid}>
-                    {playerDetailModel.summaryMetrics.map((metric) => (
+                    {effectivePlayerDetailModel.summaryMetrics.map((metric) => (
                       <div key={metric.label}>
                         <span>{metric.label}</span>
                         <strong className={getSplitPctClassName(metric.value)}>{metric.value}</strong>
@@ -1612,16 +1742,16 @@ export function DashboardView() {
                     <div className={styles.chartHeader}>
                       <p className={styles.chartTitle}>{selectedStat} · {selectedSplit}</p>
                       <div className={styles.chartHeaderBadges}>
-                        <Badge variant="muted">Média {playerDetailModel.average ?? '—'}</Badge>
+                        <Badge variant="muted">Média {effectivePlayerDetailModel.average ?? '—'}</Badge>
                       </div>
                     </div>
                     <div className={styles.chartCanvas}>
-                      {playerDetailModel.bars.length ? (
+                      {effectivePlayerDetailModel.bars.length ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={playerDetailModel.bars}
+                            data={effectivePlayerDetailModel.bars}
                             margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
-                            barCategoryGap={playerDetailModel.bars.length <= 5 ? '6%' : playerDetailModel.bars.length <= 10 ? '8%' : playerDetailModel.bars.length <= 20 ? '10%' : '12%'}
+                            barCategoryGap={effectivePlayerDetailModel.bars.length <= 5 ? '6%' : effectivePlayerDetailModel.bars.length <= 10 ? '8%' : effectivePlayerDetailModel.bars.length <= 20 ? '10%' : '12%'}
                           >
                             <CartesianGrid stroke="color-mix(in srgb, var(--lc-border) 55%, transparent)" strokeDasharray="2 4" vertical={false} />
                             <XAxis
@@ -1637,7 +1767,7 @@ export function DashboardView() {
                               axisLine={false}
                               tick={{ fill: 'var(--lc-muted)', fontSize: 11 }}
                               width={0}
-                              domain={[0, (max: number) => Math.max(max + 1, playerDetailModel.line + 1)]}
+                              domain={[0, (max: number) => Math.max(max + 1, effectivePlayerDetailModel.line + 1)]}
                             />
                             <Tooltip
                               cursor={false}
@@ -1645,7 +1775,7 @@ export function DashboardView() {
                               wrapperStyle={{ display: 'none' }}
                             />
                             <ReferenceLine
-                              y={playerDetailModel.line}
+                              y={effectivePlayerDetailModel.line}
                               stroke="var(--lc-accent)"
                               strokeDasharray="4 4"
                             />
@@ -1654,11 +1784,11 @@ export function DashboardView() {
                               radius={[1, 1, 0, 0]}
                               isAnimationActive={false}
                               maxBarSize={
-                                playerDetailModel.bars.length <= 5
+                                effectivePlayerDetailModel.bars.length <= 5
                                   ? 66
-                                  : playerDetailModel.bars.length <= 10
+                                  : effectivePlayerDetailModel.bars.length <= 10
                                     ? 50
-                                    : playerDetailModel.bars.length <= 20
+                                    : effectivePlayerDetailModel.bars.length <= 20
                                       ? 34
                                       : 28
                               }
@@ -1666,7 +1796,7 @@ export function DashboardView() {
                               {showChartValueLabels ? (
                                 <LabelList dataKey="value" position="insideBottom" offset={14} fill="#000000" fontSize={10} />
                               ) : null}
-                              {playerDetailModel.bars.map((bar, index) => (
+                              {effectivePlayerDetailModel.bars.map((bar, index) => (
                                 <Cell
                                   key={`${bar.label}-${index}`}
                                   fill={bar.tone === 'hit' ? '#24e880' : '#d7263d'}
@@ -1692,9 +1822,27 @@ export function DashboardView() {
                   <div className={`${styles.lineAdjustBox} ${styles.lineAdjustMobile}`}>
                     <p>Ajustar linha</p>
                     <div className={styles.lineAdjustControls}>
-                      <button type="button" onClick={() => setLineAdjustment((value) => Number((value - 0.5).toFixed(1)))}><Minus size={16} /></button>
-                      <strong>{playerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
-                      <button type="button" onClick={() => setLineAdjustment((value) => Number((value + 0.5).toFixed(1)))}><Plus size={16} /></button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!lineContextKey || !effectivePlayerDetailModel) return;
+                          const nextValue = Math.max(0, Number((effectivePlayerDetailModel.line - 0.5).toFixed(1)));
+                          setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
+                        }}
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <strong>{effectivePlayerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!lineContextKey || !effectivePlayerDetailModel) return;
+                          const nextValue = Number((effectivePlayerDetailModel.line + 0.5).toFixed(1));
+                          setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
+                        }}
+                      >
+                        <Plus size={16} />
+                      </button>
                     </div>
                   </div>
                 </>
@@ -2141,11 +2289,17 @@ export function DashboardView() {
                       <textarea
                         className={styles.supportTextarea}
                         value={supportMessage}
-                        onChange={(event) => setSupportMessage(event.target.value)}
+                        onChange={(event) => {
+                          setSupportMessage(event.target.value);
+                          if (supportMessageError && event.target.value.trim().length >= SUPPORT_MIN_MESSAGE_LENGTH) {
+                            setSupportMessageError(null);
+                          }
+                        }}
                         placeholder={supportSurface === 'bug' ? 'Descreva etapas, horário e comportamento esperado.' : 'Conte para nosso time como podemos ajudar.'}
                         maxLength={2000}
                       />
                     </label>
+                    {supportMessageError ? <p className={styles.upgradeError}>{supportMessageError}</p> : null}
                     {supportFeedback ? (
                       <p className={supportFeedback.tone === 'success' ? styles.supportSuccess : styles.upgradeError}>{supportFeedback.text}</p>
                     ) : null}
