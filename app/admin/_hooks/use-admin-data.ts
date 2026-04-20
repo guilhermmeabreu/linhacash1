@@ -9,7 +9,23 @@ export function useAdminData() {
   const [referrals, setReferrals] = useState<ReferralCode[]>([]);
   const [referralUses, setReferralUses] = useState<ReferralUse[]>([]);
   const [commissions, setCommissions] = useState<AffiliateCommission[]>([]);
-  const [syncHistory, setSyncHistory] = useState<Array<{ created_at: string; status: string; games_synced: number }>>([]);
+  const [syncHistory, setSyncHistory] = useState<Array<{
+    id: number | string;
+    status: string;
+    status_label: string;
+    message: string;
+    started_at: string | null;
+    finished_at: string | null;
+    created_at: string;
+    duration_ms: number | null;
+    games_synced: number;
+    players_synced: number;
+    player_stats_synced: number;
+    errors: string | null;
+    sync_mode: string | null;
+    route_source: string | null;
+    request_id: string | null;
+  }>>([]);
   const [productInsights, setProductInsights] = useState<ProductInsights | null>(null);
   const [operationsInsights, setOperationsInsights] = useState<OperationsInsights | null>(null);
   const [adminActionInsights, setAdminActionInsights] = useState<AdminActionInsights | null>(null);

@@ -386,7 +386,12 @@ async function createSyncLog(
     finishedAt?: string;
     log?: string;
     gamesSynced?: number;
+    playersSynced?: number;
+    playerStatsSynced?: number;
     errors?: string[];
+    syncMode?: 'bootstrap' | 'daily';
+    routeSource?: 'cron' | 'manual' | null;
+    requestId?: string | null;
   }
 ): Promise<SyncLogRecord | null> {
   const row = pickColumns(
@@ -401,6 +406,11 @@ async function createSyncLog(
       log: payload.log ?? payload.message,
       errors: payload.errors?.length ? payload.errors.join(' | ') : null,
       games_synced: payload.gamesSynced ?? 0,
+      players_synced: payload.playersSynced ?? 0,
+      player_stats_synced: payload.playerStatsSynced ?? 0,
+      sync_mode: payload.syncMode ?? null,
+      route_source: payload.routeSource ?? null,
+      request_id: payload.requestId ?? null,
     },
     columns
   );
@@ -416,13 +426,24 @@ async function updateSyncLog(
   payload: {
     status: SyncStatus;
     message: string;
+    startedAt: string;
     finishedAt: string;
     errors: string[];
     gamesSynced: number;
-    startedAt?: string;
+    playersSynced?: number;
+    playerStatsSynced?: number;
     jobType?: string;
+    syncMode?: 'bootstrap' | 'daily';
+    routeSource?: 'cron' | 'manual' | null;
+    requestId?: string | null;
   }
 ) {
+  const startedAtMs = new Date(payload.startedAt).getTime();
+  const finishedAtMs = new Date(payload.finishedAt).getTime();
+  const durationMs = Number.isFinite(startedAtMs) && Number.isFinite(finishedAtMs)
+    ? Math.max(0, finishedAtMs - startedAtMs)
+    : null;
+
   const row = pickColumns(
     {
       job_type: payload.jobType,
@@ -434,6 +455,12 @@ async function updateSyncLog(
       log: payload.message,
       errors: payload.errors.length ? payload.errors.join(' | ') : null,
       games_synced: payload.gamesSynced,
+      players_synced: payload.playersSynced ?? 0,
+      player_stats_synced: payload.playerStatsSynced ?? 0,
+      sync_mode: payload.syncMode ?? null,
+      route_source: payload.routeSource ?? null,
+      request_id: payload.requestId ?? null,
+      duration_ms: durationMs,
     },
     columns
   );
@@ -1031,6 +1058,11 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
         finishedAt,
         errors: [],
         gamesSynced: 0,
+        playersSynced: 0,
+        playerStatsSynced: 0,
+        syncMode,
+        routeSource: debugBase.routeSource,
+        requestId: debugBase.requestId,
       });
 
       const skippedSummary: SyncSummary = {
@@ -1063,6 +1095,12 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       message: 'Sync started',
       startedAt,
       log: `Sync started ${startLogContext}`,
+      gamesSynced: 0,
+      playersSynced: 0,
+      playerStatsSynced: 0,
+      syncMode,
+      routeSource: debugBase.routeSource,
+      requestId: debugBase.requestId,
     });
     logId = log?.id ?? null;
     distributedLockState = 'acquired';
@@ -1075,9 +1113,15 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       await updateSyncLog(supabase, syncLogColumns, logId, {
         status: 'skipped',
         message,
+        startedAt,
         finishedAt,
         errors: [],
         gamesSynced: 0,
+        playersSynced: 0,
+        playerStatsSynced: 0,
+        syncMode,
+        routeSource: debugBase.routeSource,
+        requestId: debugBase.requestId,
       });
 
       return {
@@ -1113,9 +1157,15 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     await updateSyncLog(supabase, syncLogColumns, logId, {
       status: partial.status,
       message: partial.message,
+      startedAt,
       finishedAt,
       errors: partial.errors,
       gamesSynced: partial.gamesSynced,
+      playersSynced: partial.playersSynced,
+      playerStatsSynced: partial.playerStatsSynced,
+      syncMode,
+      routeSource: debugBase.routeSource,
+      requestId: debugBase.requestId,
     });
 
     return {
@@ -1135,11 +1185,16 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     await updateSyncLog(supabase, syncLogColumns, logId, {
       status: 'error',
       message,
+      startedAt,
       finishedAt,
       errors: [message],
       gamesSynced: 0,
-      startedAt,
+      playersSynced: 0,
+      playerStatsSynced: 0,
       jobType: 'nba_incremental_sync',
+      syncMode,
+      routeSource: debugBase.routeSource,
+      requestId: debugBase.requestId,
     });
 
     return {

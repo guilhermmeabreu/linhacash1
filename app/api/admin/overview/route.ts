@@ -49,6 +49,68 @@ type CommissionRow = {
   updated_at: string | null;
 };
 
+type SyncLogRow = {
+  id: number | string;
+  status: string | null;
+  message: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  games_synced: number | null;
+  players_synced: number | null;
+  player_stats_synced: number | null;
+  errors: string | null;
+  sync_mode: string | null;
+  route_source: string | null;
+  request_id: string | null;
+  duration_ms: number | null;
+};
+
+type SyncHealthStatus = 'running' | 'success' | 'error' | 'skipped_lock' | 'recovered_stale_run' | 'unknown';
+
+function toSyncHealthStatus(log: SyncLogRow): SyncHealthStatus {
+  const status = (log.status || '').toLowerCase();
+  const message = (log.message || '').toLowerCase();
+  if (status === 'running' || status === 'in_progress') return 'running';
+  if (status === 'success') return 'success';
+  if (message.includes('recovered stale running sync log')) return 'recovered_stale_run';
+  if (status === 'error') return 'error';
+  if (status === 'skipped') return 'skipped_lock';
+  return 'unknown';
+}
+
+function toSyncStatusLabel(status: SyncHealthStatus): string {
+  switch (status) {
+    case 'running':
+      return 'Running';
+    case 'success':
+      return 'Success';
+    case 'error':
+      return 'Error';
+    case 'skipped_lock':
+      return 'Skipped (lock)';
+    case 'recovered_stale_run':
+      return 'Recovered stale run';
+    default:
+      return 'Unknown';
+  }
+}
+
+function resolveSyncTimestamp(log: SyncLogRow | null): string | null {
+  if (!log) return null;
+  return log.finished_at || log.started_at || log.created_at || null;
+}
+
+function computeDurationMs(log: SyncLogRow): number | null {
+  if (typeof log.duration_ms === 'number' && Number.isFinite(log.duration_ms)) return Math.max(0, log.duration_ms);
+  if (!log.started_at || !log.finished_at) return null;
+  const startedAt = new Date(log.started_at).getTime();
+  const finishedAt = new Date(log.finished_at).getTime();
+  if (!Number.isFinite(startedAt) || !Number.isFinite(finishedAt)) return null;
+  return Math.max(0, finishedAt - startedAt);
+}
+
 function countSince(users: Array<{ created_at: string }>, days: number) {
   const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
   return users.filter((user) => new Date(user.created_at).getTime() >= threshold).length;
@@ -104,7 +166,7 @@ export async function GET(req: Request) {
           .select('id,code,user_id,payment_id,created_at,profiles(name,email,plan_source,plan_status,billing_status,payment_reference,granted_by_admin)')
           .order('created_at', { ascending: false }),
         supabase.from('affiliate_commissions').select('*').order('created_at', { ascending: false }),
-        supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(20),
         supabase.from('events').select('event_name,created_at,metadata').order('created_at', { ascending: false }).limit(300),
         supabase.from('audit_logs').select('event,created_at,details').order('created_at', { ascending: false }).limit(50),
       ]);
@@ -157,9 +219,35 @@ export async function GET(req: Request) {
         }
       });
 
-      const syncHistory = syncLogsResult.data || [];
-      const latestSync = syncHistory[0] || null;
-      const freshness = getSyncFreshness(latestSync?.created_at || null);
+      const syncHistoryRows = (syncLogsResult.data || []) as SyncLogRow[];
+      const runningSync = syncHistoryRows.find((entry) => toSyncHealthStatus(entry) === 'running') || null;
+      const latestSync = syncHistoryRows[0] || null;
+      const lastSuccessSync = syncHistoryRows.find((entry) => toSyncHealthStatus(entry) === 'success') || null;
+      const lastFailedSync = syncHistoryRows.find((entry) => {
+        const normalized = toSyncHealthStatus(entry);
+        return normalized === 'error' || normalized === 'recovered_stale_run';
+      }) || null;
+      const freshness = getSyncFreshness(resolveSyncTimestamp(lastSuccessSync));
+      const syncHistory = syncHistoryRows.slice(0, 10).map((entry) => {
+        const normalizedStatus = toSyncHealthStatus(entry);
+        return {
+          id: entry.id,
+          status: normalizedStatus,
+          status_label: toSyncStatusLabel(normalizedStatus),
+          message: entry.message || '',
+          started_at: entry.started_at || entry.created_at,
+          finished_at: entry.finished_at,
+          created_at: entry.created_at || entry.started_at || new Date().toISOString(),
+          duration_ms: computeDurationMs(entry),
+          games_synced: Number(entry.games_synced || 0),
+          players_synced: Number(entry.players_synced || 0),
+          player_stats_synced: Number(entry.player_stats_synced || 0),
+          errors: entry.errors,
+          sync_mode: entry.sync_mode || null,
+          route_source: entry.route_source || null,
+          request_id: entry.request_id || null,
+        };
+      });
       const audits = ((auditResult.data || []) as AuditRow[]).filter(
         (entry): entry is AuditRow & { event: string; created_at: string } =>
           typeof entry.event === 'string' && entry.event.length > 0 && typeof entry.created_at === 'string' && entry.created_at.length > 0,
@@ -258,8 +346,13 @@ export async function GET(req: Request) {
           recentEvents: events.slice(0, 12),
         },
         operationsInsights: {
-          latestSyncStatus: latestSync?.status || null,
-          latestSyncTimestamp: latestSync?.created_at || null,
+          latestSyncStatus: latestSync ? toSyncStatusLabel(toSyncHealthStatus(latestSync)) : null,
+          latestSyncTimestamp: resolveSyncTimestamp(latestSync),
+          latestSyncMessage: latestSync?.message || null,
+          syncRunning: Boolean(runningSync),
+          currentRunningSince: resolveSyncTimestamp(runningSync),
+          lastSuccessAt: resolveSyncTimestamp(lastSuccessSync),
+          lastFailureAt: resolveSyncTimestamp(lastFailedSync),
           syncFreshness: freshness.level,
           syncFreshnessLabel: freshness.label,
           recentImportantEvents: audits.slice(0, 10),

@@ -14,6 +14,15 @@ const TABS: Array<{ key: AdminTab; label: string }> = [
 ];
 
 const brl = (value: number | undefined) => `R$ ${(value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatSyncTimestamp = (value: string | null | undefined) => (value ? new Date(value).toLocaleString('pt-BR') : '—');
+const formatSyncDuration = (durationMs: number | null | undefined) => {
+  if (typeof durationMs !== 'number' || !Number.isFinite(durationMs)) return '—';
+  if (durationMs < 1_000) return `${durationMs} ms`;
+  if (durationMs < 60_000) return `${(durationMs / 1_000).toFixed(1)} s`;
+  const minutes = Math.floor(durationMs / 60_000);
+  const seconds = Math.round((durationMs % 60_000) / 1_000);
+  return `${minutes}m ${seconds}s`;
+};
 
 const PlanBadge = memo(function PlanBadge({ user }: { user: Profile }) {
   if (user.billing?.isManualPro) return <span className="adm-badge admin">PRO ADMIN</span>;
@@ -444,7 +453,8 @@ export default function AdminPage() {
                 <div>
                 <div className="adm-muted">Status da última sincronização</div>
                 <div className="adm-kpi-sm">{operationsInsights?.latestSyncStatus || 'N/A'}</div>
-                <p className="adm-muted">{operationsInsights?.latestSyncTimestamp ? new Date(operationsInsights.latestSyncTimestamp).toLocaleString('pt-BR') : 'Sem horário registrado'}</p>
+                <p className="adm-muted">{formatSyncTimestamp(operationsInsights?.latestSyncTimestamp)}</p>
+                <p className="adm-muted">{operationsInsights?.latestSyncMessage || 'Sem mensagem registrada'}</p>
                 <span className={`adm-status ${
                   operationsInsights?.syncFreshness === 'fresh'
                     ? 'good'
@@ -456,13 +466,27 @@ export default function AdminPage() {
                 }`}>
                   {operationsInsights?.syncFreshnessLabel || 'Sem dados de sincronização'}
                 </span>
+                <div className="adm-log" style={{ marginTop: 10 }}>
+                  <span>Sync em execução</span>
+                  <span className={`adm-status ${operationsInsights?.syncRunning ? 'warn' : 'neutral'}`}>
+                    {operationsInsights?.syncRunning ? `Running desde ${formatSyncTimestamp(operationsInsights?.currentRunningSince)}` : 'Nenhum'}
+                  </span>
+                </div>
+                <div className="adm-log">
+                  <span>Último sucesso</span>
+                  <span className="adm-muted">{formatSyncTimestamp(operationsInsights?.lastSuccessAt)}</span>
+                </div>
+                <div className="adm-log">
+                  <span>Última falha</span>
+                  <span className="adm-muted">{formatSyncTimestamp(operationsInsights?.lastFailureAt)}</span>
+                </div>
                 </div>
                 <div>
-                <div className="adm-section-title" style={{ fontSize: 14 }}>Últimas 5 sincronizações</div>
-                {(syncHistory || []).slice(0, 5).map((entry, index) => (
-                  <div className="adm-log" key={`${entry.created_at}-${index}`}>
-                    <span>{entry.status} · {entry.games_synced} jogos</span>
-                    <span className="adm-muted">{new Date(entry.created_at).toLocaleString('pt-BR')}</span>
+                <div className="adm-section-title" style={{ fontSize: 14 }}>Últimas 10 sincronizações</div>
+                {(syncHistory || []).slice(0, 10).map((entry, index) => (
+                  <div className="adm-log" key={`${entry.created_at}-${index}-${entry.id}`}>
+                    <span>{entry.status_label} · {entry.games_synced} jogos · {entry.players_synced} jogadores · {entry.player_stats_synced} stats</span>
+                    <span className="adm-muted">{formatSyncTimestamp(entry.started_at || entry.created_at)} · {formatSyncDuration(entry.duration_ms)}</span>
                   </div>
                 ))}
                 </div>
@@ -691,12 +715,41 @@ export default function AdminPage() {
               <button className="adm-btn" disabled={syncRunning} onClick={() => destroy('Executar sincronização agora?', actions.runSync)}>
                 {syncRunning ? 'Sincronizando...' : 'Rodar sync agora'}
               </button>
-              <span className="adm-muted">Mostrando as 5 sincronizações mais recentes.</span>
+              <span className="adm-muted">Mostrando as 10 sincronizações mais recentes.</span>
             </div>
-            {(syncHistory || []).slice(0, 5).map((entry, index) => (
-              <div className="adm-log" key={`${entry.created_at}-${index}`}>
-                <span>{entry.status} · {entry.games_synced} jogos</span>
-                <span className="adm-muted">{new Date(entry.created_at).toLocaleString('pt-BR')}</span>
+            <div className="adm-grid" style={{ marginBottom: 12 }}>
+              <div className="adm-card">
+                <div className="adm-muted">Último status</div>
+                <div className="adm-kpi-sm">{operationsInsights?.latestSyncStatus || 'N/A'}</div>
+                <div className="adm-muted">{formatSyncTimestamp(operationsInsights?.latestSyncTimestamp)}</div>
+              </div>
+              <div className="adm-card">
+                <div className="adm-muted">Último sucesso</div>
+                <div className="adm-kpi-sm">{formatSyncTimestamp(operationsInsights?.lastSuccessAt)}</div>
+              </div>
+              <div className="adm-card">
+                <div className="adm-muted">Última falha</div>
+                <div className="adm-kpi-sm">{formatSyncTimestamp(operationsInsights?.lastFailureAt)}</div>
+              </div>
+              <div className="adm-card">
+                <div className="adm-muted">Execução atual</div>
+                <div className="adm-kpi-sm">{operationsInsights?.syncRunning ? 'Running' : 'Idle'}</div>
+                <div className="adm-muted">{operationsInsights?.syncRunning ? `desde ${formatSyncTimestamp(operationsInsights?.currentRunningSince)}` : 'sem execução ativa'}</div>
+              </div>
+            </div>
+            {(syncHistory || []).slice(0, 10).map((entry, index) => (
+              <div key={`${entry.created_at}-${index}-${entry.id}`} style={{ borderBottom: '1px solid #1d2824', padding: '10px 0' }}>
+                <div className="adm-log" style={{ padding: 0, borderBottom: 'none' }}>
+                  <span>
+                    <strong>{entry.status_label}</strong> · {entry.games_synced} jogos · {entry.players_synced} jogadores · {entry.player_stats_synced} stats
+                    {entry.sync_mode ? ` · modo ${entry.sync_mode}` : ''}
+                    {entry.route_source ? ` · origem ${entry.route_source}` : ''}
+                  </span>
+                  <span className="adm-muted">{formatSyncTimestamp(entry.started_at || entry.created_at)} · {formatSyncDuration(entry.duration_ms)}</span>
+                </div>
+                <div className="adm-muted" style={{ fontSize: 12 }}>
+                  {entry.message || entry.errors || 'Sem detalhes adicionais.'}
+                </div>
               </div>
             ))}
           </section>

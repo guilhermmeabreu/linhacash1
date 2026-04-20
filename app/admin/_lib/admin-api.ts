@@ -106,6 +106,11 @@ export interface ProductInsights {
 export interface OperationsInsights {
   latestSyncStatus: string | null;
   latestSyncTimestamp: string | null;
+  latestSyncMessage?: string | null;
+  syncRunning?: boolean;
+  currentRunningSince?: string | null;
+  lastSuccessAt?: string | null;
+  lastFailureAt?: string | null;
   syncFreshness: 'fresh' | 'stale' | 'critical' | 'unknown';
   syncFreshnessLabel: string;
   recentImportantEvents: Array<{ event: string; created_at: string; details: Record<string, unknown> | null }>;
@@ -152,7 +157,23 @@ export interface AdminOverviewPayload {
   referrals: ReferralCode[];
   referralUses: ReferralUse[];
   commissions: AffiliateCommission[];
-  syncHistory: Array<{ created_at: string; status: string; games_synced: number }>;
+  syncHistory: Array<{
+    id: number | string;
+    status: string;
+    status_label: string;
+    message: string;
+    started_at: string | null;
+    finished_at: string | null;
+    created_at: string;
+    duration_ms: number | null;
+    games_synced: number;
+    players_synced: number;
+    player_stats_synced: number;
+    errors: string | null;
+    sync_mode: string | null;
+    route_source: string | null;
+    request_id: string | null;
+  }>;
   productInsights: ProductInsights;
   operationsInsights: OperationsInsights;
   adminActionInsights: AdminActionInsights;
