@@ -19,6 +19,11 @@ type TrialProfileState = {
   subscription_started_at: string | null;
 };
 
+type TrialUsageLookup = {
+  normalized_email: string | null;
+  stripe_customer_id: string | null;
+};
+
 function getPlanPriceConfig(plan: StripePlan): PlanPriceConfig {
   if (plan === 'monthly') {
     return { envVar: 'STRIPE_PRICE_PRO_MONTHLY', priceId: requireEnv('STRIPE_PRICE_PRO_MONTHLY') };
@@ -128,6 +133,32 @@ function isMonthlyTrialEligible(profile: TrialProfileState) {
   return true;
 }
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+async function hasTrialUsageRecord(normalizedEmail: string, stripeCustomerId: string) {
+  const { data: byEmail, error: byEmailError } = await supabase
+    .from('trial_usage')
+    .select('normalized_email')
+    .eq('normalized_email', normalizedEmail)
+    .limit(1)
+    .maybeSingle<Pick<TrialUsageLookup, 'normalized_email'>>();
+
+  if (byEmailError) throw byEmailError;
+  if (byEmail) return true;
+
+  const { data: byCustomer, error: byCustomerError } = await supabase
+    .from('trial_usage')
+    .select('stripe_customer_id')
+    .eq('stripe_customer_id', stripeCustomerId)
+    .limit(1)
+    .maybeSingle<Pick<TrialUsageLookup, 'stripe_customer_id'>>();
+
+  if (byCustomerError) throw byCustomerError;
+  return Boolean(byCustomer);
+}
+
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/stripe/checkout' });
@@ -163,9 +194,11 @@ export async function POST(req: Request) {
     }
 
     const appUrl = requireEnv('NEXT_PUBLIC_APP_URL').replace(/\/$/, '');
+    const normalizedEmail = normalizeEmail(user.email);
     const stripeCustomerId = await resolveStripeCustomerId(user.id, user.email, user.name);
     const profileTrialState = await getTrialProfileState(user.id);
-    const shouldGrantMonthlyTrial = plan === 'monthly' && isMonthlyTrialEligible(profileTrialState);
+    const trialUsageExists = await hasTrialUsageRecord(normalizedEmail, stripeCustomerId);
+    const shouldGrantMonthlyTrial = plan === 'monthly' && isMonthlyTrialEligible(profileTrialState) && !trialUsageExists;
     const trialStartedAt = shouldGrantMonthlyTrial ? new Date().toISOString() : null;
 
     if (trialStartedAt) {
@@ -180,6 +213,20 @@ export async function POST(req: Request) {
 
       if (trialStateError) {
         throw trialStateError;
+      }
+
+      // Fingerprint is intentionally not accepted from client input in this rollout.
+      const { error: trialUsageError } = await supabase
+        .from('trial_usage')
+        .insert({
+          email: user.email,
+          normalized_email: normalizedEmail,
+          stripe_customer_id: stripeCustomerId,
+          first_user_id: user.id,
+        });
+
+      if (trialUsageError && trialUsageError.code !== '23505') {
+        throw trialUsageError;
       }
     }
 
