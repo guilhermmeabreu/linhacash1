@@ -14,6 +14,11 @@ function admin2faEnabled() {
   return Boolean(process.env.ADMIN_TOTP_SECRET);
 }
 
+function admin2faRequiredInProduction() {
+  if (process.env.NODE_ENV !== 'production') return false;
+  return process.env.ADMIN_ALLOW_PASSWORD_ONLY !== 'true';
+}
+
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/admin/auth' });
@@ -33,6 +38,10 @@ export async function POST(req: Request) {
     if (!validEmail || !validPassword) {
       await auditLog('admin_login_failed', { ip, reason: 'invalid_credentials' });
       throw new AuthenticationError('Invalid credentials');
+    }
+
+    if (admin2faRequiredInProduction() && !admin2faEnabled()) {
+      throw new AppError('SECURITY_CONFIGURATION_ERROR', 503, 'Admin 2FA is required in production');
     }
 
     if (admin2faEnabled()) {

@@ -1,10 +1,17 @@
 import type { NextConfig } from 'next';
 
-// Build-time safety: avoids route-module initialization crashes when envs are
-// not injected during compilation (runtime envs still override these values).
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
-if (!process.env.SUPABASE_SERVICE_KEY) process.env.SUPABASE_SERVICE_KEY = 'placeholder-service-key';
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'placeholder-anon-key';
+// Build-time safety (non-production only): avoids route-module initialization
+// crashes when envs are not injected during local compilation.
+const isProductionBuild = process.env.NODE_ENV === 'production';
+const allowPlaceholdersInProduction = process.env.NEXT_BUILD_ALLOW_PLACEHOLDERS === 'true';
+if (!isProductionBuild || allowPlaceholdersInProduction) {
+  if (isProductionBuild && allowPlaceholdersInProduction) {
+    console.warn('[SECURITY] NEXT_BUILD_ALLOW_PLACEHOLDERS=true em produção. Use apenas temporariamente durante migração de variáveis de ambiente.');
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
+  if (!process.env.SUPABASE_SERVICE_KEY) process.env.SUPABASE_SERVICE_KEY = 'placeholder-service-key';
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'placeholder-anon-key';
+}
 
 const ALLOWED_ORIGIN = process.env.NEXT_PUBLIC_URL || 'https://linhacash.com.br';
 
