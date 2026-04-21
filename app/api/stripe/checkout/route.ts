@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         plan,
       },
       ...(plan === 'monthly'
-        ? { subscription_data: { trial_period_days: 2, metadata: { user_id: user.id, plan } } }
+        ? { subscription_data: { trial_period_days: 7, metadata: { user_id: user.id, plan } } }
         : plan === 'annual'
           ? { subscription_data: { metadata: { user_id: user.id, plan } } }
           : {}),

@@ -216,6 +216,25 @@ export async function POST(req: Request) {
     return okResponse({ url: data.url });
     }
 
+    if (action === 'exchange_code') {
+      const code = typeof body?.code === 'string' ? body.code.trim() : '';
+      if (!code) return errorResponse('Código OAuth ausente', 400);
+
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error || !data.session?.access_token || !data.user?.id) {
+        return errorResponse('Não foi possível concluir o login com Google.', 401);
+      }
+
+      await syncProfileEmail(data.user.id, data.user.email);
+      return okResponse({
+        ok: true,
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token,
+        expiresAt: data.session.expires_at,
+        tokenType: data.session.token_type,
+      });
+    }
+
   // ── RECUPERAR SENHA ────────────────────────────────────────────────────────
     if (action === 'forgot') {
     const { email } = body;
