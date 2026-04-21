@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     if (admin2faRequiredInProduction() && !admin2faEnabled()) {
-      throw new AppError('SECURITY_CONFIGURATION_ERROR', 503, 'Admin 2FA is required in production');
+      throw new AppError('INTERNAL_ERROR', 503, 'Admin 2FA is required in production');
     }
 
     if (admin2faEnabled()) {
