@@ -19,6 +19,10 @@ function admin2faRequiredInProduction() {
   return process.env.ADMIN_ALLOW_PASSWORD_ONLY !== 'true';
 }
 
+function shouldEnforceAdmin2fa() {
+  return admin2faRequiredInProduction() && admin2faEnabled();
+}
+
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/admin/auth' });
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
       throw new AppError('INTERNAL_ERROR', 503, 'Admin 2FA is required in production');
     }
 
-    if (admin2faEnabled()) {
+    if (shouldEnforceAdmin2fa()) {
       const validTotp = totpCode ? verifyTotpCode(process.env.ADMIN_TOTP_SECRET!, totpCode) : false;
       const validRecovery = recoveryCode ? await consumeRecoveryCode(recoveryCode) : false;
       if (!validTotp && !validRecovery) {
