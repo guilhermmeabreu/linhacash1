@@ -246,6 +246,41 @@ function shortTeamName(name: string) {
     .toUpperCase();
 }
 
+const TEAM_LOGO_FALLBACK_BY_KEY: Record<string, string> = {
+  portlandtrailblazers: 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/por.png',
+};
+
+function normalizeTeamKey(teamName: string) {
+  return teamName
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+}
+
+function resolveTeamLogoUrl(teamName: string, teamId: number, logoUrl: string | null) {
+  const normalizedTeam = normalizeTeamKey(teamName);
+  const normalizedLogo = logoUrl?.trim() || null;
+
+  // Portland has been consistently returning a broken upstream logo URL.
+  // Prefer a stable fallback source for this team to avoid broken badges.
+  if (teamId === 29 || normalizedTeam.includes('portlandtrailblazers') || normalizedTeam.includes('trailblazers')) {
+    return TEAM_LOGO_FALLBACK_BY_KEY.portlandtrailblazers;
+  }
+
+  return normalizedLogo;
+}
+
+function TeamLogo({ teamName, teamId, logoUrl }: { teamName: string; teamId: number; logoUrl: string | null }) {
+  const safeLogoUrl = resolveTeamLogoUrl(teamName, teamId, logoUrl);
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
+  const logoFailed = Boolean(safeLogoUrl && failedLogoUrl === safeLogoUrl);
+
+  if (!safeLogoUrl || logoFailed) {
+    return <>{shortTeamName(teamName)}</>;
+  }
+
+  return <img src={safeLogoUrl} alt={teamName} loading="lazy" onError={() => setFailedLogoUrl(safeLogoUrl)} />;
+}
+
 function formatVisibleDashboardDayLabel(dayKey: string) {
   const parsed = parseCalendarDate(dayKey);
   if (!parsed) return '';
@@ -1697,14 +1732,14 @@ export function DashboardView() {
                       <div className={styles.gameCardTeams}>
                         <div className={styles.teamColumn}>
                           <div className={styles.teamBadge}>
-                            {game.away_logo ? <img src={game.away_logo} alt={game.away_team} loading="lazy" /> : shortTeamName(game.away_team)}
+                            <TeamLogo teamName={game.away_team} teamId={game.away_team_id} logoUrl={game.away_logo} />
                           </div>
                           <span>{game.away_team}</span>
                         </div>
                         <div className={styles.gameVs}>X</div>
                         <div className={styles.teamColumn}>
                           <div className={styles.teamBadge}>
-                            {game.home_logo ? <img src={game.home_logo} alt={game.home_team} loading="lazy" /> : shortTeamName(game.home_team)}
+                            <TeamLogo teamName={game.home_team} teamId={game.home_team_id} logoUrl={game.home_logo} />
                           </div>
                           <span>{game.home_team}</span>
                         </div>
