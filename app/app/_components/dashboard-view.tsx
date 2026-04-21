@@ -68,6 +68,7 @@ import styles from './dashboard-view.module.css';
 
 const STATS = ['PTS', 'AST', 'REB', '3PM', 'PA', 'PR', 'PRA', 'AR', 'DD', 'TD', 'STEAL', 'BLOCKS', 'SB', 'FG2A', 'FG3A'] as const;
 const FREE_STATS = ['PTS', '3PM'] as const;
+const FREE_SPLITS = ['L5', 'L30'] as const;
 type Stat = (typeof STATS)[number];
 const SPLITS = ['L5', 'L10', 'L20', 'L30', 'Season', 'H2H'] as const;
 type Split = (typeof SPLITS)[number];
@@ -102,6 +103,7 @@ type Player = {
   position: string;
   jersey: string | number | null;
 };
+type VisiblePlayer = Player & { locked: boolean };
 
 type PlayerAvatarProps = {
   playerName: string;
@@ -367,6 +369,10 @@ function isLockedStat(stat: Stat, plan: Plan) {
   return plan !== 'pro' && !FREE_STATS.includes(stat as (typeof FREE_STATS)[number]);
 }
 
+function isLockedSplit(split: Split, plan: Plan) {
+  return plan !== 'pro' && !FREE_SPLITS.includes(split as (typeof FREE_SPLITS)[number]);
+}
+
 function resolveMetricsWindow(split: Split): MetricsWindow {
   if (split === 'L5' || split === 'L10' || split === 'L20' || split === 'L30') return split;
   if (split === 'Season') return 'CURRENT_SEASON';
@@ -499,11 +505,17 @@ export function DashboardView() {
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportFeedback, setSupportFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [supportMessageError, setSupportMessageError] = useState<string | null>(null);
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [profileEditorName, setProfileEditorName] = useState('');
+  const [profileEditorEmail, setProfileEditorEmail] = useState('');
+  const [profileEditorLoading, setProfileEditorLoading] = useState(false);
+  const [profileEditorFeedback, setProfileEditorFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [deleteConfirmValue, setDeleteConfirmValue] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteFeedback, setDeleteFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
   const [checkoutReturnStatus, setCheckoutReturnStatus] = useState('');
+  const [upgradeReferralFeedback, setUpgradeReferralFeedback] = useState<string | null>(null);
   const [authBootstrapped, setAuthBootstrapped] = useState(false);
 
   const gamesRequestRef = useRef(0);
@@ -532,6 +544,17 @@ export function DashboardView() {
     () => (selectedGameId ? playersByGame[selectedGameId] ?? [] : []),
     [playersByGame, selectedGameId],
   );
+  const visiblePlayers = useMemo<VisiblePlayer[]>(() => {
+    if (plan === 'pro') return players.map((player) => ({ ...player, locked: false }));
+    const unlockedByTeam = new Set<number>();
+    return players.map((player) => {
+      const teamId = Number(player.team_id || 0);
+      const teamKey = teamId > 0 ? teamId : Number.NaN;
+      const unlocked = Number.isFinite(teamKey) && !unlockedByTeam.has(teamKey);
+      if (Number.isFinite(teamKey) && unlocked) unlockedByTeam.add(teamKey);
+      return { ...player, locked: !unlocked };
+    });
+  }, [plan, players]);
   const selectedPlayer = useMemo(
     () => players.find((player) => player.id === selectedPlayerId) ?? null,
     [players, selectedPlayerId],
@@ -934,11 +957,13 @@ export function DashboardView() {
     [persistDashboardCache],
   );
 
-  const loadGames = useCallback(async () => {
+  const loadGames = useCallback(async (options?: { silent?: boolean }) => {
     gamesRequestRef.current += 1;
     const requestId = gamesRequestRef.current;
 
-    setGamesStatus('loading');
+    if (!options?.silent || games.length === 0) {
+      setGamesStatus('loading');
+    }
     setErrorMessage(null);
 
     const result = await apiFetch<{ games: Game[] }>('/api/games');
@@ -976,7 +1001,7 @@ export function DashboardView() {
     });
 
     setGamesStatus('ready');
-  }, [initialGameId]);
+  }, [games.length, initialGameId]);
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -999,6 +1024,21 @@ export function DashboardView() {
   useEffect(() => {
     if (!authBootstrapped) return;
     void loadGames();
+  }, [authBootstrapped, loadGames]);
+
+  useEffect(() => {
+    if (!authBootstrapped) return;
+    const handleVisibleRefresh = () => {
+      if (document.visibilityState === 'visible') {
+        void loadGames({ silent: true });
+      }
+    };
+    window.addEventListener('focus', handleVisibleRefresh);
+    document.addEventListener('visibilitychange', handleVisibleRefresh);
+    return () => {
+      window.removeEventListener('focus', handleVisibleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibleRefresh);
+    };
   }, [authBootstrapped, loadGames]);
 
   useEffect(() => {
@@ -1108,6 +1148,20 @@ export function DashboardView() {
   }, [loadMetricsForPlayer, marketLocked, plan, selectedPlayerId, selectedSplit, selectedStat, splitScopes, view]);
 
   useEffect(() => {
+    if (!isLockedSplit(selectedSplit, plan)) return;
+    setSelectedSplit('L5');
+  }, [plan, selectedSplit]);
+
+  useEffect(() => {
+    if (plan === 'pro' || !selectedPlayerId) return;
+    const selectedVisiblePlayer = visiblePlayers.find((player) => player.id === selectedPlayerId);
+    if (!selectedVisiblePlayer?.locked) return;
+    const firstUnlocked = visiblePlayers.find((player) => !player.locked);
+    setSelectedPlayerId(firstUnlocked?.id ?? null);
+    setView('players');
+  }, [plan, selectedPlayerId, visiblePlayers]);
+
+  useEffect(() => {
     syncQueryString({ gameId: selectedGameId, stat: selectedStat, playerId: selectedPlayer ? selectedPlayerId : null, mode: view });
   }, [selectedGameId, selectedPlayer, selectedPlayerId, selectedStat, syncQueryString, view]);
 
@@ -1124,7 +1178,18 @@ export function DashboardView() {
 
   const openUpgradeSurface = useCallback(() => {
     setUpgradeError(null);
+    setUpgradeReferralFeedback(null);
     setUpgradeOpen(true);
+  }, []);
+
+  const navigateToView = useCallback((nextView: DashboardViewMode) => {
+    setUpgradeOpen(false);
+    setSupportSurface(null);
+    setProfileEditorOpen(false);
+    if (nextView !== 'profile') {
+      setProfileEditorFeedback(null);
+    }
+    setView(nextView);
   }, []);
 
   const handleManageSubscription = useCallback(async () => {
@@ -1245,6 +1310,7 @@ export function DashboardView() {
         text: 'Conta excluída com sucesso. Você será redirecionado para o login.',
       });
       setTimeout(() => {
+        clearAuthSession();
         window.location.assign('/login');
       }, 900);
     } catch {
@@ -1257,9 +1323,85 @@ export function DashboardView() {
     }
   }, [deleteConfirmValue]);
 
+  const openProfileEditor = useCallback(() => {
+    setProfileEditorName(profile?.name?.trim() || '');
+    setProfileEditorEmail(profile?.email?.trim() || '');
+    setProfileEditorFeedback(null);
+    setProfileEditorOpen(true);
+  }, [profile?.email, profile?.name]);
+
+  const submitProfileEditor = useCallback(async () => {
+    const nextName = profileEditorName.trim();
+    const nextEmail = profileEditorEmail.trim().toLowerCase();
+    const currentName = profile?.name?.trim() || '';
+    const currentEmail = profile?.email?.trim().toLowerCase() || '';
+
+    if (!nextName || !nextEmail) {
+      setProfileEditorFeedback({ tone: 'error', text: 'Preencha nome e email para continuar.' });
+      return;
+    }
+
+    const changedName = nextName !== currentName;
+    const changedEmail = nextEmail !== currentEmail;
+    if (!changedName && !changedEmail) {
+      setProfileEditorFeedback({ tone: 'success', text: 'Nenhuma alteração pendente.' });
+      return;
+    }
+
+    setProfileEditorLoading(true);
+    setProfileEditorFeedback(null);
+    try {
+      const token = await ensureValidAccessToken();
+      if (changedName) {
+        const response = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ name: nextName }),
+        });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          setProfileEditorFeedback({ tone: 'error', text: payload?.error || 'Não foi possível atualizar o nome.' });
+          return;
+        }
+      }
+
+      if (changedEmail) {
+        const emailResponse = await fetch('/api/profile/email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ email: nextEmail }),
+        });
+        const emailPayload = await emailResponse.json().catch(() => ({}));
+        if (!emailResponse.ok) {
+          setProfileEditorFeedback({ tone: 'error', text: emailPayload?.error || 'Não foi possível iniciar a troca de email.' });
+          return;
+        }
+      }
+
+      await refreshBillingState();
+      setProfileEditorFeedback({
+        tone: 'success',
+        text: changedEmail
+          ? 'Perfil atualizado. Confirme o novo email na sua caixa de entrada para concluir a troca.'
+          : 'Perfil atualizado com sucesso.',
+      });
+    } catch {
+      setProfileEditorFeedback({ tone: 'error', text: 'Falha ao salvar perfil. Tente novamente em instantes.' });
+    } finally {
+      setProfileEditorLoading(false);
+    }
+  }, [profile?.email, profile?.name, profileEditorEmail, profileEditorName, refreshBillingState]);
+
   const startCheckout = useCallback(async () => {
     setUpgradeLoading(true);
     setUpgradeError(null);
+    setUpgradeReferralFeedback(null);
     try {
       const token = await ensureValidAccessToken();
       const response = await fetch('/api/stripe/checkout', {
@@ -1268,13 +1410,19 @@ export function DashboardView() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ plan: upgradePlan }),
+        body: JSON.stringify({ plan: upgradePlan, referralCode: upgradeCode.trim() || null }),
       });
       const data = await response.json().catch(() => ({}));
       const checkoutUrl = data?.data?.url;
       if (!response.ok || !checkoutUrl) {
         setUpgradeError(data?.error?.message || 'Não foi possível iniciar o checkout agora.');
+        if (data?.error?.message?.toLowerCase?.().includes('código de indicação')) {
+          setUpgradeReferralFeedback('Código inválido ou inativo. Remova o código para continuar sem indicação.');
+        }
         return;
+      }
+      if (upgradeCode.trim()) {
+        setUpgradeReferralFeedback('Código de indicação validado com sucesso.');
       }
       window.location.href = checkoutUrl as string;
     } catch {
@@ -1282,7 +1430,7 @@ export function DashboardView() {
     } finally {
       setUpgradeLoading(false);
     }
-  }, [upgradePlan]);
+  }, [upgradeCode, upgradePlan]);
 
   const handleReferralInputFocus = useCallback((event: FocusEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -1335,6 +1483,9 @@ export function DashboardView() {
       return { ...sample, tone, label };
     });
     const splitMetrics: PlayerDetailSplitMetric[] = SPLITS.map((split) => {
+      if (isLockedSplit(split, plan)) {
+        return { label: split, value: 'PRO', note: 'Bloqueado no grátis' };
+      }
       if (!selectedPlayerId) return { label: split, value: '—', note: 'Sem dados' };
       const scope = splitScopes[split];
       const cacheKey = buildMetricsCacheKey(selectedPlayerId, selectedStat, scope.scopeKey);
@@ -1376,7 +1527,7 @@ export function DashboardView() {
       metrics: payload?.metrics ?? null,
       splitMetrics,
     };
-  }, [lineContextKey, manualLineByContext, metricsBySelection, selectedMetricsFallbackResource, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedStat, splitScopes]);
+  }, [lineContextKey, manualLineByContext, metricsBySelection, plan, selectedMetricsFallbackResource, selectedMetricsResource, selectedPlayer, selectedPlayerId, selectedStat, splitScopes]);
 
   useEffect(() => {
     if (!playerDetailModel || !selectedPlayerId) return;
@@ -1442,9 +1593,9 @@ export function DashboardView() {
         <Sidebar
           items={sidebarItems}
           activeKey={activeSidebarKey}
-          onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
+          onItemClick={(item) => navigateToView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
-            <button type="button" className={styles.accountSummary} data-close-mobile-sidebar="true" onClick={() => setView('profile')}>
+            <button type="button" className={styles.accountSummary} data-close-mobile-sidebar="true" onClick={() => navigateToView('profile')}>
               <div className={styles.accountAvatar}>{profileInitial}</div>
               <div className={styles.accountMeta}>
                 <strong>{profileName}</strong>
@@ -1458,9 +1609,9 @@ export function DashboardView() {
         <MobileSidebar
           items={sidebarItems}
           activeKey={activeSidebarKey}
-          onItemClick={(item) => setView(item.key === 'perfil' ? 'profile' : 'games')}
+          onItemClick={(item) => navigateToView(item.key === 'perfil' ? 'profile' : 'games')}
           footer={(
-            <button type="button" className={styles.accountSummary} data-close-mobile-sidebar="true" onClick={() => setView('profile')}>
+            <button type="button" className={styles.accountSummary} data-close-mobile-sidebar="true" onClick={() => navigateToView('profile')}>
               <div className={styles.accountAvatar}>{profileInitial}</div>
               <div className={styles.accountMeta}>
                 <strong>{profileName}</strong>
@@ -1476,7 +1627,7 @@ export function DashboardView() {
           showBrand={false}
           context={view === 'games' ? null : topTitle}
           leading={canGoBack ? (
-            <Button size="sm" variant="ghost" onClick={() => setView(view === 'detail' ? 'players' : 'games')}>
+            <Button size="sm" variant="ghost" onClick={() => navigateToView(view === 'detail' ? 'players' : 'games')}>
               <ArrowLeft size={14} />
             </Button>
           ) : null}
@@ -1500,7 +1651,7 @@ export function DashboardView() {
                 <EmptyState
                   heading="Não foi possível carregar os jogos"
                   description={errorMessage || 'Tente novamente em instantes.'}
-                  action={<Button variant="secondary" size="sm" onClick={loadGames}>Tentar novamente</Button>}
+                  action={<Button variant="secondary" size="sm" onClick={() => { void loadGames(); }}>Tentar novamente</Button>}
                 />
               ) : null}
               {gamesStatus === 'empty' ? (
@@ -1621,12 +1772,16 @@ export function DashboardView() {
 
                     {!marketLocked ? (
                       <div className={`${styles.playerList} technical-grid`}>
-                        {players.map((player) => (
+                        {visiblePlayers.map((player) => (
                           <button
                             key={player.id}
-                            className={styles.playerRow}
+                            className={`${styles.playerRow} ${player.locked ? styles.playerRowLocked : ''}`}
                             type="button"
                             onClick={() => {
+                              if (player.locked) {
+                                openUpgradeSurface();
+                                return;
+                              }
                               setSelectedPlayerId(player.id);
                               setView('detail');
                             }}
@@ -1639,6 +1794,7 @@ export function DashboardView() {
                                   <p className={styles.playerMeta}>{player.position} • {player.team}</p>
                                 </div>
                               </div>
+                              {player.locked ? <Lock size={12} /> : null}
                             </div>
 
                             <div className={styles.playerRowDesktop}>
@@ -1651,6 +1807,7 @@ export function DashboardView() {
                                   </div>
                                 </div>
                               </div>
+                              {player.locked ? <Lock size={12} /> : null}
                             </div>
                           </button>
                         ))}
@@ -1757,6 +1914,7 @@ export function DashboardView() {
                     <div className={styles.chartHeader}>
                       <p className={styles.chartTitle}>{selectedStat} · {selectedSplit}</p>
                       <div className={styles.chartHeaderBadges}>
+                        <Badge variant="muted">Linha {effectivePlayerDetailModel.line.toFixed(1)}</Badge>
                         <Badge variant="muted">Média {effectivePlayerDetailModel.average ?? '—'}</Badge>
                       </div>
                     </div>
@@ -1828,9 +1986,23 @@ export function DashboardView() {
 
                   <TabsRoot value={selectedSplit} onValueChange={(value) => setSelectedSplit((SPLITS.includes(value as Split) ? value : 'L10') as Split)}>
                     <TabsList className={styles.splitTabs}>
-                      {SPLITS.map((split) => (
-                        <TabsTrigger key={split} value={split}>{split}</TabsTrigger>
-                      ))}
+                      {SPLITS.map((split) => {
+                        const lockedSplit = isLockedSplit(split, plan);
+                        return (
+                          <TabsTrigger
+                            key={split}
+                            value={split}
+                            className={lockedSplit ? styles.lockedTab : undefined}
+                            onClick={lockedSplit ? (event) => {
+                              event.preventDefault();
+                              openUpgradeSurface();
+                            } : undefined}
+                          >
+                            {split}
+                            {lockedSplit ? <Lock size={11} /> : null}
+                          </TabsTrigger>
+                        );
+                      })}
                     </TabsList>
                   </TabsRoot>
 
@@ -1869,7 +2041,7 @@ export function DashboardView() {
             <section className={`${styles.profileView} ${styles.viewPanel}`}>
               <div className={styles.profileTopHeader}>
                 <div className={styles.profileTopHeaderMain}>
-                  <Button size="sm" variant="ghost" className={styles.profileBackButton} onClick={() => setView('games')} aria-label="Voltar para jogos do dia">
+                  <Button size="sm" variant="ghost" className={styles.profileBackButton} onClick={() => navigateToView('games')} aria-label="Voltar para jogos do dia">
                     <ArrowLeft size={16} />
                   </Button>
                   <h1>Meu Perfil</h1>
@@ -1917,12 +2089,12 @@ export function DashboardView() {
                 <Surface className={styles.profileSection}>
                   <h3>Conta</h3>
                   <div className={`${styles.profileRows} technical-grid`}>
-                    <a className={`${styles.profileRow} technical-item`} href="mailto:suporte@linhacash.com.br?subject=Atualiza%C3%A7%C3%A3o%20de%20perfil">
+                    <button type="button" className={`${styles.profileRow} technical-item`} onClick={openProfileEditor}>
                       <div className={styles.profileRowContent}>
                         <span><UserRound size={14} /> Editar perfil</span>
                       </div>
                       <ChevronRight size={14} />
-                    </a>
+                    </button>
                     <a className={`${styles.profileRow} technical-item`} href="/forgot-password">
                       <div className={styles.profileRowContent}>
                         <span><Shield size={14} /> Segurança</span>
@@ -2087,6 +2259,7 @@ export function DashboardView() {
                               maxLength={20}
                             />
                           </label>
+                          {upgradeReferralFeedback ? <small className={styles.upgradeReferralFeedback}>{upgradeReferralFeedback}</small> : null}
                         </section>
                         <section className={styles.upgradeSecurity}>
                           <small>Segurança</small>
@@ -2189,6 +2362,7 @@ export function DashboardView() {
                             maxLength={20}
                           />
                         </label>
+                        {upgradeReferralFeedback ? <small className={styles.upgradeReferralFeedback}>{upgradeReferralFeedback}</small> : null}
                       </section>
                       </div>
 
@@ -2307,6 +2481,33 @@ export function DashboardView() {
                     </Button>
                   </>
                 )}
+              </Surface>
+            </div>
+          ) : null}
+
+          {profileEditorOpen ? (
+            <div className={styles.supportOverlay} role="dialog" aria-modal="true" aria-label="Editar perfil">
+              <Surface className={styles.supportModal}>
+                <button type="button" className={styles.supportClose} onClick={() => setProfileEditorOpen(false)} aria-label="Fechar">
+                  <X size={16} />
+                </button>
+                <p className={styles.supportKicker}>Conta</p>
+                <h3>Editar perfil</h3>
+                <p className={styles.supportSubtitle}>Atualize seu nome e email no mesmo fluxo. Alterações de email exigem confirmação no novo endereço.</p>
+                <label className={styles.upgradeField}>
+                  Nome
+                  <input value={profileEditorName} onChange={(event) => setProfileEditorName(event.target.value)} maxLength={100} />
+                </label>
+                <label className={styles.upgradeField}>
+                  Email
+                  <input value={profileEditorEmail} onChange={(event) => setProfileEditorEmail(event.target.value)} maxLength={254} />
+                </label>
+                {profileEditorFeedback ? (
+                  <p className={profileEditorFeedback.tone === 'success' ? styles.supportSuccess : styles.upgradeError}>{profileEditorFeedback.text}</p>
+                ) : null}
+                <Button size="lg" onClick={submitProfileEditor} disabled={profileEditorLoading}>
+                  {profileEditorLoading ? 'Salvando...' : 'Salvar alterações'}
+                </Button>
               </Surface>
             </div>
           ) : null}

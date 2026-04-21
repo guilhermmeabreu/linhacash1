@@ -411,6 +411,11 @@
   transform: translateY(-1px);
 }
 
+.playerRowLocked {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
 .playerMain {
   display: flex;
   align-items: center;
@@ -544,8 +549,10 @@
   border: 1px solid color-mix(in srgb, var(--lc-border) 45%, transparent);
   border-radius: 14px;
   background: color-mix(in srgb, var(--lc-surface) 94%, var(--lc-bg) 6%);
-  padding: 0.55rem 0.6rem;
+  padding: 0.6rem 0.64rem;
   min-width: 12.5rem;
+  display: grid;
+  gap: 0.35rem;
 }
 
 .lineAdjustBox p {
@@ -566,7 +573,8 @@
 
 .lineAdjustControls {
   justify-content: center !important;
-  gap: 0.3rem !important;
+  align-items: center !important;
+  gap: 0.36rem !important;
 }
 
 .lineAdjustDesktop {
@@ -611,14 +619,14 @@
   border-radius: 10px;
   border: 0;
   box-shadow: none;
-  padding: 0.42rem 0.35rem;
+  padding: 0.5rem 0.42rem;
   text-align: center;
   display: grid;
   gap: 0.12rem;
 }
 
 .quickStatsGrid span {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--lc-muted);
@@ -626,12 +634,12 @@
 }
 
 .quickStatsGrid strong {
-  font-size: 0.96rem;
+  font-size: 1.04rem;
   font-family: var(--lc-font-mono);
 }
 
 .quickStatsGrid small {
-  font-size: 0.54rem;
+  font-size: 0.58rem;
   color: var(--lc-muted);
 }
 
@@ -925,12 +933,14 @@
 }
 
 .profileLogoutButton {
-  border-color: color-mix(in srgb, #dd5a5a 45%, var(--lc-border) 55%);
-  color: #f09e9e;
+  border-color: color-mix(in srgb, var(--lc-accent) 30%, var(--lc-border) 70%);
+  color: var(--lc-text);
 }
 
 .profileLogoutButton:hover {
-  background: color-mix(in srgb, #401111 30%, transparent);
+  background: color-mix(in srgb, var(--lc-surface-elevated) 88%, var(--lc-bg) 12%);
+  border-color: color-mix(in srgb, var(--lc-accent) 42%, var(--lc-border) 58%);
+  color: var(--lc-text);
 }
 
 .upgradeOverlay {
@@ -1547,8 +1557,14 @@
   font-size: 0.62rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--lc-muted) 92%, #b7c2cf 8%);
+  color: color-mix(in srgb, var(--lc-muted) 70%, var(--lc-text) 30%);
   font-family: var(--lc-font-sans);
+}
+
+.upgradeReferralFeedback {
+  color: color-mix(in srgb, var(--lc-text) 78%, var(--lc-muted) 22%);
+  font-size: 0.66rem;
+  line-height: 1.35;
 }
 
 .upgradeSecurity {
@@ -1618,7 +1634,7 @@ html.light .upgradePlanBtn small,
 html.light .upgradeSupportLine,
 html.light .upgradeReferral p,
 html.light .upgradeSecurity small {
-  color: #3f4b5d;
+  color: #2f3f54;
 }
 
 html.light .upgradePriceHighlight small,
@@ -1742,7 +1758,7 @@ html.light .upgradePlanBtn span {
 
   .quickStatsGrid > div {
     min-width: 4.35rem;
-    padding: 0.22rem 0.24rem;
+    padding: 0.3rem 0.3rem;
     gap: 0.07rem;
     border: 0;
     border-radius: 10px;
@@ -1754,15 +1770,15 @@ html.light .upgradePlanBtn span {
   }
 
   .quickStatsGrid span {
-    font-size: 0.48rem;
+    font-size: 0.54rem;
   }
 
   .quickStatsGrid strong {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
   }
 
   .quickStatsGrid small {
-    font-size: 0.41rem;
+    font-size: 0.47rem;
   }
 
   .splitTabs {

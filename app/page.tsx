@@ -55,10 +55,11 @@ export default function LandingPage() {
 
       <section className="lc-hero lc-public-container" id="hero">
         <div className="lc-hero-content">
-          <h1 className="lc-hero-editorial-title">Análise de Dados para Props NBA</h1>
-          <p>
-            O LinhaCash oferece análise avançada de dados para jogadores da NBA, ajudando você a identificar tendências, desempenho recente e matchups relevantes para props.
-          </p>
+          <h1 className="lc-hero-editorial-title">
+            <span>VEJA O QUE OS</span>
+            <span className="lc-hero-highlight">NÚMEROS</span>
+            <span>MOSTRAM</span>
+          </h1>
           <p>
             Analisar dados nunca ficou tão fácil com o Linha<span>Cash</span>.
           </p>
