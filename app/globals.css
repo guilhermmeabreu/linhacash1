@@ -519,7 +519,7 @@ textarea {
 }
 .lc-hero p { color: color-mix(in srgb, var(--lc-text) 64%, var(--lc-muted) 36%); max-width: 33ch; margin: 0 auto; text-wrap: pretty; line-height: 1.45; font-size: clamp(0.95rem, 1.7vw, 1.15rem); }
 .lc-hero p span { color: var(--lc-accent); font-weight: 700; }
-.lc-hero small { color: var(--lc-muted); font-size: 0.75rem; margin-top: -0.2rem; }
+.lc-hero small { color: var(--lc-muted); font-size: 0.75rem; margin-top: 0.05rem; }
 .lc-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; margin-top: .55rem; }
 .lc-hero-secondary-cta { text-decoration: none; }
 .lc-hero-secondary-cta .lc-btn-secondary { border-color: var(--lc-accent); color: var(--lc-text); }
@@ -859,16 +859,14 @@ html.light .lc-hero p {
     margin-top: 0.25rem;
   }
 
-  .lc-hero small {
-    margin-top: -0.15rem;
-  }
+  .lc-hero small { margin-top: 0.05rem; }
 
   .lc-scroll-hint {
     position: static;
     left: auto;
     bottom: auto;
     transform: none;
-    margin-top: 0.15rem;
+    margin-top: 0.05rem;
     opacity: 0.92;
   }
 }
