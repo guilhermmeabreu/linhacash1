@@ -277,8 +277,15 @@ textarea {
 
 .lc-tabs { width: 100%; }
 .lc-tabs-list { display: inline-flex; gap: var(--lc-space-2); border-bottom: 1px solid var(--lc-border); padding-bottom: var(--lc-space-2); }
-.lc-tab-trigger { background: transparent; border: 1px solid transparent; color: var(--lc-muted); min-height: 2rem; padding: 0 var(--lc-space-3); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: var(--lc-transition-fast); -webkit-appearance: none; appearance: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-.lc-tab-trigger:hover { color: var(--lc-text); }
+.lc-tab-trigger { background: transparent; border: 1px solid transparent; color: var(--lc-muted); min-height: 2rem; padding: 0 var(--lc-space-3); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: var(--lc-transition-fast); -webkit-appearance: none; appearance: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; outline: none; }
+@media (hover: hover) and (pointer: fine) {
+  .lc-tab-trigger:hover { color: var(--lc-text); }
+}
+.lc-tab-trigger:focus-visible {
+  color: var(--lc-text);
+  border-color: color-mix(in srgb, var(--lc-accent) 45%, var(--lc-border) 55%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--lc-accent) 35%, transparent);
+}
 .lc-tab-trigger.is-active { color: var(--lc-accent); border-color: color-mix(in srgb, var(--lc-accent) 40%, var(--lc-border) 60%); background: var(--lc-accent-dim); }
 .lc-tab-content { padding-top: var(--lc-space-4); }
 
