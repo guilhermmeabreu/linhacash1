@@ -2,8 +2,39 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'LinhaCash',
-  description: 'Análise de props da NBA',
+  title: {
+    default: 'LinhaCash | Análise para NBA',
+    template: '%s | LinhaCash',
+  },
+  description: 'Plataforma de análise avançada para NBA com dados de props, tendências e desempenho.',
+  keywords: [
+    'NBA',
+    'props NBA',
+    'análise NBA',
+    'estatísticas NBA',
+    'tendências NBA',
+    'desempenho jogadores NBA',
+    'apostas esportivas NBA',
+    'player props',
+    'dados avançados NBA',
+    'matchups NBA',
+  ],
+  openGraph: {
+    title: 'LinhaCash | Análise para NBA',
+    description: 'Dados avançados de NBA para análise de props e desempenho.',
+    url: 'https://linhacash.com.br',
+    siteName: 'LinhaCash',
+    images: [
+      {
+        url: '/og-image.png',
+      },
+    ],
+    locale: 'pt_BR',
+    type: 'website',
+  },
+  verification: {
+    google: 'Blk_U52ESbPN6YqttyCz5GNnGAlWc8wVkKbDw1Lmo-M',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico' },
