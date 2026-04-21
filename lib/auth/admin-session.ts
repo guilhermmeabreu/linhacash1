@@ -4,6 +4,7 @@ import { AuthenticationError } from '@/lib/http/errors';
 
 const COOKIE_NAME = process.env.NODE_ENV === 'production' ? '__Host-lc_admin_session' : 'lc_admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
+let warnedWeakSecretFallback = false;
 
 type AdminSessionPayload = {
   sid: string;
@@ -58,11 +59,21 @@ function getAdminSessionSecret() {
   const configured = process.env.ADMIN_SESSION_SECRET?.trim();
   if (configured) return configured;
 
-  const fallback = `${process.env.ADMIN_PASSWORD || ''}:${process.env.SUPABASE_SERVICE_KEY || ''}`.trim();
-  if (fallback && fallback !== ':') return fallback;
+  const strictSecret = process.env.ADMIN_SESSION_STRICT_SECRET === 'true';
+  if (process.env.NODE_ENV === 'production' && strictSecret) {
+    throw new AuthenticationError('Admin session secret not configured');
+  }
 
-  if (process.env.NODE_ENV !== 'production') return 'linhacash-dev-admin-session-secret';
-  throw new AuthenticationError('Admin session secret not configured');
+  const fallback = `${process.env.ADMIN_PASSWORD || ''}:${process.env.SUPABASE_SERVICE_KEY || ''}`.trim();
+  if (fallback && fallback !== ':') {
+    if (process.env.NODE_ENV === 'production' && !warnedWeakSecretFallback) {
+      warnedWeakSecretFallback = true;
+      console.error('[SECURITY] ADMIN_SESSION_SECRET ausente em produção. Usando fallback legado; configure ADMIN_SESSION_SECRET e habilite ADMIN_SESSION_STRICT_SECRET=true.');
+    }
+    return fallback;
+  }
+
+  return 'linhacash-dev-admin-session-secret';
 }
 
 function signPayload(payloadBase64Url: string) {

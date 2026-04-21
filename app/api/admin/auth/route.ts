@@ -14,6 +14,15 @@ function admin2faEnabled() {
   return Boolean(process.env.ADMIN_TOTP_SECRET);
 }
 
+function admin2faRequiredInProduction() {
+  if (process.env.NODE_ENV !== 'production') return false;
+  return process.env.ADMIN_ALLOW_PASSWORD_ONLY !== 'true';
+}
+
+function shouldEnforceAdmin2fa() {
+  return admin2faRequiredInProduction() && admin2faEnabled();
+}
+
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/admin/auth' });
@@ -35,7 +44,11 @@ export async function POST(req: Request) {
       throw new AuthenticationError('Invalid credentials');
     }
 
-    if (admin2faEnabled()) {
+    if (admin2faRequiredInProduction() && !admin2faEnabled()) {
+      throw new AppError('INTERNAL_ERROR', 503, 'Admin 2FA is required in production');
+    }
+
+    if (shouldEnforceAdmin2fa()) {
       const validTotp = totpCode ? verifyTotpCode(process.env.ADMIN_TOTP_SECRET!, totpCode) : false;
       const validRecovery = recoveryCode ? await consumeRecoveryCode(recoveryCode) : false;
       if (!validTotp && !validRecovery) {
