@@ -64,18 +64,17 @@ export default function LandingPage() {
             Analisar dados nunca ficou tão fácil com o Linha<span>Cash</span>.
           </p>
           <div className="lc-hero-cta">
-            <Link href="/login">
-              <Button size="lg">Começar grátis <ArrowRight size={18} /></Button>
+            <Link href="/login" className="lc-btn lc-btn-primary lc-btn-lg">
+              Começar grátis <ArrowRight size={18} />
             </Link>
             <a href="#planos" className="lc-hero-secondary-cta">
-              <Button variant="secondary" size="lg">Ver planos</Button>
+              <span className="lc-btn lc-btn-secondary lc-btn-lg">Ver planos</span>
             </a>
           </div>
-          <small>7 dias grátis no plano mensal · plano gratuito disponível</small>
           <a className="lc-scroll-hint" href="#como-funciona" aria-label="Ver mais conteúdo">
             <ArrowDown size={16} />
-            <span>Role para ver mais</span>
           </a>
+          <small>7 dias grátis no plano mensal • Plano gratuito disponível</small>
         </div>
       </section>
 

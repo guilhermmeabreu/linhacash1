@@ -35,6 +35,7 @@ export const metadata: Metadata = {
   verification: {
     google: 'Blk_U52ESbPN6YqttyCz5GNnGAlWc8wVkKbDw1Lmo-M',
   },
+  manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -43,6 +44,11 @@ export const metadata: Metadata = {
     ],
     shortcut: '/favicon.ico',
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'LinhaCash',
+    statusBarStyle: 'default',
   },
 };
 

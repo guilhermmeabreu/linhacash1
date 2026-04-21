@@ -555,6 +555,14 @@ export function DashboardView() {
       return { ...player, locked: !unlocked };
     });
   }, [plan, players]);
+  const freeVisiblePlayers = useMemo(
+    () => (plan === 'pro' ? visiblePlayers : visiblePlayers.filter((player) => !player.locked).slice(0, 2)),
+    [plan, visiblePlayers],
+  );
+  const hiddenPlayersCount = useMemo(
+    () => (plan === 'pro' ? 0 : Math.max(0, players.length - freeVisiblePlayers.length)),
+    [freeVisiblePlayers.length, plan, players.length],
+  );
   const selectedPlayer = useMemo(
     () => players.find((player) => player.id === selectedPlayerId) ?? null,
     [players, selectedPlayerId],
@@ -1772,16 +1780,12 @@ export function DashboardView() {
 
                     {!marketLocked ? (
                       <div className={`${styles.playerList} technical-grid`}>
-                        {visiblePlayers.map((player) => (
+                        {freeVisiblePlayers.map((player) => (
                           <button
                             key={player.id}
-                            className={`${styles.playerRow} ${player.locked ? styles.playerRowLocked : ''}`}
+                            className={styles.playerRow}
                             type="button"
                             onClick={() => {
-                              if (player.locked) {
-                                openUpgradeSurface();
-                                return;
-                              }
                               setSelectedPlayerId(player.id);
                               setView('detail');
                             }}
@@ -1794,7 +1798,6 @@ export function DashboardView() {
                                   <p className={styles.playerMeta}>{player.position} • {player.team}</p>
                                 </div>
                               </div>
-                              {player.locked ? <Lock size={12} /> : null}
                             </div>
 
                             <div className={styles.playerRowDesktop}>
@@ -1807,10 +1810,15 @@ export function DashboardView() {
                                   </div>
                                 </div>
                               </div>
-                              {player.locked ? <Lock size={12} /> : null}
                             </div>
                           </button>
                         ))}
+                        {hiddenPlayersCount > 0 ? (
+                          <Surface className={styles.freePlayersUpgradeHint}>
+                            <p>Todos os jogadores ficam disponíveis no Pro.</p>
+                            <Button size="sm" variant="secondary" onClick={openUpgradeSurface}>Ver planos Pro</Button>
+                          </Surface>
+                        ) : null}
                       </div>
                     ) : null}
                   </TabsContent>

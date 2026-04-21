@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { LinhaCashLogo, ThemeToggle } from '@/components/layout';
 
 export function PublicNav() {
@@ -9,8 +8,8 @@ export function PublicNav() {
         <LinhaCashLogo href="/" ariaLabel="LinhaCash home" />
         <nav className="lc-public-actions">
           <ThemeToggle compact />
-          <Link href="/login">
-            <Button size="sm">Começar grátis</Button>
+          <Link href="/login" className="lc-btn lc-btn-sm lc-public-login-cta">
+            Entrar/Criar Conta
           </Link>
         </nav>
       </div>

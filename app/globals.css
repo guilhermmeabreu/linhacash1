@@ -519,7 +519,7 @@ textarea {
 }
 .lc-hero p { color: color-mix(in srgb, var(--lc-text) 64%, var(--lc-muted) 36%); max-width: 33ch; margin: 0 auto; text-wrap: pretty; line-height: 1.45; font-size: clamp(0.95rem, 1.7vw, 1.15rem); }
 .lc-hero p span { color: var(--lc-accent); font-weight: 700; }
-.lc-hero small { color: var(--lc-muted); font-size: 0.75rem; }
+.lc-hero small { color: var(--lc-muted); font-size: 0.75rem; margin-top: -0.2rem; }
 .lc-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; margin-top: .55rem; }
 .lc-hero-secondary-cta { text-decoration: none; }
 .lc-hero-secondary-cta .lc-btn-secondary { border-color: var(--lc-accent); color: var(--lc-text); }
@@ -531,9 +531,8 @@ textarea {
   color: var(--lc-muted);
   text-decoration: none;
   font-size: 0.64rem;
-  text-transform: uppercase;
   letter-spacing: 0.11em;
-  gap: 0.2rem;
+  gap: 0.1rem;
   animation: none;
   opacity: 0.95;
   visibility: visible;
@@ -666,6 +665,21 @@ textarea {
   font-weight: 800;
 }
 .lc-public-actions a:hover { color: var(--lc-text); }
+.lc-public-actions .lc-public-login-cta {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  color: var(--lc-text);
+  border-color: color-mix(in srgb, var(--lc-border-strong) 70%, transparent);
+}
+html.dark .lc-public-actions .lc-public-login-cta {
+  background: #000000;
+}
+html.light .lc-public-actions .lc-public-login-cta {
+  background: #ffffff;
+  border-color: #cfd8e3;
+}
 html.light .lc-landing {
   background: linear-gradient(180deg, #f8fafc 0%, #f4f7fb 36%, #f6f8fb 100%);
 }
@@ -846,12 +860,10 @@ html.light .lc-hero p {
   }
 
   .lc-hero small {
-    order: 5;
-    margin-top: 0.2rem;
+    margin-top: -0.15rem;
   }
 
   .lc-scroll-hint {
-    order: 4;
     position: static;
     left: auto;
     bottom: auto;
