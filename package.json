@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "attribution:payload": "node scripts/buildAttributionPayload.mjs",
-    "security:resilience": "node scripts/security-resilience.mjs"
+    "security:resilience": "node scripts/security-resilience.mjs",
+    "security:preflight": "node scripts/security-preflight.mjs",
+    "security:audit": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.46.0",
