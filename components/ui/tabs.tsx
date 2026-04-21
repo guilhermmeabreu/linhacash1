@@ -56,6 +56,13 @@ interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
 export function TabsTrigger({ className, value, ...props }: TabsTriggerProps) {
   const tabs = useTabsContext();
   const isActive = tabs.value === value;
+  const { onClick, ...restProps } = props;
+
+  const handleClick = React.useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    if (event.defaultPrevented) return;
+    tabs.setValue(value);
+  }, [onClick, tabs, value]);
 
   return (
     <button
@@ -63,8 +70,8 @@ export function TabsTrigger({ className, value, ...props }: TabsTriggerProps) {
       aria-selected={isActive}
       type="button"
       className={cn('lc-tab-trigger', isActive && 'is-active', className)}
-      onClick={() => tabs.setValue(value)}
-      {...props}
+      onClick={handleClick}
+      {...restProps}
     />
   );
 }
