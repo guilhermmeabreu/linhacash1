@@ -7,6 +7,7 @@ import { requireEnv } from '@/lib/env';
 import { getStripeServerClient } from '@/lib/stripe/server';
 import { getIP, rateLimitDetailed } from '@/lib/rate-limit';
 import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { requireActiveReferralCode } from '@/lib/services/referral-service';
 
 type StripePlan = 'monthly' | 'annual' | 'playoff';
 
@@ -102,6 +103,7 @@ export async function POST(req: Request) {
   let userId: string | null = null;
   let plan: StripePlan | null = null;
   let selectedPrice: PlanPriceConfig | null = null;
+  let resolvedReferralCode: string | null = null;
 
   try {
     const user = await requireAuthenticatedUser(req);
@@ -116,6 +118,18 @@ export async function POST(req: Request) {
     const body = await readJsonObject(req);
     plan = parsePlan(body.plan);
     selectedPrice = getPlanPriceConfig(plan);
+    const requestedReferralCode = typeof body.referralCode === 'string' ? body.referralCode.trim() : '';
+    if (requestedReferralCode) {
+      const referral = await requireActiveReferralCode(requestedReferralCode);
+      resolvedReferralCode = referral.code;
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ referral_code_used: referral.code })
+        .eq('id', user.id);
+      if (profileUpdateError) {
+        throw profileUpdateError;
+      }
+    }
 
     const appUrl = requireEnv('NEXT_PUBLIC_APP_URL').replace(/\/$/, '');
     const stripeCustomerId = await resolveStripeCustomerId(user.id, user.email, user.name);
@@ -131,6 +145,7 @@ export async function POST(req: Request) {
       metadata: {
         user_id: user.id,
         plan,
+        ...(resolvedReferralCode ? { referral_code: resolvedReferralCode } : {}),
       },
       ...(plan === 'monthly'
         ? { subscription_data: { trial_period_days: 7, metadata: { user_id: user.id, plan } } }
