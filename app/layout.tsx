@@ -1,12 +1,24 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+const homeSeoDescription =
+  'LinhaCash é uma plataforma brasileira de análise de dados para props da NBA, com estatísticas avançadas, tendências e matchups em tempo real.';
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'LinhaCash',
+  url: 'https://linhacash.com.br',
+  logo: 'https://linhacash.com.br/favicon.ico',
+  description: homeSeoDescription,
+};
+
 export const metadata: Metadata = {
   title: {
     default: 'LinhaCash | Análise para NBA',
     template: '%s | LinhaCash',
   },
-  description: 'Plataforma de análise avançada para NBA com dados de props, tendências e desempenho.',
+  description: homeSeoDescription,
   keywords: [
     'NBA',
     'props NBA',
@@ -21,7 +33,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: 'LinhaCash | Análise para NBA',
-    description: 'Dados avançados de NBA para análise de props e desempenho.',
+    description: homeSeoDescription,
     url: 'https://linhacash.com.br',
     siteName: 'LinhaCash',
     images: [
@@ -38,7 +50,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
-      { url: '/favicon.ico' },
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
     ],
@@ -59,6 +71,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd).replace(/</g, '\\u003c'),
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>
