@@ -72,7 +72,7 @@ export default function LandingPage() {
               <Button variant="secondary" size="lg">Ver planos</Button>
             </a>
           </div>
-          <small>2 dias de teste grátis · plano gratuito disponível</small>
+          <small>7 dias grátis no plano mensal · plano gratuito disponível</small>
           <a className="lc-scroll-hint" href="#como-funciona" aria-label="Ver mais conteúdo">
             <ArrowDown size={16} />
             <span>Role para ver mais</span>

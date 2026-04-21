@@ -74,11 +74,13 @@ type Split = (typeof SPLITS)[number];
 type MetricsWindow = 'L5' | 'L10' | 'L20' | 'L30' | 'SEASON' | 'CURRENT_SEASON' | 'PREV_SEASON';
 
 type Plan = 'free' | 'pro';
-type UpgradePlan = 'monthly';
+type UpgradePlan = 'monthly' | 'annual';
 type DashboardViewMode = 'games' | 'players' | 'detail' | 'profile';
 type Theme = 'dark' | 'light';
 type SupportSurface = 'faq' | 'support' | 'bug' | 'delete' | null;
 const SUPPORT_SUBJECT_OPTIONS = ['Assinatura / cobrança', 'Acesso / conta', 'Erro técnico', 'Sugestão / melhoria', 'Outro'] as const;
+const MONTHLY_PLAN_PRICE = 'R$24,90/mês';
+const ANNUAL_PLAN_PRICE = 'R$197/ano';
 
 type Game = {
   id: number;
@@ -485,7 +487,7 @@ export function DashboardView() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [isDesktopCheckoutViewport, setIsDesktopCheckoutViewport] = useState(false);
-  const upgradePlan: UpgradePlan = 'monthly';
+  const [upgradePlan, setUpgradePlan] = useState<UpgradePlan>('monthly');
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
@@ -1410,6 +1412,14 @@ export function DashboardView() {
   const profileInitial = profileName.slice(0, 1).toUpperCase();
   const profilePlanLabel = plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito';
   const canManageSubscription = plan === 'pro';
+  const isMonthlyUpgrade = upgradePlan === 'monthly';
+  const selectedPlanPrice = isMonthlyUpgrade ? MONTHLY_PLAN_PRICE : ANNUAL_PLAN_PRICE;
+  const selectedPlanHeadline = isMonthlyUpgrade ? 'Plano Mensal' : 'Plano Anual';
+  const selectedPlanDescription = isMonthlyUpgrade
+    ? '7 dias grátis para testar todos os recursos. Depois: cobrança mensal recorrente.'
+    : 'Cobrança anual recorrente. Sem período de teste no plano anual.';
+  const selectedPlanCta = isMonthlyUpgrade ? 'INICIAR 7 DIAS GRÁTIS' : 'ASSINAR PLANO ANUAL';
+  const selectedPlanSupportLine = isMonthlyUpgrade ? 'Depois do período grátis: R$24,90/mês.' : 'Cobrança recorrente de R$197/ano.';
 
   const handleLogout = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -1896,7 +1906,7 @@ export function DashboardView() {
                         <small>
                           {plan === 'pro'
                             ? `PRO ativo${billing?.isPaidPro ? ' · assinatura Stripe' : billing?.isManualPro ? ' · acesso concedido' : ''}`
-                            : 'R$24,90/mês · 7 dias grátis no plano mensal'}
+                            : `${MONTHLY_PLAN_PRICE} · 7 dias grátis no Mensal · ${ANNUAL_PLAN_PRICE} no Anual`}
                         </small>
                       </div>
                       {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
@@ -2034,11 +2044,24 @@ export function DashboardView() {
                 ) : (
                   <>
                     <section className={styles.upgradePlansDesktopGrid}>
-                      <div className={`${styles.upgradePlanBtn} ${styles.isSelected}`}>
-                        <span>Mensal Pro</span>
-                        <strong>R$24,90/mês</strong>
+                      <button
+                        type="button"
+                        className={`${styles.upgradePlanBtn} ${styles.upgradePlanMonthly} ${isMonthlyUpgrade ? styles.isSelected : ''}`}
+                        onClick={() => setUpgradePlan('monthly')}
+                      >
+                        <span>Mensal</span>
+                        <strong>{MONTHLY_PLAN_PRICE}</strong>
                         <small>7 dias grátis para experimentar todos os recursos.</small>
-                      </div>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.upgradePlanBtn} ${styles.upgradePlanAnnual} ${!isMonthlyUpgrade ? styles.isSelected : ''}`}
+                        onClick={() => setUpgradePlan('annual')}
+                      >
+                        <span>Anual</span>
+                        <strong>{ANNUAL_PLAN_PRICE}</strong>
+                        <small>Cobrança anual recorrente, sem período de teste.</small>
+                      </button>
                     </section>
 
                     <section className={styles.upgradeDesktopLower}>
@@ -2071,9 +2094,9 @@ export function DashboardView() {
                         </section>
                         <footer className={styles.upgradeFooterDesktop}>
                           <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
-                            {upgradeLoading ? 'Abrindo checkout...' : 'INICIAR 7 DIAS GRÁTIS'}
+                            {upgradeLoading ? 'Abrindo checkout...' : selectedPlanCta}
                           </Button>
-                          <p className={styles.upgradeSupportLine}>Depois do período grátis: R$24,90/mês.</p>
+                          <p className={styles.upgradeSupportLine}>{selectedPlanSupportLine}</p>
                         </footer>
                       </div>
                     </section>
@@ -2122,15 +2145,26 @@ export function DashboardView() {
 
                       <div className={styles.upgradeSheetBody}>
                         <section className={styles.upgradePlanSelector}>
-                          <div className={`${styles.upgradePlanChip} ${styles.isSelected}`}>
-                            <span>Mensal Pro</span>
-                          </div>
+                          <button
+                            type="button"
+                            className={`${styles.upgradePlanChip} ${isMonthlyUpgrade ? styles.isSelected : ''}`}
+                            onClick={() => setUpgradePlan('monthly')}
+                          >
+                            <span>Mensal</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.upgradePlanChip} ${styles.upgradePlanChipAnnual} ${!isMonthlyUpgrade ? styles.isSelected : ''}`}
+                            onClick={() => setUpgradePlan('annual')}
+                          >
+                            <span>Anual</span>
+                          </button>
                         </section>
 
                       <section className={styles.upgradePriceHighlight}>
-                        <small>PLANO MENSAL PRO</small>
-                        <strong>R$ 24,90</strong>
-                        <p>7 dias grátis para testar o Pro completo. Depois: cobrança mensal recorrente.</p>
+                        <small>{selectedPlanHeadline}</small>
+                        <strong>{selectedPlanPrice}</strong>
+                        <p>{selectedPlanDescription}</p>
                       </section>
 
                       <section className={styles.upgradeBenefits}>
@@ -2160,9 +2194,9 @@ export function DashboardView() {
 
                       <footer className={styles.upgradeFooter}>
                         <Button size="lg" onClick={startCheckout} disabled={upgradeLoading}>
-                          {upgradeLoading ? 'Abrindo checkout...' : 'INICIAR 7 DIAS GRÁTIS'}
+                          {upgradeLoading ? 'Abrindo checkout...' : selectedPlanCta}
                         </Button>
-                        <p className={styles.upgradeSupportLine}>Depois do período grátis: R$24,90/mês.</p>
+                        <p className={styles.upgradeSupportLine}>{selectedPlanSupportLine}</p>
                       </footer>
                     </div>
                   )}

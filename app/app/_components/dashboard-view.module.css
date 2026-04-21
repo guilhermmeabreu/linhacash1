@@ -980,7 +980,7 @@
 
 .upgradePlansDesktopGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -1131,7 +1131,7 @@
 
 .upgradePlanSelector {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.35rem;
   padding: 0.22rem;
   border: 1px solid var(--lc-border);
@@ -1141,6 +1141,8 @@
 .upgradePlanChip {
   border: 1px solid transparent;
   background: transparent;
+  appearance: none;
+  border-radius: 8px;
   min-height: 2rem;
   display: inline-flex;
   align-items: center;
@@ -1610,6 +1612,20 @@ html.light .upgradeSecurity {
   border-color: transparent;
 }
 
+html.light .upgradeSubtitle,
+html.light .upgradePriceHighlight p,
+html.light .upgradePlanBtn small,
+html.light .upgradeSupportLine,
+html.light .upgradeReferral p,
+html.light .upgradeSecurity small {
+  color: #3f4b5d;
+}
+
+html.light .upgradePriceHighlight small,
+html.light .upgradePlanBtn span {
+  color: #4d5e76;
+}
+
 .errorBox {
   margin-top: 0.8rem;
   display: flex;
@@ -1628,9 +1644,9 @@ html.light .upgradeSecurity {
   margin-top: 0;
   font-family: var(--lc-font-mono);
   font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   line-height: 1.1;
-  text-transform: uppercase;
+  text-transform: none;
   color: color-mix(in srgb, var(--lc-text) 84%, var(--lc-muted) 16%);
 }
 
