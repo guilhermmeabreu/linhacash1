@@ -13,7 +13,7 @@ A plataforma foi construída para oferecer um fluxo estruturado de análise espo
 ## Funcionalidades principais
 
 - **Pipeline NBA**: sincronização server-side de jogos, jogadores, estatísticas e métricas derivadas.
-- **Dashboard de análise**: filtros por janela (L5/L10/L20/L30/Season), split (home/away/all) e contexto por oponente.
+- **Dashboard de análise**: filtros por janela (L5/L10/L20/L30/Season) e contexto por oponente.
 - **Autenticação e perfil**: fluxos de conta baseados em Supabase Auth.
 - **Assinaturas e cobrança**: checkout Stripe, portal do cliente e reconciliação de acesso por webhook.
 - **Operação administrativa**: APIs de overview, usuários, referrals, comissões e logs de sync.
