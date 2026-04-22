@@ -70,6 +70,7 @@ const STATS = ['PTS', 'AST', 'REB', '3PM', 'PA', 'PR', 'PRA', 'AR', 'DD', 'TD', 
 const FREE_STATS = ['PTS', '3PM'] as const;
 const FREE_SPLITS = ['L5', 'L30'] as const;
 type Stat = (typeof STATS)[number];
+const BINARY_LINE_STATS = new Set<Stat>(['DD', 'TD']);
 const SPLITS = ['L5', 'L10', 'L20', 'L30', 'Season', 'H2H'] as const;
 type Split = (typeof SPLITS)[number];
 type MetricsWindow = 'L5' | 'L10' | 'L20' | 'L30' | 'SEASON' | 'CURRENT_SEASON' | 'PREV_SEASON';
@@ -244,6 +245,25 @@ function shortTeamName(name: string) {
     .slice(-1)[0]
     ?.slice(0, 3)
     .toUpperCase();
+}
+
+function isBinaryLineStat(stat: Stat) {
+  return BINARY_LINE_STATS.has(stat);
+}
+
+function getMinimumLineForStat(stat: Stat) {
+  return isBinaryLineStat(stat) ? 0.5 : 0;
+}
+
+function sanitizeLineForStat(stat: Stat, value: number) {
+  const minimumLine = getMinimumLineForStat(stat);
+  if (!Number.isFinite(value)) return minimumLine;
+  return Math.max(minimumLine, Number(value.toFixed(1)));
+}
+
+function formatLineLabel(stat: Stat, value: number | null | undefined) {
+  const safeValue = sanitizeLineForStat(stat, Number(value ?? getMinimumLineForStat(stat)));
+  return isBinaryLineStat(stat) ? `${safeValue.toFixed(1)}+` : safeValue.toFixed(1);
 }
 
 const TEAM_LOGO_FALLBACK_BY_KEY: Record<string, string> = {
@@ -1511,9 +1531,10 @@ export function DashboardView() {
     const games = scopedGames;
     const values = games.map((sample) => sample.value);
     const lineBase = Number(payload?.metrics?.line ?? payload?.metrics?.avg_l10 ?? 0);
-    const apiLine = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : 0.5;
+    const minimumLine = getMinimumLineForStat(selectedStat);
+    const apiLine = Number.isFinite(lineBase) && lineBase > 0 ? Math.round(lineBase * 2) / 2 : minimumLine;
     const manualLine = lineContextKey ? manualLineByContext[lineContextKey] : undefined;
-    const line = typeof manualLine === 'number' ? manualLine : apiLine;
+    const line = sanitizeLineForStat(selectedStat, typeof manualLine === 'number' ? manualLine : apiLine);
     const selectedAverage = Number(payload?.metrics?.selected_avg);
     const average = Number.isFinite(selectedAverage)
       ? selectedAverage
@@ -1895,18 +1916,18 @@ export function DashboardView() {
                       type="button"
                       onClick={() => {
                         if (!lineContextKey || !effectivePlayerDetailModel) return;
-                        const nextValue = Math.max(0, Number((effectivePlayerDetailModel.line - 0.5).toFixed(1)));
+                        const nextValue = sanitizeLineForStat(selectedStat, effectivePlayerDetailModel.line - 0.5);
                         setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
                       }}
                     >
                       <Minus size={16} />
                     </button>
-                    <strong>{effectivePlayerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
+                    <strong>{formatLineLabel(selectedStat, effectivePlayerDetailModel?.line)}</strong>
                     <button
                       type="button"
                       onClick={() => {
                         if (!lineContextKey || !effectivePlayerDetailModel) return;
-                        const nextValue = Number((effectivePlayerDetailModel.line + 0.5).toFixed(1));
+                        const nextValue = sanitizeLineForStat(selectedStat, effectivePlayerDetailModel.line + 0.5);
                         setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
                       }}
                     >
@@ -1957,7 +1978,7 @@ export function DashboardView() {
                     <div className={styles.chartHeader}>
                       <p className={styles.chartTitle}>{selectedStat} · {selectedSplit}</p>
                       <div className={styles.chartHeaderBadges}>
-                        <Badge variant="muted">Linha {effectivePlayerDetailModel.line.toFixed(1)}</Badge>
+                        <Badge variant="muted">Linha {formatLineLabel(selectedStat, effectivePlayerDetailModel.line)}</Badge>
                         <Badge variant="muted">Média {effectivePlayerDetailModel.average ?? '—'}</Badge>
                       </div>
                     </div>
@@ -2056,18 +2077,18 @@ export function DashboardView() {
                         type="button"
                         onClick={() => {
                           if (!lineContextKey || !effectivePlayerDetailModel) return;
-                          const nextValue = Math.max(0, Number((effectivePlayerDetailModel.line - 0.5).toFixed(1)));
+                          const nextValue = sanitizeLineForStat(selectedStat, effectivePlayerDetailModel.line - 0.5);
                           setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
                         }}
                       >
                         <Minus size={16} />
                       </button>
-                      <strong>{effectivePlayerDetailModel?.line.toFixed(1) ?? '0.0'}</strong>
+                      <strong>{formatLineLabel(selectedStat, effectivePlayerDetailModel?.line)}</strong>
                       <button
                         type="button"
                         onClick={() => {
                           if (!lineContextKey || !effectivePlayerDetailModel) return;
-                          const nextValue = Number((effectivePlayerDetailModel.line + 0.5).toFixed(1));
+                          const nextValue = sanitizeLineForStat(selectedStat, effectivePlayerDetailModel.line + 0.5);
                           setManualLineByContext((prev) => ({ ...prev, [lineContextKey]: nextValue }));
                         }}
                       >

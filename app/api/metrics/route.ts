@@ -13,6 +13,7 @@ const supabase = createClient(
 
 const FREE_STATS = ['PTS', '3PM'];
 const ALL_STATS = ['PTS', 'AST', 'REB', '3PM', 'PA', 'PR', 'PRA', 'AR', 'DD', 'TD', 'STEAL', 'BLOCKS', 'SB', 'FG2A', 'FG3A'];
+const BINARY_OUTCOME_STATS = new Set(['DD', 'TD']);
 const LEGACY_STAT_ALIASES: Record<string, string> = {
   'P+A': 'PA',
   'P+R': 'PR',
@@ -406,6 +407,12 @@ function hitRate(values: number[], line: number): number {
   return Number(((hits / values.length) * 100).toFixed(1));
 }
 
+function resolveLineForStat(stat: string, rawLine: number): number {
+  const minimumLine = BINARY_OUTCOME_STATS.has(stat) ? 0.5 : 0;
+  if (!Number.isFinite(rawLine)) return minimumLine;
+  return Math.max(minimumLine, Number(rawLine.toFixed(1)));
+}
+
 function buildRuntimeMetrics(
   playerId: number,
   stat: string,
@@ -417,7 +424,7 @@ function buildRuntimeMetrics(
 ) {
   const filteredValues = filteredGames.map((row) => row.value);
   const l10Values = filteredValues.slice(0, 10);
-  const line = Number((persistedMetrics?.avg_l10 ?? avg(l10Values)).toFixed(1));
+  const line = resolveLineForStat(stat, persistedMetrics?.avg_l10 ?? avg(l10Values));
 
   return {
     player_id: playerId,
