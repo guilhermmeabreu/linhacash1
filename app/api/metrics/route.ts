@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateSession, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimitDetailed, getIP } from '@/lib/rate-limit';
 import { getCachedValue } from '@/lib/cache/memory-cache';
-import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { buildRequestContext, logHotPathRead, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,10 +24,18 @@ type MetricsWindow = (typeof SUPPORTED_WINDOWS)[number];
 
 const SUPPORTED_SPLITS = ['ALL', 'HOME', 'AWAY'] as const;
 type MetricsSplit = (typeof SUPPORTED_SPLITS)[number];
+type PersistedMetricRow = {
+  avg_l5?: number | null;
+  avg_l10?: number | null;
+  avg_l20?: number | null;
+  avg_l30?: number | null;
+  avg_season?: number | null;
+};
 
 // GET /api/metrics?playerId=xxx&stat=PTS — métricas de um jogador
 export async function GET(req: Request) {
   const context = buildRequestContext(req, { route: '/api/metrics' });
+  const startedAt = Date.now();
   try {
     const session = await validateSession(req);
     if (!session.valid) {
@@ -61,31 +69,15 @@ export async function GET(req: Request) {
     }
 
     const parsedPlayerId = parseInt(playerId, 10);
-    const cacheKey = `metrics:${session.plan}:${parsedPlayerId}:${stat}:${window}:${split}:${opponentTeamId || 0}:${selectedGameId || 0}:${opponent || 'all'}`;
+    const cacheKey = `metrics:${parsedPlayerId}:${stat}:${window}:${split}:${opponentTeamId || 0}:${selectedGameId || 0}:${opponent || 'all'}`;
     const payload = await getCachedValue(cacheKey, 2 * 60_000, async () => {
-      const { data: recentStats, error } = await supabase
-        .from('player_stats')
-        .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fgm,fga,steals,blocks,fg2a,fg3a,three_pa')
-        .eq('player_id', parsedPlayerId)
-        .order('game_date', { ascending: false })
-        .limit(300);
-
-      if (error) throw error;
-
-      const allGames = (recentStats || []).map((row) => ({
-        game_id: asNumber(row.game_id) || null,
-        date: row.game_date,
-        opponent: row.opponent?.trim() || null,
-        is_home: row.is_home ?? null,
-        value: getStatValue(row, stat),
-        minutes: row.minutes,
-      }));
+      const { allGames, persistedMetrics } = await loadPlayerMetricsBase(parsedPlayerId, stat);
 
       const filteredGames = applySplitAndOpponent(allGames, split, opponent, opponentTeamId, selectedGameId);
       const scopedGames = applyWindow(filteredGames, window);
       const scopedValues = scopedGames.map((row) => row.value);
 
-      const metrics = buildRuntimeMetrics(parsedPlayerId, stat, allGames, filteredGames, scopedGames, scopedValues);
+      const metrics = buildRuntimeMetrics(parsedPlayerId, stat, allGames, filteredGames, scopedGames, scopedValues, persistedMetrics);
 
       return {
         metrics,
@@ -108,6 +100,20 @@ export async function GET(req: Request) {
       };
     });
 
+    logHotPathRead('/api/metrics', {
+      requestId: context.requestId,
+      userId: session.userId || null,
+      cacheKey,
+      cacheTtlMs: 2 * 60_000,
+      durationMs: Date.now() - startedAt,
+      rowCount: payload.games.length,
+      playerId: parsedPlayerId,
+      stat,
+      window,
+      split,
+      opponent: opponent || 'all',
+    });
+
     return okResponse({
       metrics: payload.metrics,
       games: payload.games,
@@ -123,6 +129,42 @@ export async function GET(req: Request) {
     logRouteError('/api/metrics', context.requestId, error, { status: 500, provider: 'supabase' });
     return errorResponse('Erro ao buscar métricas', 500);
   }
+}
+
+async function loadPlayerMetricsBase(playerId: number, stat: string): Promise<{ allGames: RuntimeGame[]; persistedMetrics: PersistedMetricRow | null }> {
+  return getCachedValue(`metrics-base:${playerId}:${stat}`, 5 * 60_000, async () => {
+    const [statsResult, persistedResult] = await Promise.all([
+      supabase
+        .from('player_stats')
+        .select('game_id,game_date,minutes,is_home,opponent,points,rebounds,assists,three_pointers,fga,steals,blocks,fg2a,fg3a,three_pa')
+        .eq('player_id', playerId)
+        .order('game_date', { ascending: false })
+        .limit(300),
+      supabase
+        .from('player_metrics')
+        .select('avg_l5,avg_l10,avg_l20,avg_l30,avg_season')
+        .eq('player_id', playerId)
+        .eq('stat', stat)
+        .maybeSingle(),
+    ]);
+
+    if (statsResult.error) throw statsResult.error;
+    if (persistedResult.error) throw persistedResult.error;
+
+    const allGames = (statsResult.data || []).map((row) => ({
+      game_id: asNumber(row.game_id) || null,
+      date: row.game_date,
+      opponent: row.opponent?.trim() || null,
+      is_home: row.is_home ?? null,
+      value: getStatValue(row, stat),
+      minutes: row.minutes,
+    }));
+
+    return {
+      allGames,
+      persistedMetrics: (persistedResult.data || null) as PersistedMetricRow | null,
+    };
+  });
 }
 
 function normalizeStat(rawStat: string | null): string {
@@ -156,7 +198,6 @@ type PlayerStatRow = {
   rebounds: number | null;
   assists: number | null;
   three_pointers: number | null;
-  fgm: number | null;
   fga: number | null;
   steals?: number | null;
   blocks?: number | null;
@@ -372,19 +413,20 @@ function buildRuntimeMetrics(
   filteredGames: RuntimeGame[],
   scopedGames: RuntimeGame[],
   scopedValues: number[],
+  persistedMetrics: PersistedMetricRow | null,
 ) {
   const filteredValues = filteredGames.map((row) => row.value);
   const l10Values = filteredValues.slice(0, 10);
-  const line = avg(l10Values);
+  const line = Number((persistedMetrics?.avg_l10 ?? avg(l10Values)).toFixed(1));
 
   return {
     player_id: playerId,
     stat,
-    avg_l5: avg(filteredValues.slice(0, 5)),
-    avg_l10: line,
-    avg_l20: avg(filteredValues.slice(0, 20)),
-    avg_l30: avg(filteredValues.slice(0, 30)),
-    avg_season: avg(filteredValues),
+    avg_l5: resolveMetricValue(filteredValues.slice(0, 5), persistedMetrics?.avg_l5),
+    avg_l10: resolveMetricValue(l10Values, persistedMetrics?.avg_l10),
+    avg_l20: resolveMetricValue(filteredValues.slice(0, 20), persistedMetrics?.avg_l20),
+    avg_l30: resolveMetricValue(filteredValues.slice(0, 30), persistedMetrics?.avg_l30),
+    avg_season: resolveMetricValue(filteredValues, persistedMetrics?.avg_season),
     avg_home: avg(allGames.filter((row) => row.is_home === true).map((row) => row.value)),
     avg_away: avg(allGames.filter((row) => row.is_home === false).map((row) => row.value)),
     hit_rate_l10: hitRate(l10Values, line),
@@ -394,6 +436,13 @@ function buildRuntimeMetrics(
     selected_avg: avg(scopedValues),
     selected_hit_rate: hitRate(scopedValues, line),
   };
+}
+
+function resolveMetricValue(fallbackValues: number[], persistedValue: number | null | undefined): number {
+  if (typeof persistedValue === 'number' && Number.isFinite(persistedValue)) {
+    return Number(persistedValue.toFixed(1));
+  }
+  return avg(fallbackValues);
 }
 
 // OPTIONS

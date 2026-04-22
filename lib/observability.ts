@@ -72,6 +72,25 @@ export function logRouteError(route: string, requestId: string, error: unknown, 
   );
 }
 
+export function logHotPathRead(route: string, payload: {
+  requestId: string;
+  durationMs: number;
+  cacheKey?: string;
+  cacheTtlMs?: number;
+  userId?: string | null;
+  rowCount?: number;
+  [key: string]: unknown;
+}) {
+  console.info(
+    '[route-read]',
+    JSON.stringify({
+      route,
+      ts: new Date().toISOString(),
+      ...payload,
+    }),
+  );
+}
+
 export function buildRequestContext(req: Request, extra?: Record<string, unknown>) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
   return {

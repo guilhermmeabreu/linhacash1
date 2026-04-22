@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateSession, sanitizePlayer, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 import { getCachedValue } from '@/lib/cache/memory-cache';
-import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { buildRequestContext, logHotPathRead, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -104,6 +104,7 @@ function rankPlayersForProps(players: PlayerRow[], statRows: PlayerStatRow[]): P
 // GET /api/players?gameId=xxx — jogadores de um jogo
 export async function GET(req: Request) {
   const context = buildRequestContext(req, { route: '/api/players' });
+  const startedAt = Date.now();
   try {
     const session = await validateSession(req);
     if (!session.valid) {
@@ -120,7 +121,9 @@ export async function GET(req: Request) {
     const gameId = searchParams.get('gameId');
     if (!gameId || !/^\d+$/.test(gameId)) return errorResponse('gameId inválido');
 
-    const result = await getCachedValue(`players:${gameId}:${session.plan}`, 120_000, async () => {
+    const cacheKey = `players:${gameId}`;
+    const cacheTtlMs = 120_000;
+    const result = await getCachedValue(cacheKey, cacheTtlMs, async () => {
       const { data: game, error: gameError } = await supabase
         .from('games')
         .select('id, home_team_id, away_team_id')
@@ -171,6 +174,16 @@ export async function GET(req: Request) {
 
     if (result === 'not_found') return errorResponse('Jogo não encontrado', 404);
     if (!result) return errorResponse('Erro ao buscar jogadores', 500);
+
+    logHotPathRead('/api/players', {
+      requestId: context.requestId,
+      userId: session.userId || null,
+      cacheKey,
+      cacheTtlMs,
+      durationMs: Date.now() - startedAt,
+      rowCount: result.length,
+      gameId,
+    });
 
     return okResponse({ players: result });
   } catch (error) {
