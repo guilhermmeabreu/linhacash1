@@ -921,6 +921,18 @@
   overflow-wrap: anywhere;
 }
 
+.profilePlanStatusBadge {
+  min-width: 4.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  flex-shrink: 0;
+}
+
 .profileRowActive {
   border-color: color-mix(in srgb, var(--lc-accent) 48%, var(--lc-border) 52%);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc-accent) 20%, transparent);

@@ -2113,7 +2113,7 @@ export function DashboardView() {
                         <span>Gratuito</span>
                         <small>Todos os jogos visíveis · Acesso parcial às estatísticas</small>
                       </div>
-                      {plan === 'free' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
+                      {plan === 'free' ? <Badge variant="success" className={styles.profilePlanStatusBadge}>Ativo</Badge> : <ChevronRight size={14} />}
                     </div>
                     <button type="button" className={`${styles.profileRow} technical-item ${plan === 'pro' ? styles.profileRowActive : ''}`} onClick={openUpgradeSurface}>
                       <div className={styles.profileRowContent}>
@@ -2124,7 +2124,7 @@ export function DashboardView() {
                             : `${MONTHLY_PLAN_PRICE} · 7 dias grátis no Mensal · ${ANNUAL_PLAN_PRICE} no Anual`}
                         </small>
                       </div>
-                      {plan === 'pro' ? <Badge variant="success">Ativo</Badge> : <ChevronRight size={14} />}
+                      {plan === 'pro' ? <Badge variant="success" className={styles.profilePlanStatusBadge}>Ativo</Badge> : <ChevronRight size={14} />}
                     </button>
                   </div>
                 </Surface>
