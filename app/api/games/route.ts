@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateSession, sanitizeGame, errorResponse, okResponse, corsHeaders } from '@/lib/security';
 import { rateLimitDetailed, getIP } from '@/lib/rate-limit';
 import { getCachedValue } from '@/lib/cache/memory-cache';
-import { buildRequestContext, logRouteError, logSecurityEvent } from '@/lib/observability';
+import { buildRequestContext, logHotPathRead, logRouteError, logSecurityEvent } from '@/lib/observability';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -114,6 +114,7 @@ function isInVisibleSlateWindow(gameTime: string | null | undefined, visibleDayK
 // GET /api/games — slate visível do dashboard (regra BRT)
 export async function GET(req: Request) {
   const context = buildRequestContext(req, { route: '/api/games' });
+  const startedAt = Date.now();
   const session = await validateSession(req);
   if (!session.valid) {
     logSecurityEvent('auth_failed', { ...context, reason: session.error || 'unauthorized' });
@@ -149,6 +150,16 @@ export async function GET(req: Request) {
   });
 
   if (!result) return errorResponse('Erro ao buscar jogos', 500);
+
+  logHotPathRead('/api/games', {
+    requestId: context.requestId,
+    userId: session.userId || null,
+    cacheKey: `games:${visibleDay}:cutoff-${DASHBOARD_CUTOFF_HOUR}`,
+    cacheTtlMs: 30_000,
+    durationMs: Date.now() - startedAt,
+    rowCount: result.length,
+    visibleDay,
+  });
 
   return okResponse({ games: result, date: visibleDay });
 }
