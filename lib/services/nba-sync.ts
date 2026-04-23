@@ -21,6 +21,7 @@ type SyncSummary = {
     hasRunningSync: boolean | null;
     inProcessRunAlready: boolean;
     distributedLock: 'acquired' | 'locked' | 'unavailable' | null;
+    playerTeamReconciled?: number;
   };
 };
 
@@ -226,6 +227,12 @@ function normalizePlayer(player: ApiSportsPlayer, teamId: number, teamName: stri
     position: player.leagues?.standard?.pos || '',
     photo: player.photo || null,
   };
+}
+
+function parseApiDate(value: string | null | undefined): number {
+  if (!value) return 0;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 type OpponentContext = {
@@ -848,7 +855,9 @@ async function runSyncCore(
       : [...teamIds];
   let playersSynced = 0;
   let playerStatsSynced = 0;
+  let playerTeamReconciled = 0;
   const syncedPlayerApiIds: number[] = [];
+  const latestTeamAssignmentByApi = new Map<number, { teamId: number; teamName: string; observedAt: number }>();
 
   for (const teamId of selectedTeamIds) {
     const playersRaw = await apiProvider.getPlayersByTeam(teamId, season, signal);
@@ -975,6 +984,20 @@ async function runSyncCore(
           if (!internalPlayerId) {
             return null;
           }
+          const statTeam = (stat as { team?: { id?: number | null; name?: string | null } }).team;
+          const statTeamId = toNumber(statTeam?.id);
+          const statTeamName = (statTeam?.name || '').trim();
+          if (statTeamId > 0 && statTeamName) {
+            const observedAt = parseApiDate(stat.game?.date) || Date.now();
+            const previous = latestTeamAssignmentByApi.get(statPlayerApiId);
+            if (!previous || observedAt >= previous.observedAt) {
+              latestTeamAssignmentByApi.set(statPlayerApiId, {
+                teamId: statTeamId,
+                teamName: statTeamName,
+                observedAt,
+              });
+            }
+          }
           const statGameApiId = toNumber(stat.game?.id);
           return normalizePlayerStat(internalPlayerId, apiGameToInternalGameId.get(statGameApiId) ?? null, stat, fallbackGameDate, {
             playerTeamName: playerTeamNameByApi.get(statPlayerApiId) ?? null,
@@ -1042,6 +1065,23 @@ async function runSyncCore(
     }
   }
 
+  if (latestTeamAssignmentByApi.size > 0) {
+    const reconciliationPayload = [...latestTeamAssignmentByApi.entries()].map(([apiId, assignment]) => ({
+      api_id: apiId,
+      team_id: assignment.teamId,
+      team: assignment.teamName,
+    }));
+
+    const { error: reconciliationError } = await supabase
+      .from('players')
+      .upsert(reconciliationPayload, { onConflict: 'api_id' });
+
+    if (reconciliationError) {
+      throw new Error(`players team reconciliation failed: ${reconciliationError.message}`);
+    }
+    playerTeamReconciled = reconciliationPayload.length;
+  }
+
   if (metricPlayerIds.size > 0) {
     const metricColumns = await detectTableColumns(supabase, 'player_metrics');
     await recomputePlayerMetrics(supabase, metricPlayerIds, metricColumns);
@@ -1061,6 +1101,14 @@ async function runSyncCore(
     playersSynced,
     playerStatsSynced,
     errors: [],
+    debug: {
+      requestId: null,
+      routeSource: null,
+      hasRunningSync: null,
+      inProcessRunAlready: false,
+      distributedLock: null,
+      playerTeamReconciled,
+    },
   };
 }
 
@@ -1217,6 +1265,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       startedAt,
       finishedAt,
       debug: {
+        ...(partial.debug || {}),
         ...debugBase,
         hasRunningSync: hasRunningSyncResult,
         inProcessRunAlready: false,

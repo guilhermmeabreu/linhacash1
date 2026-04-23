@@ -18,7 +18,7 @@ export type ApiSportsPlayer = {
 
 export type ApiSportsPlayerStat = {
   game?: { id?: number | null; date?: string | null };
-  team?: { name?: string | null };
+  team?: { id?: number | null; name?: string | null };
   points?: number | null;
   totReb?: number | null;
   assists?: number | null;
