@@ -32,18 +32,27 @@ export const metadata: Metadata = {
     'matchups NBA',
   ],
   openGraph: {
-    title: 'LinhaCash | Análise para NBA',
-    description: homeSeoDescription,
-    url: 'https://linhacash.com.br',
-    siteName: 'LinhaCash',
-    images: [
-      {
-        url: '/og-image.png',
-      },
-    ],
-    locale: 'pt_BR',
-    type: 'website',
-  },
+  title: 'LinhaCash | Análise para NBA',
+  description: homeSeoDescription,
+  url: 'https://linhacash.com.br',
+  siteName: 'LinhaCash',
+  images: [
+    {
+      url: 'https://linhacash.com.br/og-image.png',
+      width: 1200,
+      height: 630,
+    },
+  ],
+  locale: 'pt_BR',
+  type: 'website',
+},
+
+twitter: {
+  card: 'summary_large_image',
+  title: 'LinhaCash | Análise para NBA',
+  description: homeSeoDescription,
+  images: ['https://linhacash.com.br/og-image.png'],
+},
   verification: {
     google: 'Blk_U52ESbPN6YqttyCz5GNnGAlWc8wVkKbDw1Lmo-M',
   },
