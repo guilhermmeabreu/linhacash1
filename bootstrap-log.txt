@@ -1,0 +1,441 @@
+==============================
+Rodando bootstrap do time 7
+Fri Apr 17 23:41:38     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 104 games, 27 players and 936 player_stats upserted.","gamesSynced":104,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":936,"errors":[],"startedAt":"2026-04-18T02:41:38.573Z","finishedAt":"2026-04-18T02:45:21.784Z","debug":{"requestId":"a2e49177-1c39-4881-aaad-5ac651025dc9","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 7
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 10
+Fri Apr 17 23:45:32     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 99 games, 21 players and 977 player_stats upserted.","gamesSynced":99,"teamsSynced":1,"playersSynced":21,"playerStatsSynced":977,"errors":[],"startedAt":"2026-04-18T02:45:31.462Z","finishedAt":"2026-04-18T02:49:27.991Z","debug":{"requestId":"e3111615-82f9-4620-9653-70e2a0348ced","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 10
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 11
+Fri Apr 17 23:49:38     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 101 games, 25 players and 1023 player_stats upserted.","gamesSynced":101,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":1023,"errors":[],"startedAt":"2026-04-18T02:49:37.456Z","finishedAt":"2026-04-18T02:53:34.437Z","debug":{"requestId":"0226ed4d-6178-4269-a124-a8b6e4d29ecd","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 11
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 14
+Fri Apr 17 23:53:45     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 105 games, 18 players and 895 player_stats upserted.","gamesSynced":105,"teamsSynced":1,"playersSynced":18,"playerStatsSynced":895,"errors":[],"startedAt":"2026-04-18T02:53:43.810Z","finishedAt":"2026-04-18T02:57:25.967Z","debug":{"requestId":"6fb69e7c-b937-45a7-a3c8-6eb868d20263","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 14
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 15
+Fri Apr 17 23:57:36     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 99 games, 29 players and 950 player_stats upserted.","gamesSynced":99,"teamsSynced":1,"playersSynced":29,"playerStatsSynced":950,"errors":[],"startedAt":"2026-04-18T02:57:35.416Z","finishedAt":"2026-04-18T03:01:20.448Z","debug":{"requestId":"afe452a9-0b1b-4be3-ae55-e235d419fe8e","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 15
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 16
+Sat Apr 18 00:01:31     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 98 games, 26 players and 960 player_stats upserted.","gamesSynced":98,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":960,"errors":[],"startedAt":"2026-04-18T03:01:29.823Z","finishedAt":"2026-04-18T03:05:17.226Z","debug":{"requestId":"33ec50eb-27e6-418e-86f1-18c16af7f7f6","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 16
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 17
+Sat Apr 18 00:05:28     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 107 games, 26 players and 984 player_stats upserted.","gamesSynced":107,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":984,"errors":[],"startedAt":"2026-04-18T03:05:26.700Z","finishedAt":"2026-04-18T03:09:16.750Z","debug":{"requestId":"e3053e2f-8e86-4e25-858d-200b27a96eed","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 17
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 20
+Sat Apr 18 00:09:27     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 22 players and 968 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":968,"errors":[],"startedAt":"2026-04-18T03:09:26.247Z","finishedAt":"2026-04-18T03:13:05.841Z","debug":{"requestId":"c6c9dc08-754c-45fb-8d0d-a8d4e2aa44ac","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 20
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 21
+Sat Apr 18 00:13:16     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 100 games, 23 players and 973 player_stats upserted.","gamesSynced":100,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":973,"errors":[],"startedAt":"2026-04-18T03:13:15.329Z","finishedAt":"2026-04-18T03:17:04.586Z","debug":{"requestId":"15a99fd5-9f96-4e19-86d2-76654c436936","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 21
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 24
+Sat Apr 18 00:17:15     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 27 players and 1027 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":1027,"errors":[],"startedAt":"2026-04-18T03:17:13.968Z","finishedAt":"2026-04-18T03:21:03.384Z","debug":{"requestId":"f5a2ee70-5c38-413e-80af-8aecb13f7657","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 24
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 25
+Sat Apr 18 00:21:14     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 101 games, 22 players and 993 player_stats upserted.","gamesSynced":101,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":993,"errors":[],"startedAt":"2026-04-18T03:21:12.773Z","finishedAt":"2026-04-18T03:24:53.114Z","debug":{"requestId":"35943939-7627-497f-9fba-013f506d8d54","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 25
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 26
+Sat Apr 18 00:25:03     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 100 games, 22 players and 1003 player_stats upserted.","gamesSynced":100,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1003,"errors":[],"startedAt":"2026-04-18T03:25:02.603Z","finishedAt":"2026-04-18T03:28:48.041Z","debug":{"requestId":"a59d869f-2378-4788-ab7b-200b681fd65e","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 26
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 27
+Sat Apr 18 00:28:58     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 105 games, 27 players and 931 player_stats upserted.","gamesSynced":105,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":931,"errors":[],"startedAt":"2026-04-18T03:29:01.598Z","finishedAt":"2026-04-18T03:32:47.031Z","debug":{"requestId":"64d70db4-ff3c-4666-9c21-5c83aa39f0d4","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 27
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 28
+Sat Apr 18 00:32:58     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 100 games, 22 players and 991 player_stats upserted.","gamesSynced":100,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":991,"errors":[],"startedAt":"2026-04-18T03:33:02.145Z","finishedAt":"2026-04-18T03:36:42.435Z","debug":{"requestId":"82629147-5d10-4072-8c97-3ff204565202","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 28
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 29
+Sat Apr 18 00:36:53     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 19 players and 944 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":19,"playerStatsSynced":944,"errors":[],"startedAt":"2026-04-18T03:36:52.492Z","finishedAt":"2026-04-18T03:40:24.774Z","debug":{"requestId":"4a590637-322e-4c03-b2cf-a61caa1c5d5b","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 29
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 1
+Sat Apr 18 20:17:45     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 29 players and 935 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":29,"playerStatsSynced":935,"errors":[],"startedAt":"2026-04-18T23:17:45.527Z","finishedAt":"2026-04-18T23:21:35.009Z","debug":{"requestId":"32a992d5-a537-44c4-8c51-03db7da6d573","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 1
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 2
+Sat Apr 18 20:21:45     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 25 players and 957 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":957,"errors":[],"startedAt":"2026-04-18T23:21:44.835Z","finishedAt":"2026-04-18T23:25:34.917Z","debug":{"requestId":"74576eab-b91f-4c9f-bf4e-6c61acf07ad2","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 2
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 4
+Sat Apr 18 20:25:45     2026
+==============================
+Rodando bootstrap do time 1
+Sat Apr 18 20:35:02     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 29 players and 935 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":29,"playerStatsSynced":935,"errors":[],"startedAt":"2026-04-18T23:35:03.390Z","finishedAt":"2026-04-18T23:38:44.815Z","debug":{"requestId":"ad6f44b1-4ccc-49d3-930a-039a5966dc0f","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 1
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 2
+Sat Apr 18 20:38:55     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 25 players and 957 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":957,"errors":[],"startedAt":"2026-04-18T23:38:54.375Z","finishedAt":"2026-04-18T23:42:36.410Z","debug":{"requestId":"4fb9f5ee-f7f4-41d9-9b59-d0815c225867","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 2
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 4
+Sat Apr 18 20:42:46     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 100 games, 24 players and 923 player_stats upserted.","gamesSynced":100,"teamsSynced":1,"playersSynced":24,"playerStatsSynced":923,"errors":[],"startedAt":"2026-04-18T23:42:45.944Z","finishedAt":"2026-04-18T23:46:22.132Z","debug":{"requestId":"06b75afd-958c-4309-8d9c-c216e24b4e85","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 4
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 5
+Sat Apr 18 20:46:32     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 24 players and 1014 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":24,"playerStatsSynced":1014,"errors":[],"startedAt":"2026-04-18T23:46:31.680Z","finishedAt":"2026-04-18T23:50:30.197Z","debug":{"requestId":"c9fcbb44-41c1-4eba-855b-e006ca8b462a","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 5
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 6
+Sat Apr 18 20:50:40     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 28 players and 948 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":28,"playerStatsSynced":948,"errors":[],"startedAt":"2026-04-18T23:50:39.749Z","finishedAt":"2026-04-18T23:54:24.484Z","debug":{"requestId":"a708ab7d-e0e2-4a48-b328-98400c3aebe1","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 6
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 7
+Sat Apr 18 20:54:35     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 27 players and 949 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":949,"errors":[],"startedAt":"2026-04-18T23:54:33.928Z","finishedAt":"2026-04-18T23:58:10.756Z","debug":{"requestId":"08d813f5-af26-448e-a2d0-48e352c66333","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 7
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 8
+Sat Apr 18 20:58:21     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 102 games, 25 players and 950 player_stats upserted.","gamesSynced":102,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":950,"errors":[],"startedAt":"2026-04-18T23:58:20.336Z","finishedAt":"2026-04-19T00:02:06.291Z","debug":{"requestId":"37a7c9aa-8b69-4222-b728-fe57f9bd426a","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 8
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 9
+Sat Apr 18 21:02:16     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 23 players and 952 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":952,"errors":[],"startedAt":"2026-04-19T00:02:15.680Z","finishedAt":"2026-04-19T00:06:14.115Z","debug":{"requestId":"ce2e916e-0422-4572-9b74-a71425b758d0","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 9
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 10
+Sat Apr 18 21:06:24     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 108 games, 21 players and 977 player_stats upserted.","gamesSynced":108,"teamsSynced":1,"playersSynced":21,"playerStatsSynced":977,"errors":[],"startedAt":"2026-04-19T00:06:23.669Z","finishedAt":"2026-04-19T00:10:14.185Z","debug":{"requestId":"1295ca0c-e212-4aab-9d04-d563f8400d29","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 10
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 11
+Sat Apr 18 21:10:24     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 25 players and 1029 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":1029,"errors":[],"startedAt":"2026-04-19T00:10:23.962Z","finishedAt":"2026-04-19T00:14:37.196Z","debug":{"requestId":"b0a9d99f-5f8b-4e7b-a317-b999b4fb414b","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 11
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 14
+Sat Apr 18 21:14:47     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 108 games, 18 players and 895 player_stats upserted.","gamesSynced":108,"teamsSynced":1,"playersSynced":18,"playerStatsSynced":895,"errors":[],"startedAt":"2026-04-19T00:14:46.542Z","finishedAt":"2026-04-19T00:18:11.471Z","debug":{"requestId":"77297c55-8a5a-4758-beeb-f15b818d3ede","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 14
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 15
+Sat Apr 18 21:18:22     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 29 players and 949 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":29,"playerStatsSynced":949,"errors":[],"startedAt":"2026-04-19T00:18:20.839Z","finishedAt":"2026-04-19T00:22:02.362Z","debug":{"requestId":"4a63e446-b305-4aeb-86eb-c59e9069bee8","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 15
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 16
+Sat Apr 18 21:22:13     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 26 players and 961 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":961,"errors":[],"startedAt":"2026-04-19T00:22:11.697Z","finishedAt":"2026-04-19T00:25:57.469Z","debug":{"requestId":"3a652888-e854-4860-9374-80fe6edee59a","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 16
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 17
+Sat Apr 18 21:26:08     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 26 players and 985 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":985,"errors":[],"startedAt":"2026-04-19T00:26:06.886Z","finishedAt":"2026-04-19T00:29:56.459Z","debug":{"requestId":"3e8bfaac-4e01-4ff8-9203-d69b9128b319","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 17
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 19
+Sat Apr 18 21:30:07     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 105 games, 32 players and 879 player_stats upserted.","gamesSynced":105,"teamsSynced":1,"playersSynced":32,"playerStatsSynced":879,"errors":[],"startedAt":"2026-04-19T00:30:05.850Z","finishedAt":"2026-04-19T00:33:42.369Z","debug":{"requestId":"b459224a-b371-485c-a29b-790d06036664","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 19
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 20
+Sat Apr 18 21:33:53     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 107 games, 22 players and 968 player_stats upserted.","gamesSynced":107,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":968,"errors":[],"startedAt":"2026-04-19T00:33:51.760Z","finishedAt":"2026-04-19T00:37:32.986Z","debug":{"requestId":"006000e0-3bfc-4ea5-9c20-5919a1ea0c37","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 20
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 21
+Sat Apr 18 21:37:43     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 104 games, 23 players and 975 player_stats upserted.","gamesSynced":104,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":975,"errors":[],"startedAt":"2026-04-19T00:37:42.392Z","finishedAt":"2026-04-19T00:41:24.678Z","debug":{"requestId":"d1ef9724-9006-4c4d-a8f9-214800d37211","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 21
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 22
+Sat Apr 18 21:41:35     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 24 players and 987 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":24,"playerStatsSynced":987,"errors":[],"startedAt":"2026-04-19T00:41:34.170Z","finishedAt":"2026-04-19T00:45:22.495Z","debug":{"requestId":"daef5771-b1e1-461e-a29f-d38687556a42","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 22
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 23
+Sat Apr 18 21:45:33     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 101 games, 21 players and 873 player_stats upserted.","gamesSynced":101,"teamsSynced":1,"playersSynced":21,"playerStatsSynced":873,"errors":[],"startedAt":"2026-04-19T00:45:31.810Z","finishedAt":"2026-04-19T00:49:05.161Z","debug":{"requestId":"175f1f76-7870-4782-8180-503dd5480ec9","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 23
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 24
+Sat Apr 18 21:49:16     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 27 players and 1036 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":1036,"errors":[],"startedAt":"2026-04-19T00:49:14.513Z","finishedAt":"2026-04-19T00:53:19.499Z","debug":{"requestId":"34eb3316-cf4d-4a8b-b4a5-c66d34e80180","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 24
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 25
+Sat Apr 18 21:53:30     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 22 players and 993 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":993,"errors":[],"startedAt":"2026-04-19T00:53:28.929Z","finishedAt":"2026-04-19T00:57:13.865Z","debug":{"requestId":"967f45f7-0c04-4113-b6ac-26b53ae28652","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 25
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 26
+Sat Apr 18 21:57:24     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 22 players and 1003 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1003,"errors":[],"startedAt":"2026-04-19T00:57:23.191Z","finishedAt":"2026-04-19T01:01:21.374Z","debug":{"requestId":"fc3417f1-cfdb-489e-92ec-f00bed80384e","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 26
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 27
+Sat Apr 18 22:01:32     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 27 players and 932 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":932,"errors":[],"startedAt":"2026-04-19T01:01:30.720Z","finishedAt":"2026-04-19T01:05:06.487Z","debug":{"requestId":"9ddf53c1-2518-48b7-acd6-1c61f90df1f4","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 27
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 28
+Sat Apr 18 22:05:17     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 22 players and 994 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":994,"errors":[],"startedAt":"2026-04-19T01:05:15.925Z","finishedAt":"2026-04-19T01:08:58.560Z","debug":{"requestId":"346bc0b9-32b2-4d8b-bdd6-0d73920a479b","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 28
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 29
+Sat Apr 18 22:09:09     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 19 players and 944 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":19,"playerStatsSynced":944,"errors":[],"startedAt":"2026-04-19T01:09:08.011Z","finishedAt":"2026-04-19T01:12:46.978Z","debug":{"requestId":"308c08a7-ec22-44fa-9379-254055b45282","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 29
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 30
+Sat Apr 18 22:12:58     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 26 players and 888 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":888,"errors":[],"startedAt":"2026-04-19T01:12:56.350Z","finishedAt":"2026-04-19T01:16:25.979Z","debug":{"requestId":"bc025666-aefb-42d2-9ab5-555341dcbb05","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 30
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 31
+Sat Apr 18 22:16:37     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 22 players and 1001 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1001,"errors":[],"startedAt":"2026-04-19T01:16:35.385Z","finishedAt":"2026-04-19T01:20:24.358Z","debug":{"requestId":"48d65428-66f5-453f-9401-5aa355450851","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 31
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 38
+Sat Apr 18 22:20:35     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 23 players and 1032 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":1032,"errors":[],"startedAt":"2026-04-19T01:20:33.701Z","finishedAt":"2026-04-19T01:24:36.310Z","debug":{"requestId":"242de707-740e-459b-bf37-da567f8e3a60","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"unavailable"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 38
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 1
+Mon Apr 20 01:56:18     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 108 games, 29 players and 936 player_stats upserted.","gamesSynced":108,"teamsSynced":1,"playersSynced":29,"playerStatsSynced":936,"errors":[],"startedAt":"2026-04-20T04:56:19.350Z","finishedAt":"2026-04-20T05:00:10.230Z","debug":{"requestId":"ef982429-f32e-4423-a918-305b83e8084a","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 1
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 2
+Mon Apr 20 02:00:20     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 25 players and 968 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":968,"errors":[],"startedAt":"2026-04-20T05:00:19.800Z","finishedAt":"2026-04-20T05:04:19.170Z","debug":{"requestId":"f2c25092-fd53-4257-b1ec-5f58c7e92d39","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 2
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 4
+Mon Apr 20 02:04:29     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 103 games, 24 players and 923 player_stats upserted.","gamesSynced":103,"teamsSynced":1,"playersSynced":24,"playerStatsSynced":923,"errors":[],"startedAt":"2026-04-20T05:04:28.604Z","finishedAt":"2026-04-20T05:08:21.374Z","debug":{"requestId":"505b2aa9-ed76-4f57-89c6-dd9280ad04f1","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 4
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 5
+Mon Apr 20 02:08:31     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 107 games, 24 players and 1014 player_stats upserted.","gamesSynced":107,"teamsSynced":1,"playersSynced":24,"playerStatsSynced":1014,"errors":[],"startedAt":"2026-04-20T05:08:30.998Z","finishedAt":"2026-04-20T05:12:13.651Z","debug":{"requestId":"121bf2e9-cd61-4bc4-9e33-a28ed8390174","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 5
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 6
+Mon Apr 20 02:12:24     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 28 players and 949 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":28,"playerStatsSynced":949,"errors":[],"startedAt":"2026-04-20T05:12:23.814Z","finishedAt":"2026-04-20T05:16:08.516Z","debug":{"requestId":"eaed87b1-ede4-4e90-b195-52456c0db8ed","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 6
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 7
+Mon Apr 20 02:16:18     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 27 players and 948 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":948,"errors":[],"startedAt":"2026-04-20T05:16:17.908Z","finishedAt":"2026-04-20T05:20:03.719Z","debug":{"requestId":"88379dd8-02d8-4290-b978-fe7833c3c1e1","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 7
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 8
+Mon Apr 20 02:20:14     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 105 games, 25 players and 950 player_stats upserted.","gamesSynced":105,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":950,"errors":[],"startedAt":"2026-04-20T05:20:13.275Z","finishedAt":"2026-04-20T05:23:51.775Z","debug":{"requestId":"c668bc03-8f2b-4b8a-8155-9f49bc904a18","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 8
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 9
+Mon Apr 20 02:24:02     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 23 players and 952 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":952,"errors":[],"startedAt":"2026-04-20T05:24:01.250Z","finishedAt":"2026-04-20T05:27:39.255Z","debug":{"requestId":"35d58323-dc4b-4c66-8ee2-8da4a6894dfc","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 9
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 10
+Mon Apr 20 02:27:49     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 21 players and 988 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":21,"playerStatsSynced":988,"errors":[],"startedAt":"2026-04-20T05:27:48.626Z","finishedAt":"2026-04-20T05:31:27.297Z","debug":{"requestId":"27e47331-64b3-47b7-9719-ee1b9793c35c","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 10
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 11
+Mon Apr 20 02:31:37     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 107 games, 25 players and 1029 player_stats upserted.","gamesSynced":107,"teamsSynced":1,"playersSynced":25,"playerStatsSynced":1029,"errors":[],"startedAt":"2026-04-20T05:31:36.959Z","finishedAt":"2026-04-20T05:35:28.313Z","debug":{"requestId":"cc1a95a8-2c36-4a19-87be-3f389456f3c7","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 11
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 14
+Mon Apr 20 02:35:38     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 109 games, 18 players and 904 player_stats upserted.","gamesSynced":109,"teamsSynced":1,"playersSynced":18,"playerStatsSynced":904,"errors":[],"startedAt":"2026-04-20T05:35:37.731Z","finishedAt":"2026-04-20T05:38:56.390Z","debug":{"requestId":"63926834-a883-4a47-bd26-6c390f44c91c","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 14
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 15
+Mon Apr 20 02:39:06     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 104 games, 29 players and 949 player_stats upserted.","gamesSynced":104,"teamsSynced":1,"playersSynced":29,"playerStatsSynced":949,"errors":[],"startedAt":"2026-04-20T05:39:05.786Z","finishedAt":"2026-04-20T05:42:43.656Z","debug":{"requestId":"5c0ce9c6-d297-4feb-b648-c82b8a0ec6a7","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 15
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 16
+Mon Apr 20 02:42:54     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 104 games, 26 players and 961 player_stats upserted.","gamesSynced":104,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":961,"errors":[],"startedAt":"2026-04-20T05:42:53.395Z","finishedAt":"2026-04-20T05:46:26.969Z","debug":{"requestId":"6529b79a-5adc-4cc9-917d-162340fe686c","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 16
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 17
+Mon Apr 20 02:46:37     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 26 players and 994 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":994,"errors":[],"startedAt":"2026-04-20T05:46:36.364Z","finishedAt":"2026-04-20T05:50:27.470Z","debug":{"requestId":"f662657e-a4cf-4cdf-a2d3-5e08d3521d5d","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 17
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 19
+Mon Apr 20 02:50:37     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 106 games, 32 players and 879 player_stats upserted.","gamesSynced":106,"teamsSynced":1,"playersSynced":32,"playerStatsSynced":879,"errors":[],"startedAt":"2026-04-20T05:50:36.921Z","finishedAt":"2026-04-20T05:54:04.972Z","debug":{"requestId":"e87d36c1-239c-4fd6-9457-941a073d401a","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 19
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 20
+Mon Apr 20 02:54:15     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 108 games, 22 players and 968 player_stats upserted.","gamesSynced":108,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":968,"errors":[],"startedAt":"2026-04-20T05:54:14.526Z","finishedAt":"2026-04-20T05:58:01.938Z","debug":{"requestId":"e981c6fc-1778-4cc4-a7a3-8d7003b901ac","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 20
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 21
+Mon Apr 20 02:58:12     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 105 games, 23 players and 977 player_stats upserted.","gamesSynced":105,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":977,"errors":[],"startedAt":"2026-04-20T05:58:11.330Z","finishedAt":"2026-04-20T06:02:07.716Z","debug":{"requestId":"295c2e74-bef1-4504-a1a9-b9e49cdea00d","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 21
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 22
+Mon Apr 20 03:02:18     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 24 players and 987 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":24,"playerStatsSynced":987,"errors":[],"startedAt":"2026-04-20T06:02:17.162Z","finishedAt":"2026-04-20T06:05:54.044Z","debug":{"requestId":"0a1f5c02-a431-4ae2-a8fb-4029af1294c1","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 22
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 23
+Mon Apr 20 03:06:04     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 102 games, 21 players and 873 player_stats upserted.","gamesSynced":102,"teamsSynced":1,"playersSynced":21,"playerStatsSynced":873,"errors":[],"startedAt":"2026-04-20T06:06:03.660Z","finishedAt":"2026-04-20T06:09:30.380Z","debug":{"requestId":"565b2b9a-fbf6-4fac-828e-a96d290d4bf2","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 23
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 24
+Mon Apr 20 03:09:40     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 27 players and 1036 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":1036,"errors":[],"startedAt":"2026-04-20T06:09:39.718Z","finishedAt":"2026-04-20T06:13:32.071Z","debug":{"requestId":"58472907-e1ad-49d4-8390-39530fbd1a21","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 24
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 25
+Mon Apr 20 03:13:42     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 22 players and 1007 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1007,"errors":[],"startedAt":"2026-04-20T06:13:41.512Z","finishedAt":"2026-04-20T06:17:28.630Z","debug":{"requestId":"8f8f9ffc-8eda-4728-84d3-618e3777fb23","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 25
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 26
+Mon Apr 20 03:17:39     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 22 players and 1012 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1012,"errors":[],"startedAt":"2026-04-20T06:17:38.143Z","finishedAt":"2026-04-20T06:21:40.924Z","debug":{"requestId":"17df2274-c3c3-4e16-8dc1-c44f6c55d1f2","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 26
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 27
+Mon Apr 20 03:21:51     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 27 players and 945 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":27,"playerStatsSynced":945,"errors":[],"startedAt":"2026-04-20T06:21:50.310Z","finishedAt":"2026-04-20T06:25:18.164Z","debug":{"requestId":"bfcb8c50-f799-4585-97e9-050087c2667d","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 27
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 28
+Mon Apr 20 03:25:28     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 22 players and 1007 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1007,"errors":[],"startedAt":"2026-04-20T06:25:27.520Z","finishedAt":"2026-04-20T06:29:15.882Z","debug":{"requestId":"2f330bf2-86c4-43e0-a89c-376aa1ae8154","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":null,"lockValuePresent":false}}
+Finalizado time 28
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 29
+Mon Apr 20 03:29:26     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 19 players and 958 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":19,"playerStatsSynced":958,"errors":[],"startedAt":"2026-04-20T06:29:25.382Z","finishedAt":"2026-04-20T06:33:02.716Z","debug":{"requestId":"59155819-d2d6-45a9-bb9c-ee07825066de","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 29
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 30
+Mon Apr 20 03:33:13     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 104 games, 26 players and 888 player_stats upserted.","gamesSynced":104,"teamsSynced":1,"playersSynced":26,"playerStatsSynced":888,"errors":[],"startedAt":"2026-04-20T06:33:12.165Z","finishedAt":"2026-04-20T06:36:36.743Z","debug":{"requestId":"fdd9695c-81f8-431c-bef6-0554c736503e","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 30
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 31
+Mon Apr 20 03:36:47     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 110 games, 22 players and 1014 player_stats upserted.","gamesSynced":110,"teamsSynced":1,"playersSynced":22,"playerStatsSynced":1014,"errors":[],"startedAt":"2026-04-20T06:36:46.228Z","finishedAt":"2026-04-20T06:40:32.900Z","debug":{"requestId":"767de3cd-65b3-477d-8de1-a93a1a33d5aa","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 31
+Aguardando 8 segundos...
+==============================
+Rodando bootstrap do time 38
+Mon Apr 20 03:40:43     2026
+{"status":"success","message":"Sync (real, bootstrap) finished with 111 games, 23 players and 1032 player_stats upserted.","gamesSynced":111,"teamsSynced":1,"playersSynced":23,"playerStatsSynced":1032,"errors":[],"startedAt":"2026-04-20T06:40:42.406Z","finishedAt":"2026-04-20T06:44:40.321Z","debug":{"requestId":"d136f790-000b-4ece-a816-2c27f58b44c0","routeSource":"manual","syncMode":"bootstrap","hasRunningSync":false,"inProcessRunAlready":false,"distributedLock":"acquired"},"lockDiagnostics":{"upstashConfigured":true,"lockKey":"lock:nba_sync","currentTtlSeconds":-2,"lockValuePresent":false}}
+Finalizado time 38
+Aguardando 8 segundos...

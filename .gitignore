@@ -60,3 +60,5 @@ private-key.json
 .cache/
 tmp/
 temp/
+.vercel
+.env*.local
