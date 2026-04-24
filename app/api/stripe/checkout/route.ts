@@ -12,17 +12,6 @@ import { requireActiveReferralCode } from '@/lib/services/referral-service';
 type StripePlan = 'monthly' | 'annual' | 'playoff';
 
 type PlanPriceConfig = { envVar: 'STRIPE_PRICE_PRO_MONTHLY' | 'STRIPE_PRICE_PRO_ANNUAL' | 'STRIPE_PRICE_PLAYOFF_PACK'; priceId: string };
-type TrialProfileState = {
-  trial_eligible: boolean | null;
-  trial_used_at: string | null;
-  subscription_status: string | null;
-  subscription_started_at: string | null;
-};
-
-type TrialUsageLookup = {
-  normalized_email: string | null;
-  stripe_customer_id: string | null;
-};
 
 function getPlanPriceConfig(plan: StripePlan): PlanPriceConfig {
   if (plan === 'monthly') {
@@ -108,57 +97,6 @@ async function resolveStripeCustomerId(userId: string, email: string, name: stri
   return customer.id;
 }
 
-async function getTrialProfileState(userId: string): Promise<TrialProfileState> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('trial_eligible,trial_used_at,subscription_status,subscription_started_at')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (error) throw error;
-
-  return {
-    trial_eligible: typeof data?.trial_eligible === 'boolean' ? data.trial_eligible : null,
-    trial_used_at: typeof data?.trial_used_at === 'string' ? data.trial_used_at : null,
-    subscription_status: typeof data?.subscription_status === 'string' ? data.subscription_status : null,
-    subscription_started_at: typeof data?.subscription_started_at === 'string' ? data.subscription_started_at : null,
-  };
-}
-
-function isMonthlyTrialEligible(profile: TrialProfileState) {
-  if (profile.trial_eligible === false) return false;
-  if (profile.trial_used_at) return false;
-  if (profile.subscription_started_at) return false;
-  if (profile.subscription_status) return false;
-  return true;
-}
-
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-async function hasTrialUsageRecord(normalizedEmail: string, stripeCustomerId: string) {
-  const { data: byEmail, error: byEmailError } = await supabase
-    .from('trial_usage')
-    .select('normalized_email')
-    .eq('normalized_email', normalizedEmail)
-    .limit(1)
-    .maybeSingle<Pick<TrialUsageLookup, 'normalized_email'>>();
-
-  if (byEmailError) throw byEmailError;
-  if (byEmail) return true;
-
-  const { data: byCustomer, error: byCustomerError } = await supabase
-    .from('trial_usage')
-    .select('stripe_customer_id')
-    .eq('stripe_customer_id', stripeCustomerId)
-    .limit(1)
-    .maybeSingle<Pick<TrialUsageLookup, 'stripe_customer_id'>>();
-
-  if (byCustomerError) throw byCustomerError;
-  return Boolean(byCustomer);
-}
-
 export async function POST(req: Request) {
   const origin = req.headers.get('origin') || undefined;
   const context = buildRequestContext(req, { route: '/api/stripe/checkout' });
@@ -194,12 +132,7 @@ export async function POST(req: Request) {
     }
 
     const appUrl = requireEnv('NEXT_PUBLIC_APP_URL').replace(/\/$/, '');
-    const normalizedEmail = normalizeEmail(user.email);
     const stripeCustomerId = await resolveStripeCustomerId(user.id, user.email, user.name);
-    const profileTrialState = await getTrialProfileState(user.id);
-    const trialUsageExists = await hasTrialUsageRecord(normalizedEmail, stripeCustomerId);
-    const shouldGrantMonthlyTrial = plan === 'monthly' && isMonthlyTrialEligible(profileTrialState) && !trialUsageExists;
-
     const stripe = getStripeServerClient();
     const checkout = await stripe.createCheckoutSession({
       mode: plan === 'playoff' ? 'payment' : 'subscription',
@@ -216,7 +149,7 @@ export async function POST(req: Request) {
       ...(plan === 'monthly'
         ? {
           subscription_data: {
-            ...(shouldGrantMonthlyTrial ? { trial_period_days: 7 } : {}),
+            trial_period_days: 7,
             metadata: { user_id: user.id, plan },
           },
         }
@@ -229,6 +162,7 @@ export async function POST(req: Request) {
       throw new ExternalIntegrationError('Stripe checkout URL not available');
     }
 
+    console.log('[stripe-checkout] session created', { userId: user.id, plan, checkoutSessionId: checkout.id });
     logSecurityEvent('checkout_created', { ...context, userId: user.id, plan, provider: 'stripe' });
     return ok({ url: checkout.url, plan });
   } catch (error) {

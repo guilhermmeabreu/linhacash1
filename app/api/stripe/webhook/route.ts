@@ -207,6 +207,7 @@ function buildStripeOwnershipPatch(input: {
     patch.plan_status = 'none';
     patch.billing_status = 'none';
     patch.subscription_status = 'canceled';
+    patch.subscription_reference = null;
     patch.subscription_expires_at = null;
     patch.pro_expires_at = null;
     patch.cancel_at_period_end = false;
@@ -382,15 +383,18 @@ async function handleCheckoutSessionCompleted(eventObject: Record<string, unknow
       ? `stripe_session:${eventObject.id}`
       : null;
 
-  await patchProfile(userId, buildStripeOwnershipPatch({
-    status,
-    plan: stripePlan,
-    stripeCustomerId,
-    stripeSubscriptionId,
-    cancelAtPeriodEnd: false,
-    isPro: status !== 'canceled',
-    paymentReference: checkoutPaymentReference,
-  }));
+  await patchProfile(userId, {
+    ...buildStripeOwnershipPatch({
+      status,
+      plan: stripePlan,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      cancelAtPeriodEnd: false,
+      isPro: status !== 'canceled',
+      paymentReference: checkoutPaymentReference,
+    }),
+    subscription_started_at: new Date().toISOString(),
+  });
 
   if (stripeMode === 'payment' && paymentStatus === 'paid') {
     const paymentIntentId = typeof eventObject.payment_intent === 'string' ? eventObject.payment_intent : null;
@@ -546,7 +550,7 @@ async function handleSubscriptionDeleted(eventObject: Record<string, unknown>) {
   }));
 }
 
-async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
+async function handleSubscriptionUpsert(eventObject: Record<string, unknown>, eventType: 'customer.subscription.created' | 'customer.subscription.updated') {
   const {
     metadata,
     stripeCustomerId,
@@ -581,15 +585,18 @@ async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
     ? new Date(eventObject.current_period_end * 1000).toISOString()
     : undefined;
 
-  await patchProfile(userId, buildStripeOwnershipPatch({
-    status: subscriptionStatus === 'canceled' && cancelAtPeriodEnd ? 'active' : subscriptionStatus,
-    plan: stripePlan,
-    stripeCustomerId,
-    stripeSubscriptionId: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
-    cancelAtPeriodEnd,
-    isPro: cancelAtPeriodEnd ? true : subscriptionStatus !== 'canceled',
-    subscriptionExpiresAt: periodEnd,
-  }));
+  await patchProfile(userId, {
+    ...buildStripeOwnershipPatch({
+      status: subscriptionStatus === 'canceled' && cancelAtPeriodEnd ? 'active' : subscriptionStatus,
+      plan: stripePlan,
+      stripeCustomerId,
+      stripeSubscriptionId: typeof eventObject.id === 'string' ? eventObject.id : stripeSubscriptionId,
+      cancelAtPeriodEnd,
+      isPro: cancelAtPeriodEnd ? true : subscriptionStatus !== 'canceled',
+      subscriptionExpiresAt: periodEnd,
+    }),
+    ...(eventType === 'customer.subscription.created' ? { subscription_started_at: new Date().toISOString() } : {}),
+  });
 
   await consumeMonthlyTrialIfConfirmed({
     userId,
@@ -630,6 +637,7 @@ export async function POST(req: Request) {
     }
 
     const event = JSON.parse(payload) as StripeEvent;
+    console.log('[stripe-webhook] event received', { eventId: event.id, eventType: event.type });
 
     try {
       switch (event.type) {
@@ -645,7 +653,7 @@ export async function POST(req: Request) {
           break;
         case 'customer.subscription.created':
         case 'customer.subscription.updated':
-          await handleSubscriptionUpsert(event.data.object);
+          await handleSubscriptionUpsert(event.data.object, event.type as 'customer.subscription.created' | 'customer.subscription.updated');
           break;
         case 'customer.subscription.deleted':
           await handleSubscriptionDeleted(event.data.object);
