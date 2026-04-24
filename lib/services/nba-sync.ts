@@ -635,9 +635,9 @@ async function recomputePlayerMetrics(
   supabase: SupabaseClient,
   playerIds: Iterable<number>,
   metricColumns: Set<string>
-) {
+): Promise<number> {
   const uniquePlayerIds = [...new Set([...playerIds].filter((playerId) => Number.isInteger(playerId) && playerId > 0))];
-  if (!uniquePlayerIds.length) return;
+  if (!uniquePlayerIds.length) return 0;
 
   const playerStatsMap = new Map<number, PlayerStatMetricsRow[]>();
   const chunkSize = 200;
@@ -674,7 +674,7 @@ async function recomputePlayerMetrics(
     metricUpserts.push(...buildPlayerMetricPayloads(playerId, stats, metricColumns));
   }
 
-  if (!metricUpserts.length) return;
+  if (!metricUpserts.length) return 0;
 
   for (let index = 0; index < metricUpserts.length; index += 500) {
     const chunk = metricUpserts.slice(index, index + 500);
@@ -683,6 +683,29 @@ async function recomputePlayerMetrics(
       throw new Error(`player_metrics upsert failed: ${error.message}`);
     }
   }
+
+  return metricUpserts.length;
+}
+
+
+export async function recomputeSinglePlayerMetrics(playerId: number) {
+  if (!Number.isInteger(playerId) || playerId <= 0) {
+    throw new Error(`Invalid player id for metrics recompute: ${playerId}`);
+  }
+
+  const supabase = getSupabaseAdmin();
+  const metricColumns = await detectTableColumns(supabase, 'player_metrics');
+  const metricsRecomputed = await recomputePlayerMetrics(supabase, [playerId], metricColumns);
+
+  invalidateCacheByPrefix('games:');
+  invalidateCacheByPrefix('players:');
+  invalidateCacheByPrefix('metrics:');
+  invalidateCacheByPrefix('metrics-base:');
+
+  return {
+    playerId,
+    metricsRecomputed,
+  };
 }
 
 
