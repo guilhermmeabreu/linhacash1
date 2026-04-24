@@ -22,6 +22,7 @@ type SyncSummary = {
     inProcessRunAlready: boolean;
     distributedLock: 'acquired' | 'locked' | 'unavailable' | null;
     playerTeamReconciled?: number;
+    missingMetricsCount?: number;
   };
 };
 
@@ -709,7 +710,7 @@ export async function recomputeSinglePlayerMetrics(playerId: number) {
 }
 
 
-async function recomputeAllPlayerMetricsFromStats(supabase: SupabaseClient) {
+export async function recomputeAllPlayerMetricsFromStats(supabase: SupabaseClient) {
   const metricColumns = await detectTableColumns(supabase, 'player_metrics');
   const playerIds = new Set<number>();
   const pageSize = 1000;
@@ -740,6 +741,37 @@ async function recomputeAllPlayerMetricsFromStats(supabase: SupabaseClient) {
 
   if (!playerIds.size) return;
   await recomputePlayerMetrics(supabase, playerIds, metricColumns);
+}
+
+async function countPlayersMissingMetrics(
+  supabase: SupabaseClient,
+  playerIds: Iterable<number>
+): Promise<number> {
+  const uniquePlayerIds = [...new Set([...playerIds].filter((playerId) => Number.isInteger(playerId) && playerId > 0))];
+  if (!uniquePlayerIds.length) return 0;
+
+  const playersWithMetrics = new Set<number>();
+  const chunkSize = 500;
+  for (let index = 0; index < uniquePlayerIds.length; index += chunkSize) {
+    const chunk = uniquePlayerIds.slice(index, index + chunkSize);
+    const { data, error } = await supabase
+      .from('player_metrics')
+      .select('player_id')
+      .in('player_id', chunk);
+
+    if (error) {
+      throw new Error(`player_metrics read failed while checking missing metrics: ${error.message}`);
+    }
+
+    for (const row of (data || []) as Array<{ player_id: number | null }>) {
+      const playerId = toNumber(row.player_id);
+      if (playerId > 0) {
+        playersWithMetrics.add(playerId);
+      }
+    }
+  }
+
+  return uniquePlayerIds.length - playersWithMetrics.size;
 }
 
 async function runSyncCore(
@@ -911,6 +943,7 @@ async function runSyncCore(
   const playerTeamIdByApi = new Map<number, number>((allPlayerRows || []).map((row) => [toNumber(row.api_id), toNumber(row.team_id)]));
   const playerTeamNameByApi = new Map<number, string>((allPlayerRows || []).map((row) => [toNumber(row.api_id), (row.team || '').trim()]));
   const metricPlayerIds = new Set<number>();
+  let missingMetricsCount = 0;
 
   if (isMock) {
     for (const apiId of uniqueSyncedApiIds) {
@@ -1108,6 +1141,7 @@ async function runSyncCore(
   if (metricPlayerIds.size > 0) {
     const metricColumns = await detectTableColumns(supabase, 'player_metrics');
     await recomputePlayerMetrics(supabase, metricPlayerIds, metricColumns);
+    missingMetricsCount = await countPlayersMissingMetrics(supabase, metricPlayerIds);
   }
 
   invalidateCacheByPrefix('games:');
@@ -1131,6 +1165,7 @@ async function runSyncCore(
       inProcessRunAlready: false,
       distributedLock: null,
       playerTeamReconciled,
+      missingMetricsCount,
     },
   };
 }
@@ -1258,14 +1293,6 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       partial = await runSyncCore(supabase, controller.signal, syncMode, options.bootstrapTeamIds ?? []);
     } finally {
       clearTimeout(timeoutHandle);
-    }
-
-    if (partial.status === 'success') {
-      await recomputeAllPlayerMetricsFromStats(supabase);
-      invalidateCacheByPrefix('games:');
-      invalidateCacheByPrefix('players:');
-      invalidateCacheByPrefix('metrics:');
-      invalidateCacheByPrefix('metrics-base:');
     }
 
     const finishedAt = nowIso();
