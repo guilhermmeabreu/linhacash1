@@ -199,36 +199,6 @@ export async function POST(req: Request) {
     const profileTrialState = await getTrialProfileState(user.id);
     const trialUsageExists = await hasTrialUsageRecord(normalizedEmail, stripeCustomerId);
     const shouldGrantMonthlyTrial = plan === 'monthly' && isMonthlyTrialEligible(profileTrialState) && !trialUsageExists;
-    const trialStartedAt = shouldGrantMonthlyTrial ? new Date().toISOString() : null;
-
-    if (trialStartedAt) {
-      const { error: trialStateError } = await supabase
-        .from('profiles')
-        .update({
-          trial_used_at: trialStartedAt,
-          trial_eligible: false,
-          billing_updated_at: trialStartedAt,
-        })
-        .eq('id', user.id);
-
-      if (trialStateError) {
-        throw trialStateError;
-      }
-
-      // Fingerprint is intentionally not accepted from client input in this rollout.
-      const { error: trialUsageError } = await supabase
-        .from('trial_usage')
-        .insert({
-          email: user.email,
-          normalized_email: normalizedEmail,
-          stripe_customer_id: stripeCustomerId,
-          first_user_id: user.id,
-        });
-
-      if (trialUsageError && trialUsageError.code !== '23505') {
-        throw trialUsageError;
-      }
-    }
 
     const stripe = getStripeServerClient();
     const checkout = await stripe.createCheckoutSession({

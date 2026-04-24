@@ -23,6 +23,10 @@ type WebhookMetadata = {
 
 type StripeAccessStatus = 'active' | 'trialing' | 'canceled';
 type StripePlan = 'monthly' | 'annual' | 'playoff';
+type TrialConsumptionProfile = {
+  trial_used_at: string | null;
+  email: string | null;
+};
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -217,6 +221,57 @@ function mapStripePlanToLegacyReferralPlan(plan: string | null): 'mensal' | 'anu
   if (plan === 'monthly') return 'mensal';
   if (plan === 'annual') return 'anual';
   return null;
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+async function consumeMonthlyTrialIfConfirmed(input: {
+  userId: string;
+  plan: StripePlan | null;
+  status: StripeAccessStatus;
+  stripeCustomerId: string | null;
+  customerEmail: string | null;
+}) {
+  if (input.plan !== 'monthly' || input.status !== 'trialing') return;
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('trial_used_at,email')
+    .eq('id', input.userId)
+    .maybeSingle<TrialConsumptionProfile>();
+  if (profileError) throw profileError;
+  if (!profile) return;
+
+  if (typeof profile.trial_used_at === 'string' && profile.trial_used_at.length > 0) return;
+
+  const consumedAt = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      trial_used_at: consumedAt,
+      trial_eligible: false,
+      billing_updated_at: consumedAt,
+    })
+    .eq('id', input.userId);
+  if (updateError) throw updateError;
+
+  const rawEmail = typeof profile.email === 'string' && profile.email.length > 0 ? profile.email : input.customerEmail;
+  if (!rawEmail) return;
+
+  const { error: trialUsageError } = await supabase
+    .from('trial_usage')
+    .insert({
+      email: rawEmail,
+      normalized_email: normalizeEmail(rawEmail),
+      stripe_customer_id: input.stripeCustomerId,
+      first_user_id: input.userId,
+    });
+
+  if (trialUsageError && trialUsageError.code !== '23505') {
+    throw trialUsageError;
+  }
 }
 
 async function getActiveProfileReferralCode(userId: string): Promise<string | null> {
@@ -535,6 +590,14 @@ async function handleSubscriptionUpsert(eventObject: Record<string, unknown>) {
     isPro: cancelAtPeriodEnd ? true : subscriptionStatus !== 'canceled',
     subscriptionExpiresAt: periodEnd,
   }));
+
+  await consumeMonthlyTrialIfConfirmed({
+    userId,
+    plan: stripePlan,
+    status: subscriptionStatus,
+    stripeCustomerId,
+    customerEmail,
+  });
 }
 
 export async function GET() {
