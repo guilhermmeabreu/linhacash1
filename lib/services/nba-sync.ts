@@ -8,9 +8,13 @@ type SyncSummary = {
   status: SyncStatus;
   message: string;
   gamesSynced: number;
+  gamesConsideredForStats: number;
+  gamesWithStatsResponse: number;
   teamsSynced: number;
   playersSynced: number;
   playerStatsSynced: number;
+  playersRecomputed: number;
+  missingMetricsAfter: number;
   errors: string[];
   startedAt: string;
   finishedAt: string;
@@ -18,6 +22,7 @@ type SyncSummary = {
     requestId: string | null;
     routeSource: 'cron' | 'manual' | null;
     syncMode?: 'bootstrap' | 'daily';
+    stage?: 'games' | 'stats' | 'metrics' | 'all';
     hasRunningSync: boolean | null;
     inProcessRunAlready: boolean;
     distributedLock: 'acquired' | 'locked' | 'unavailable' | null;
@@ -31,6 +36,7 @@ type RunNbaSyncOptions = {
   routeSource?: 'cron' | 'manual' | null;
   syncMode?: 'bootstrap' | 'daily';
   bootstrapTeamIds?: number[];
+  stage?: 'games' | 'stats' | 'metrics' | 'all';
 };
 
 type ApiSportsResponse<T> = { response?: T[] };
@@ -804,11 +810,67 @@ async function countPlayersMissingMetrics(
   return uniquePlayerIds.length - playersWithMetrics.size;
 }
 
+async function findPlayersMissingMetrics(
+  supabase: SupabaseClient,
+  playerIds: Iterable<number>
+): Promise<number[]> {
+  const uniquePlayerIds = [...new Set([...playerIds].filter((playerId) => Number.isInteger(playerId) && playerId > 0))];
+  if (!uniquePlayerIds.length) return [];
+
+  const playersWithMetrics = new Set<number>();
+  const chunkSize = 500;
+  for (let index = 0; index < uniquePlayerIds.length; index += chunkSize) {
+    const chunk = uniquePlayerIds.slice(index, index + chunkSize);
+    const { data, error } = await supabase
+      .from('player_metrics')
+      .select('player_id')
+      .in('player_id', chunk);
+
+    if (error) {
+      throw new Error(`player_metrics read failed while listing missing metrics: ${error.message}`);
+    }
+
+    for (const row of (data || []) as Array<{ player_id: number | null }>) {
+      const playerId = toNumber(row.player_id);
+      if (playerId > 0) {
+        playersWithMetrics.add(playerId);
+      }
+    }
+  }
+
+  return uniquePlayerIds.filter((playerId) => !playersWithMetrics.has(playerId));
+}
+
+async function loadRecentPlayerIdsForMetrics(supabase: SupabaseClient): Promise<number[]> {
+  const now = new Date();
+  const startDate = dateOnly(addDays(now, -DATE_WINDOW_PAST_DAYS));
+  const endDate = dateOnly(addDays(now, DATE_WINDOW_FUTURE_DAYS));
+  const { data, error } = await supabase
+    .from('player_stats')
+    .select('player_id')
+    .gte('game_date', startDate)
+    .lte('game_date', endDate)
+    .order('game_date', { ascending: false })
+    .limit(8000);
+
+  if (error) {
+    throw new Error(`player_stats read failed while loading recent player ids: ${error.message}`);
+  }
+
+  const playerIds = new Set<number>();
+  for (const row of (data || []) as Array<{ player_id: number | null }>) {
+    const playerId = toNumber(row.player_id);
+    if (playerId > 0) playerIds.add(playerId);
+  }
+  return [...playerIds];
+}
+
 async function runSyncCore(
   supabase: SupabaseClient,
   signal: AbortSignal,
   syncMode: 'bootstrap' | 'daily',
-  bootstrapTeamIds: number[] = []
+  bootstrapTeamIds: number[] = [],
+  options: { includeGamesUpsert: boolean; includeStats: boolean }
 ): Promise<SyncCoreResult> {
   const apiProvider = createApiProvider(signal);
   const isMock = apiProvider.source === 'mock';
@@ -869,7 +931,7 @@ async function runSyncCore(
 
   const normalizedGames = [...uniqueGameMap.values()].map((entry) => normalizeGame(entry.game, entry.day));
   const apiGameToInternalGameId = new Map<number, number>();
-  if (normalizedGames.length > 0) {
+  if (options.includeGamesUpsert && normalizedGames.length > 0) {
     const dedupedNormalizedGames = (() => {
       const byLogicalKey = new Map<string, (typeof normalizedGames)[number]>();
       for (const game of normalizedGames) {
@@ -923,6 +985,40 @@ async function runSyncCore(
         }
       }
     }
+  } else if (normalizedGames.length > 0) {
+    const relevantDates = [...new Set(normalizedGames.map((game) => game.game_date).filter(Boolean))];
+    if (relevantDates.length > 0) {
+      const { data: gameRows, error: gameRowsError } = await supabase
+        .from('games')
+        .select('id,game_date,home_team,away_team')
+        .in('game_date', relevantDates);
+
+      if (gameRowsError) {
+        throw new Error(`games lookup failed for stats stage: ${gameRowsError.message}`);
+      }
+
+      const internalGameIdByLogicalKey = new Map<string, number>();
+      for (const row of (gameRows || []) as Array<{ id: number | null; game_date: string | null; home_team: string | null; away_team: string | null }>) {
+        const internalId = toNumber(row.id);
+        const gameDate = row.game_date || '';
+        const homeTeam = row.home_team || '';
+        const awayTeam = row.away_team || '';
+        if (!internalId || !gameDate || !homeTeam || !awayTeam) continue;
+        internalGameIdByLogicalKey.set(gameLogicalKey(gameDate, homeTeam, awayTeam), internalId);
+      }
+
+      for (const [apiGameId, entry] of uniqueGameMap.entries()) {
+        const logicalKey = gameLogicalKey(
+          entry.day,
+          entry.game.teams?.home?.name || 'Unknown',
+          entry.game.teams?.visitors?.name || 'Unknown'
+        );
+        const internalGameId = internalGameIdByLogicalKey.get(logicalKey);
+        if (internalGameId) {
+          apiGameToInternalGameId.set(apiGameId, internalGameId);
+        }
+      }
+    }
   }
 
   const teamIds = new Set<number>();
@@ -940,6 +1036,8 @@ async function runSyncCore(
       : [...teamIds];
   let playersSynced = 0;
   let playerStatsSynced = 0;
+  let gamesConsideredForStats = 0;
+  let gamesWithStatsResponse = 0;
   let playerTeamReconciled = 0;
   const syncedPlayerApiIds: number[] = [];
   const latestTeamAssignmentByApi = new Map<number, { teamId: number; teamName: string; observedAt: number }>();
@@ -975,7 +1073,7 @@ async function runSyncCore(
   const metricPlayerIds = new Set<number>();
   const missingMetricsCount = 0;
 
-  if (isMock) {
+  if (options.includeStats && isMock) {
     for (const apiId of uniqueSyncedApiIds) {
       const internalPlayerId = playerIdByApi.get(apiId);
       if (!internalPlayerId) {
@@ -1030,17 +1128,20 @@ async function runSyncCore(
         metricPlayerIds.add(row.player_id);
       }
     }
-  } else {
+  } else if (options.includeStats) {
     const selectedGameIds = [...uniqueGameMap.keys()].filter((gameId) => {
-      if (syncMode !== 'bootstrap') return true;
       const gameEntry = uniqueGameMap.get(gameId);
       if (!gameEntry) return false;
       return isLikelyFinishedGame(gameEntry.game, now);
     });
     let loggedFirstRealGameStatsDebug = false;
     
+    gamesConsideredForStats = selectedGameIds.length;
     for (const gameId of selectedGameIds) {
       const statsRaw = await apiProvider.getPlayerStatisticsByGame(gameId, statsSeason, signal);
+      if (statsRaw.length > 0) {
+        gamesWithStatsResponse += 1;
+      }
       const fallbackGameDate = uniqueGameMap.get(gameId)?.day ?? null;
       const gameDetails = uniqueGameMap.get(gameId)?.game;
       const homeTeamId = toNumber(gameDetails?.teams?.home?.id) || null;
@@ -1172,9 +1273,13 @@ async function runSyncCore(
     status: 'success',
     message: `Sync (${apiProvider.source}, ${syncMode}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.`,
     gamesSynced: normalizedGames.length,
+    gamesConsideredForStats,
+    gamesWithStatsResponse,
     teamsSynced: selectedTeamIds.length,
     playersSynced,
     playerStatsSynced,
+    playersRecomputed: 0,
+    missingMetricsAfter: 0,
     errors: [],
     debug: {
       requestId: null,
@@ -1196,10 +1301,10 @@ async function recomputeMetricsAfterSync(
   startedAt: string,
   routeSource: 'cron' | 'manual' | null,
   requestId: string | null
-): Promise<{ missingMetricsCount: number }> {
+): Promise<{ missingMetricsCount: number; playersRecomputed: number }> {
   const targetPlayerIds = [...new Set([...playerIds].filter((playerId) => Number.isInteger(playerId) && playerId > 0))];
   if (!targetPlayerIds.length) {
-    return { missingMetricsCount: 0 };
+    return { missingMetricsCount: 0, playersRecomputed: 0 };
   }
 
   const recomputeLog = await createSyncLog(supabase, syncLogColumns, {
@@ -1237,15 +1342,29 @@ async function recomputeMetricsAfterSync(
       routeSource,
       requestId,
     });
-    return { missingMetricsCount: await countPlayersMissingMetrics(supabase, targetPlayerIds) };
+    return {
+      missingMetricsCount: await countPlayersMissingMetrics(supabase, targetPlayerIds),
+      playersRecomputed: 0,
+    };
   }
 
   const metricColumns = await detectTableColumns(supabase, 'player_metrics');
+  let playersRecomputed = 0;
   for (let index = 0; index < targetPlayerIds.length; index += METRIC_RECOMPUTE_BATCH_SIZE) {
     const chunk = targetPlayerIds.slice(index, index + METRIC_RECOMPUTE_BATCH_SIZE);
     await recomputePlayerMetrics(supabase, chunk, metricColumns);
+    playersRecomputed += chunk.length;
   }
-  const missingMetricsCount = await countPlayersMissingMetrics(supabase, targetPlayerIds);
+  let missingPlayerIds = await findPlayersMissingMetrics(supabase, targetPlayerIds);
+  if (missingPlayerIds.length) {
+    for (let index = 0; index < missingPlayerIds.length; index += METRIC_RECOMPUTE_BATCH_SIZE) {
+      const chunk = missingPlayerIds.slice(index, index + METRIC_RECOMPUTE_BATCH_SIZE);
+      await recomputePlayerMetrics(supabase, chunk, metricColumns);
+      playersRecomputed += chunk.length;
+    }
+    missingPlayerIds = await findPlayersMissingMetrics(supabase, targetPlayerIds);
+  }
+  const missingMetricsCount = missingPlayerIds.length;
 
   const finishedAt = nowIso();
   await updateSyncLog(supabase, syncLogColumns, recomputeLogId, {
@@ -1262,15 +1381,26 @@ async function recomputeMetricsAfterSync(
     requestId,
   });
 
-  return { missingMetricsCount };
+  return { missingMetricsCount, playersRecomputed };
 }
 
 export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<SyncSummary> {
   const syncMode = options.syncMode ?? 'daily';
+  const stage = options.stage ?? 'all';
+  const includeGamesUpsert = stage === 'all' || stage === 'games';
+  const includeStats = stage === 'all' || stage === 'stats';
+  const jobType = stage === 'games'
+    ? 'nba_sync_games'
+    : stage === 'stats'
+      ? 'nba_sync_stats'
+      : stage === 'metrics'
+        ? 'nba_metrics_recompute'
+        : 'nba_incremental_sync';
   const debugBase = {
     requestId: options.requestId ?? null,
     routeSource: options.routeSource ?? null,
     syncMode,
+    stage,
   };
 
   const startedAt = nowIso();
@@ -1288,7 +1418,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     if (hasRunningSyncResult) {
       const finishedAt = nowIso();
       await createSyncLog(supabase, syncLogColumns, {
-        jobType: 'nba_incremental_sync',
+        jobType,
         status: 'skipped',
         message: 'Sync skipped because a recent running sync exists.',
         startedAt,
@@ -1306,9 +1436,13 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
         status: 'skipped',
         message: 'Sync skipped because a recent running sync exists.',
         gamesSynced: 0,
+        gamesConsideredForStats: 0,
+        gamesWithStatsResponse: 0,
         teamsSynced: 0,
         playersSynced: 0,
         playerStatsSynced: 0,
+        playersRecomputed: 0,
+        missingMetricsAfter: 0,
         errors: [],
         startedAt,
         finishedAt,
@@ -1327,7 +1461,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       routeSource: debugBase.routeSource,
     });
     const log = await createSyncLog(supabase, syncLogColumns, {
-      jobType: 'nba_incremental_sync',
+      jobType,
       status: 'running',
       message: 'Sync started',
       startedAt,
@@ -1356,6 +1490,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
         gamesSynced: 0,
         playersSynced: 0,
         playerStatsSynced: 0,
+        jobType,
         syncMode,
         routeSource: debugBase.routeSource,
         requestId: debugBase.requestId,
@@ -1365,9 +1500,13 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
         status: 'skipped',
         message,
         gamesSynced: 0,
+        gamesConsideredForStats: 0,
+        gamesWithStatsResponse: 0,
         teamsSynced: 0,
         playersSynced: 0,
         playerStatsSynced: 0,
+        playersRecomputed: 0,
+        missingMetricsAfter: 0,
         errors: [],
         startedAt,
         finishedAt,
@@ -1384,15 +1523,58 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     const timeoutHandle = setTimeout(() => controller.abort('sync_timeout'), SYNC_TIMEOUT_MS);
 
     let partial: SyncCoreResult;
+    let playersRecomputed = 0;
+    let missingMetricsCount = 0;
     try {
-      partial = await runSyncCore(supabase, controller.signal, syncMode, options.bootstrapTeamIds ?? []);
+      if (stage === 'metrics') {
+        const metricPlayerIds = await loadRecentPlayerIdsForMetrics(supabase);
+        const metricsResult = await recomputeMetricsAfterSync(
+          supabase,
+          syncLogColumns,
+          metricPlayerIds,
+          startedAt,
+          debugBase.routeSource,
+          debugBase.requestId
+        );
+        playersRecomputed = metricsResult.playersRecomputed;
+        missingMetricsCount = metricsResult.missingMetricsCount;
+        partial = {
+          status: 'success',
+          message: `Metrics stage finished for ${metricPlayerIds.length} affected players.`,
+          gamesSynced: 0,
+          gamesConsideredForStats: 0,
+          gamesWithStatsResponse: 0,
+          teamsSynced: 0,
+          playersSynced: 0,
+          playerStatsSynced: 0,
+          playersRecomputed,
+          missingMetricsAfter: missingMetricsCount,
+          errors: [],
+          debug: {
+            requestId: null,
+            routeSource: null,
+            hasRunningSync: null,
+            inProcessRunAlready: false,
+            distributedLock: null,
+            missingMetricsCount,
+          },
+          metricPlayerIds,
+        };
+      } else {
+        partial = await runSyncCore(
+          supabase,
+          controller.signal,
+          syncMode,
+          options.bootstrapTeamIds ?? [],
+          { includeGamesUpsert, includeStats }
+        );
+      }
     } finally {
       clearTimeout(timeoutHandle);
     }
 
     const finishedAt = nowIso();
-    let missingMetricsCount = partial.debug?.missingMetricsCount ?? 0;
-    if (partial.status === 'success' && partial.playerStatsSynced > 0) {
+    if (partial.status === 'success' && stage === 'all' && partial.playerStatsSynced > 0) {
       const metricsResult = await recomputeMetricsAfterSync(
         supabase,
         syncLogColumns,
@@ -1402,6 +1584,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
         debugBase.requestId
       );
       missingMetricsCount = metricsResult.missingMetricsCount;
+      playersRecomputed = metricsResult.playersRecomputed;
     }
 
     invalidateCacheByPrefix('games:');
@@ -1419,6 +1602,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       gamesSynced: partial.gamesSynced,
       playersSynced: partial.playersSynced,
       playerStatsSynced: partial.playerStatsSynced,
+      jobType,
       syncMode,
       routeSource: debugBase.routeSource,
       requestId: debugBase.requestId,
@@ -1431,10 +1615,12 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       ...summaryPartial,
       startedAt,
       finishedAt,
+      playersRecomputed: partial.playersRecomputed || playersRecomputed,
+      missingMetricsAfter: stage === 'games' || stage === 'stats' ? 0 : missingMetricsCount,
       debug: {
         ...(partial.debug || {}),
         ...debugBase,
-        missingMetricsCount,
+        missingMetricsCount: stage === 'games' || stage === 'stats' ? 0 : missingMetricsCount,
         hasRunningSync: hasRunningSyncResult,
         inProcessRunAlready: false,
         distributedLock: distributedLockState,
@@ -1452,7 +1638,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       gamesSynced: 0,
       playersSynced: 0,
       playerStatsSynced: 0,
-      jobType: 'nba_incremental_sync',
+      jobType,
       syncMode,
       routeSource: debugBase.routeSource,
       requestId: debugBase.requestId,
@@ -1462,9 +1648,13 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       status: 'error',
       message,
       gamesSynced: 0,
+      gamesConsideredForStats: 0,
+      gamesWithStatsResponse: 0,
       teamsSynced: 0,
       playersSynced: 0,
       playerStatsSynced: 0,
+      playersRecomputed: 0,
+      missingMetricsAfter: 0,
       errors: [message],
       startedAt,
       finishedAt,
