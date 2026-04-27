@@ -39,12 +39,17 @@ type SyncLogRecord = {
   id: number | string;
 };
 
+type SyncCoreResult = Omit<SyncSummary, 'startedAt' | 'finishedAt'> & {
+  metricPlayerIds: number[];
+};
+
 const BASE_URL = 'https://v2.nba.api-sports.io';
 const RUNNING_STATUSES = new Set(['running', 'in_progress']);
 const LOCK_WINDOW_MS = 15 * 60_000;
 const SYNC_TIMEOUT_MS = 8 * 60_000;
 const DATE_WINDOW_PAST_DAYS = 2;
 const DATE_WINDOW_FUTURE_DAYS = 3;
+const METRIC_RECOMPUTE_BATCH_SIZE = 120;
 const MOCK_MAX_TEAMS = 4;
 const MOCK_MAX_PLAYERS_PER_TEAM = 6;
 const MOCK_MAX_PLAYER_STATS = 12;
@@ -550,6 +555,31 @@ async function hasOtherRunningSync(
   return (data || []).some((row) => String((row as { id: number | string | null }).id) !== currentLogIdString);
 }
 
+async function hasOtherRunningJobType(
+  supabase: SupabaseClient,
+  columns: Set<string>,
+  now: Date,
+  currentLogId: number | string | null,
+  jobType: string
+): Promise<boolean> {
+  if (!columns.has('status') || !columns.has('job_type') || currentLogId === null) return false;
+  const timestampColumn = columns.has('started_at') ? 'started_at' : columns.has('created_at') ? 'created_at' : null;
+  if (!timestampColumn) return false;
+
+  const cutoff = new Date(now.getTime() - LOCK_WINDOW_MS).toISOString();
+  const { data } = await supabase
+    .from('sync_logs')
+    .select(`id,${timestampColumn}`)
+    .in('status', [...RUNNING_STATUSES])
+    .eq('job_type', jobType)
+    .gte(timestampColumn, cutoff)
+    .order(timestampColumn, { ascending: true })
+    .limit(10);
+
+  const currentLogIdString = String(currentLogId);
+  return (data || []).some((row) => String((row as { id: number | string | null }).id) !== currentLogIdString);
+}
+
 type PlayerStatMetricsRow = {
   player_id: number | null;
   points: number | null;
@@ -779,7 +809,7 @@ async function runSyncCore(
   signal: AbortSignal,
   syncMode: 'bootstrap' | 'daily',
   bootstrapTeamIds: number[] = []
-): Promise<Omit<SyncSummary, 'startedAt' | 'finishedAt'>> {
+): Promise<SyncCoreResult> {
   const apiProvider = createApiProvider(signal);
   const isMock = apiProvider.source === 'mock';
   const now = new Date();
@@ -943,7 +973,7 @@ async function runSyncCore(
   const playerTeamIdByApi = new Map<number, number>((allPlayerRows || []).map((row) => [toNumber(row.api_id), toNumber(row.team_id)]));
   const playerTeamNameByApi = new Map<number, string>((allPlayerRows || []).map((row) => [toNumber(row.api_id), (row.team || '').trim()]));
   const metricPlayerIds = new Set<number>();
-  let missingMetricsCount = 0;
+  const missingMetricsCount = 0;
 
   if (isMock) {
     for (const apiId of uniqueSyncedApiIds) {
@@ -1138,18 +1168,6 @@ async function runSyncCore(
     playerTeamReconciled = reconciliationPayload.length;
   }
 
-  if (metricPlayerIds.size > 0) {
-    const metricColumns = await detectTableColumns(supabase, 'player_metrics');
-    await recomputePlayerMetrics(supabase, metricPlayerIds, metricColumns);
-    missingMetricsCount = await countPlayersMissingMetrics(supabase, metricPlayerIds);
-  }
-
-  invalidateCacheByPrefix('games:');
-  invalidateCacheByPrefix('players:');
-  invalidateCacheByPrefix('metrics:');
-  invalidateCacheByPrefix('metrics-base:');
-  invalidateCacheByPrefix('admin:');
-
   return {
     status: 'success',
     message: `Sync (${apiProvider.source}, ${syncMode}) finished with ${normalizedGames.length} games, ${playersSynced} players and ${playerStatsSynced} player_stats upserted.`,
@@ -1167,7 +1185,84 @@ async function runSyncCore(
       playerTeamReconciled,
       missingMetricsCount,
     },
+    metricPlayerIds: [...metricPlayerIds],
   };
+}
+
+async function recomputeMetricsAfterSync(
+  supabase: SupabaseClient,
+  syncLogColumns: Set<string>,
+  playerIds: Iterable<number>,
+  startedAt: string,
+  routeSource: 'cron' | 'manual' | null,
+  requestId: string | null
+): Promise<{ missingMetricsCount: number }> {
+  const targetPlayerIds = [...new Set([...playerIds].filter((playerId) => Number.isInteger(playerId) && playerId > 0))];
+  if (!targetPlayerIds.length) {
+    return { missingMetricsCount: 0 };
+  }
+
+  const recomputeLog = await createSyncLog(supabase, syncLogColumns, {
+    jobType: 'nba_metrics_recompute',
+    status: 'running',
+    message: `Metrics recompute started for ${targetPlayerIds.length} players`,
+    startedAt,
+    gamesSynced: 0,
+    playersSynced: targetPlayerIds.length,
+    playerStatsSynced: 0,
+    routeSource,
+    requestId,
+  });
+  const recomputeLogId = recomputeLog?.id ?? null;
+
+  const hasConcurrentRecompute = await hasOtherRunningJobType(
+    supabase,
+    syncLogColumns,
+    new Date(),
+    recomputeLogId,
+    'nba_metrics_recompute'
+  );
+  if (hasConcurrentRecompute) {
+    const finishedAt = nowIso();
+    await updateSyncLog(supabase, syncLogColumns, recomputeLogId, {
+      status: 'skipped',
+      message: 'Metrics recompute skipped because another distributed run is already in progress.',
+      startedAt,
+      finishedAt,
+      errors: [],
+      gamesSynced: 0,
+      playersSynced: targetPlayerIds.length,
+      playerStatsSynced: 0,
+      jobType: 'nba_metrics_recompute',
+      routeSource,
+      requestId,
+    });
+    return { missingMetricsCount: await countPlayersMissingMetrics(supabase, targetPlayerIds) };
+  }
+
+  const metricColumns = await detectTableColumns(supabase, 'player_metrics');
+  for (let index = 0; index < targetPlayerIds.length; index += METRIC_RECOMPUTE_BATCH_SIZE) {
+    const chunk = targetPlayerIds.slice(index, index + METRIC_RECOMPUTE_BATCH_SIZE);
+    await recomputePlayerMetrics(supabase, chunk, metricColumns);
+  }
+  const missingMetricsCount = await countPlayersMissingMetrics(supabase, targetPlayerIds);
+
+  const finishedAt = nowIso();
+  await updateSyncLog(supabase, syncLogColumns, recomputeLogId, {
+    status: 'success',
+    message: `Metrics recompute finished for ${targetPlayerIds.length} players`,
+    startedAt,
+    finishedAt,
+    errors: [],
+    gamesSynced: 0,
+    playersSynced: targetPlayerIds.length,
+    playerStatsSynced: 0,
+    jobType: 'nba_metrics_recompute',
+    routeSource,
+    requestId,
+  });
+
+  return { missingMetricsCount };
 }
 
 export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<SyncSummary> {
@@ -1288,7 +1383,7 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     const controller = new AbortController();
     const timeoutHandle = setTimeout(() => controller.abort('sync_timeout'), SYNC_TIMEOUT_MS);
 
-    let partial: Omit<SyncSummary, 'startedAt' | 'finishedAt'>;
+    let partial: SyncCoreResult;
     try {
       partial = await runSyncCore(supabase, controller.signal, syncMode, options.bootstrapTeamIds ?? []);
     } finally {
@@ -1296,6 +1391,25 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
     }
 
     const finishedAt = nowIso();
+    let missingMetricsCount = partial.debug?.missingMetricsCount ?? 0;
+    if (partial.status === 'success' && partial.playerStatsSynced > 0) {
+      const metricsResult = await recomputeMetricsAfterSync(
+        supabase,
+        syncLogColumns,
+        partial.metricPlayerIds,
+        startedAt,
+        debugBase.routeSource,
+        debugBase.requestId
+      );
+      missingMetricsCount = metricsResult.missingMetricsCount;
+    }
+
+    invalidateCacheByPrefix('games:');
+    invalidateCacheByPrefix('players:');
+    invalidateCacheByPrefix('metrics:');
+    invalidateCacheByPrefix('metrics-base:');
+    invalidateCacheByPrefix('admin:');
+
     await updateSyncLog(supabase, syncLogColumns, logId, {
       status: partial.status,
       message: partial.message,
@@ -1310,13 +1424,17 @@ export async function runNbaSyncJob(options: RunNbaSyncOptions = {}): Promise<Sy
       requestId: debugBase.requestId,
     });
 
+    const summaryPartial = Object.fromEntries(
+      Object.entries(partial).filter(([key]) => key !== 'metricPlayerIds')
+    ) as Omit<SyncCoreResult, 'metricPlayerIds'>;
     return {
-      ...partial,
+      ...summaryPartial,
       startedAt,
       finishedAt,
       debug: {
         ...(partial.debug || {}),
         ...debugBase,
+        missingMetricsCount,
         hasRunningSync: hasRunningSyncResult,
         inProcessRunAlready: false,
         distributedLock: distributedLockState,
