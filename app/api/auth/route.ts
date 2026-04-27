@@ -11,6 +11,22 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+function isEmailProviderUser(user: { app_metadata?: Record<string, unknown> | null }): boolean {
+  const provider = typeof user.app_metadata?.provider === 'string'
+    ? user.app_metadata.provider.trim().toLowerCase()
+    : 'email';
+  return provider === 'email';
+}
+
+function isUserEmailConfirmed(user: {
+  app_metadata?: Record<string, unknown> | null;
+  email_confirmed_at?: string | null;
+  confirmed_at?: string | null;
+}): boolean {
+  if (!isEmailProviderUser(user)) return true;
+  return Boolean(user.email_confirmed_at || user.confirmed_at);
+}
+
 async function syncProfileEmail(userId: string, email?: string | null) {
   if (!email) return;
   const normalized = email.trim().toLowerCase();
@@ -85,10 +101,18 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error || !data.user) {
+      const normalizedError = (error?.message || '').toLowerCase();
+      if (normalizedError.includes('email') && normalizedError.includes('confirm')) {
+        return errorResponse('Conta criada. Confirme seu email para acessar o LinhaCash.', 403);
+      }
       // Nunca revelar se email existe ou não (user enumeration)
         logSecurityEvent('auth_failed', { ...context, action, reason: 'invalid_credentials' });
       return errorResponse('Email ou senha incorretos', 401);
       }
+
+    if (!isUserEmailConfirmed(data.user) || !data.session?.access_token) {
+      return errorResponse('Conta criada. Confirme seu email para acessar o LinhaCash.', 403);
+    }
 
     // Buscar perfil — sanitizado
     await syncProfileEmail(data.user.id, data.user.email || email);
@@ -134,7 +158,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase.auth.signUp({ email, password });
     let createdUser = data.user;
-    let confirmationNotice = 'Verifique seu email para confirmar a conta';
+    let confirmationNotice = 'Conta criada. Confirme seu email para acessar o LinhaCash.';
 
     if (error) {
       const fallbackAllowed = !isProduction && isEmailDeliveryError(error.message || '');
@@ -193,7 +217,7 @@ export async function POST(req: Request) {
       }).catch(() => {});
 
       if (!isProduction && welcomeRes && !welcomeRes.ok) {
-        confirmationNotice = 'Conta criada. O envio de email está indisponível neste ambiente de teste.';
+        confirmationNotice = 'Conta criada. Confirme seu email para acessar o LinhaCash.';
       }
     }
 
@@ -267,6 +291,9 @@ export async function POST(req: Request) {
       if (!data.user?.id) {
         return errorResponse('Sessão expirada', 401);
       }
+      if (!isUserEmailConfirmed(data.user)) {
+        return errorResponse('Conta criada. Confirme seu email para acessar o LinhaCash.', 403);
+      }
 
       await syncProfileEmail(data.user.id, data.user.email);
       return okResponse({
@@ -306,6 +333,9 @@ export async function GET(req: Request) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) {
     return errorResponse('Sessão expirada', 401);
+  }
+  if (!isUserEmailConfirmed(user)) {
+    return errorResponse('Conta criada. Confirme seu email para acessar o LinhaCash.', 403);
   }
 
   await syncProfileEmail(user.id, user.email);

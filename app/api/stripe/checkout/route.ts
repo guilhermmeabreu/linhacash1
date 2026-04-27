@@ -67,20 +67,34 @@ function parsePlan(value: unknown): StripePlan {
 async function resolveStripeCustomerId(userId: string, email: string, name: string) {
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('stripe_customer_id')
+    .select('id,email,name,stripe_customer_id')
     .eq('id', userId)
     .maybeSingle();
 
   if (error) throw error;
+  if (!profile?.id) {
+    throw new ValidationError('User profile is required');
+  }
 
   if (profile?.stripe_customer_id) {
     return profile.stripe_customer_id as string;
   }
 
+  const normalizedEmail = typeof profile.email === 'string' && profile.email.trim()
+    ? profile.email.trim().toLowerCase()
+    : email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    throw new ValidationError('User profile email is required');
+  }
+
+  const customerName = typeof profile.name === 'string' && profile.name.trim()
+    ? profile.name.trim()
+    : name.trim();
+
   const stripe = getStripeServerClient();
   const customer = await stripe.createCustomer({
-    email,
-    name,
+    email: normalizedEmail,
+    name: customerName || undefined,
     metadata: { user_id: userId },
   });
 

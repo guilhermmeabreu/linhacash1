@@ -27,6 +27,22 @@ function getBearerToken(req: Request): string | null {
   return authHeader.slice(7).trim();
 }
 
+function isEmailProviderUser(user: { app_metadata?: Record<string, unknown> | null }): boolean {
+  const provider = typeof user.app_metadata?.provider === 'string'
+    ? user.app_metadata.provider.trim().toLowerCase()
+    : 'email';
+  return provider === 'email';
+}
+
+function isUserEmailConfirmed(user: {
+  app_metadata?: Record<string, unknown> | null;
+  email_confirmed_at?: string | null;
+  confirmed_at?: string | null;
+}): boolean {
+  if (!isEmailProviderUser(user)) return true;
+  return Boolean(user.email_confirmed_at || user.confirmed_at);
+}
+
 async function isValidAuthenticatedToken(token: string): Promise<boolean> {
   const supabase = getSupabase();
   const {
@@ -49,6 +65,9 @@ export async function requireAuthenticatedUser(req: Request) {
   } = await supabase.auth.getUser(token);
 
   if (error || !user) throw new AuthenticationError();
+  if (!isUserEmailConfirmed(user)) {
+    throw new AuthorizationError('Email confirmation required');
+  }
 
   const { data: profile } = await supabase.from('profiles').select('id,email,name').eq('id', user.id).single();
   const safeProfile = (profile && typeof profile === 'object'

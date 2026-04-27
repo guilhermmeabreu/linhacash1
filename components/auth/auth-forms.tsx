@@ -51,7 +51,7 @@ export function LoginForm() {
     || (status === 'success' && flow === 'signup_confirmation' ? 'Email confirmado com sucesso. Faça login para continuar.' : null)
     || (status === 'success' && flow === 'email_change' ? 'Email alterado com sucesso. Faça login novamente para continuar.' : null)
     || (status === 'success' && flow === 'password_change' ? 'Senha alterada com sucesso. Faça login novamente para continuar.' : null)
-    || (params.get('registered') ? 'Conta criada. Faça login para continuar.' : null);
+    || (params.get('registered') ? 'Conta criada. Confirme seu email para acessar o LinhaCash.' : null);
   const [error, setError] = useState<string | null>(null);
   const shouldForceLogin = flow === 'email_change' || flow === 'password_change' || flow === 'signup_confirmation';
 
@@ -167,7 +167,6 @@ export function LoginForm() {
 }
 
 export function SignupForm() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -186,8 +185,7 @@ export function SignupForm() {
       setError(data.error ?? 'Não foi possível criar sua conta.');
       return;
     }
-    setMessage(data.message ?? 'Conta criada. Verifique seu email para confirmar.');
-    router.push('/login?registered=1');
+    setMessage(data.message ?? 'Conta criada. Confirme seu email para acessar o LinhaCash.');
   }
 
   return (

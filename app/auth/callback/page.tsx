@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { captureAuthSessionFromUrl, persistAuthSession } from '@/lib/auth/client-session';
+import { captureAuthSessionFromUrl, clearAuthSession, persistAuthSession } from '@/lib/auth/client-session';
 
 export default function AuthCallbackPage() {
   useEffect(() => {
@@ -76,6 +76,7 @@ export default function AuthCallbackPage() {
       }
 
       if (flow === 'signup_confirmation' || flow === 'signup') {
+        clearAuthSession();
         window.location.replace('/login?auth_status=success&auth_flow=signup_confirmation');
         return;
       }
