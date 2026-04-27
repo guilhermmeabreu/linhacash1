@@ -132,6 +132,19 @@ export class AdminApiError extends Error {
   }
 }
 
+export type SyncStage = 'games' | 'stats' | 'metrics';
+export interface SyncStageResponse {
+  status: 'success' | 'skipped' | 'error';
+  message?: string;
+  error?: string;
+  gamesSynced?: number;
+  gamesConsideredForStats?: number;
+  gamesWithStatsResponse?: number;
+  playerStatsSynced?: number;
+  playersRecomputed?: number;
+  missingMetricsAfter?: number;
+}
+
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: {
@@ -195,7 +208,7 @@ export const adminApi = {
   resetPassword(email: string) {
     return json('/api/admin/users', { method: 'PUT', body: JSON.stringify({ email }) });
   },
-  runSync(params?: { mode?: 'daily' | 'bootstrap'; syncMode?: 'daily' | 'bootstrap'; teamBatch?: number[] }) {
+  runSync(params?: { mode?: 'daily' | 'bootstrap'; syncMode?: 'daily' | 'bootstrap'; teamBatch?: number[]; stage?: SyncStage }) {
     const searchParams = new URLSearchParams();
     const mode = params?.syncMode || params?.mode;
     if (mode) {
@@ -204,10 +217,13 @@ export const adminApi = {
     if (params?.teamBatch?.length) {
       searchParams.set('teamBatch', params.teamBatch.join(','));
     }
+    if (params?.stage) {
+      searchParams.set('stage', params.stage);
+    }
 
     const query = searchParams.toString();
     const url = query ? `/api/admin/sync/run?${query}` : '/api/admin/sync/run';
-    return json<{ status: 'success' | 'skipped' | 'error'; message?: string; error?: string }>(url, { method: 'POST' });
+    return json<SyncStageResponse>(url, { method: 'POST' });
   },
   createReferral(code: string, influencer_name: string) {
     return json('/api/admin/referrals', {

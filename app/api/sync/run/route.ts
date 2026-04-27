@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 const REDIS_SYNC_LOCK_KEY = 'lock:nba_sync';
 type SyncMode = 'bootstrap' | 'daily';
+type SyncStage = 'games' | 'stats' | 'metrics' | 'all';
 
 function requireSyncBearerSecret(req: Request): NextResponse | null {
   const syncSecret = process.env.SYNC_SECRET?.trim();
@@ -44,6 +45,13 @@ function resolveTeamBatchFromRequest(req: Request): number[] {
     .split(',')
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isInteger(value) && value > 0);
+}
+
+function resolveSyncStageFromRequest(req: Request): SyncStage {
+  const { searchParams } = new URL(req.url);
+  const stage = (searchParams.get('stage') || '').toLowerCase();
+  if (stage === 'games' || stage === 'stats' || stage === 'metrics') return stage;
+  return 'all';
 }
 
 async function withLockDiagnostics<T extends Record<string, unknown>>(payload: T): Promise<T | (T & {
@@ -83,6 +91,7 @@ async function withLockDiagnostics<T extends Record<string, unknown>>(payload: T
 async function executeSync(req: Request) {
   const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
   const syncMode = resolveSyncModeFromRequest(req);
+  const stage = resolveSyncStageFromRequest(req);
   const bootstrapTeamIds = syncMode === 'bootstrap' ? resolveTeamBatchFromRequest(req) : [];
 
   try {
@@ -93,7 +102,7 @@ async function executeSync(req: Request) {
     const authErrorResponse = requireSyncBearerSecret(req);
     if (authErrorResponse) return authErrorResponse;
 
-    const result = await runNbaSyncJob({ requestId, routeSource: 'manual', syncMode, bootstrapTeamIds });
+    const result = await runNbaSyncJob({ requestId, routeSource: 'manual', syncMode, bootstrapTeamIds, stage });
     const responsePayload = await withLockDiagnostics(result as Record<string, unknown>);
     const statusCode = result.status === 'error' ? 500 : result.status === 'skipped' ? 202 : 200;
     return NextResponse.json(responsePayload, { status: statusCode });

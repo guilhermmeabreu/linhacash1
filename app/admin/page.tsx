@@ -45,7 +45,7 @@ function AdminSkeleton() {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { stats, users, referrals, referralUses, commissions, syncHistory, productInsights, operationsInsights, adminActionInsights, loading, syncRunning, feedback, loadAll, actions } = useAdminData();
+  const { stats, users, referrals, referralUses, commissions, syncHistory, productInsights, operationsInsights, adminActionInsights, loading, syncRunning, syncCurrentStage, syncStageMessages, feedback, loadAll, actions } = useAdminData();
   const [tab, setTab] = useState<AdminTab>('dashboard');
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState<'all' | 'pro_paid' | 'pro_admin' | 'free'>('all');
@@ -712,11 +712,28 @@ export default function AdminPage() {
         {!loading && tab === 'sync' && (
           <section className="adm-card">
             <div className="adm-row" style={{ marginBottom: 16 }}>
-              <button className="adm-btn" disabled={syncRunning} onClick={() => destroy('Executar sincronização agora?', actions.runSync)}>
-                {syncRunning ? 'Sincronizando...' : 'Rodar sync agora'}
+              <button className="adm-btn" disabled={syncRunning} onClick={() => destroy('Executar sync completo em 3 estágios agora?', actions.runFullSync)}>
+                {syncRunning ? 'Sincronizando...' : 'Sync completo (games → stats → metrics)'}
               </button>
+              <button className="adm-btn alt" disabled={syncRunning} onClick={() => actions.runSyncStage('games')}>Somente games</button>
+              <button className="adm-btn alt" disabled={syncRunning} onClick={() => actions.runSyncStage('stats')}>Somente stats</button>
+              <button className="adm-btn alt" disabled={syncRunning} onClick={() => actions.runSyncStage('metrics')}>Somente metrics</button>
               <span className="adm-muted">Mostrando as 10 sincronizações mais recentes.</span>
             </div>
+            <div className="adm-muted" style={{ marginBottom: 12 }}>
+              {syncRunning
+                ? `Estágio em execução: ${syncCurrentStage || 'aguardando'}`
+                : 'Nenhuma execução ativa.'}
+            </div>
+            {syncStageMessages.length > 0 && (
+              <div style={{ marginBottom: 12, display: 'grid', gap: 8 }}>
+                {syncStageMessages.map((stageResult, index) => (
+                  <div key={`${stageResult.stage}-${index}`} className={`adm-feedback ${stageResult.type === 'success' ? 'ok' : 'err'}`}>
+                    <strong>{stageResult.stage}</strong>: {stageResult.message}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="adm-grid" style={{ marginBottom: 12 }}>
               <div className="adm-card">
                 <div className="adm-muted">Último status</div>
